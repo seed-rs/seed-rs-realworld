@@ -17,3 +17,8 @@ For more information on how to this works with other frontends/backends, head ov
 # Getting started
 
 > npm install, npm start, etc.
+
+---
+
+If you want to see images from imgur, use localhost, not 127.0.0.1
+(https://stackoverflow.com/a/43910367)

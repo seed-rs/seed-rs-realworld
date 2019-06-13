@@ -1,147 +1,69 @@
 #[macro_use]
 extern crate seed;
 use seed::prelude::*;
+use seed::Url;
 
+mod asset;
+mod avatar;
+mod username;
+mod api;
+mod viewer;
+mod session;
+mod page;
+mod route;
 
 // Model
 
-#[derive(Clone, Copy)]
-enum Page {
-    Home,
-    LoginRegister,
-    Profile,
-    Settings,
-    CreateEditArticle,
-    Article,
-    NotFound,
+// @TODO: remove all Clone
+#[derive(Clone)]
+enum Model {
+    Redirect(session::Session),
+    NotFound(session::Session),
 }
 
-impl Default for Page {
+impl Default for Model {
     fn default() -> Self {
-        Page::Home
+        Model::Redirect(session::Session::from(None))
     }
-}
-
-#[derive(Default)]
-struct Model {
-    page: Page
 }
 
 // Update
 
 #[derive(Clone)]
 enum Msg {
-    ChangePage(Page),
+    ChangedRoute(Option<route::Route>)
 }
 
 fn update(msg: Msg, model: &mut Model, _: &mut Orders<Msg>) {
     match msg {
-        Msg::ChangePage(page) => model.page = page,
+        Msg::ChangedRoute(route) => change_route_to(route, model),
     }
 }
 
-// Routes
+fn change_route_to(route: Option<route::Route>, model: &mut Model) {
+    let session = session::Session::from(model.clone());
+    if let None = route {
+        *model = Model::NotFound(session);
+    }
+}
 
-fn routes(url: &seed::Url) -> Msg {
-    match url.path[0].as_ref() {
-        "home" | "" => Msg::ChangePage(Page::default()),
-        "login-register" => Msg::ChangePage(Page::LoginRegister),
-        "profile" => Msg::ChangePage(Page::Profile),
-        "settings" => Msg::ChangePage(Page::Settings),
-        "create-edit-article" => Msg::ChangePage(Page::CreateEditArticle),
-        "article" => Msg::ChangePage(Page::Article),
-        _ => Msg::ChangePage(Page::NotFound),
+impl From<Model> for session::Session {
+    fn from(model: Model) -> session::Session {
+        match model {
+            Model::Redirect(session) => session,
+            Model::NotFound(session) => session,
+        }
     }
 }
 
 // View
 
 fn view(model: &Model) -> impl ElContainer<Msg> {
-    use Page::*;
-    let header = view_header();
-    let content = match model.page {
-        Home => view_home_page(),
-        LoginRegister => view_login_register_page(),
-        Profile => view_profile_page(),
-        Settings => view_settings_page(),
-        CreateEditArticle => view_create_edit_article_page(),
-        Article => view_article_page(),
-        NotFound => view_not_found_page(),
-    };
-    let footer = view_footer();
-    vec![ header, content, footer]
-}
-
-fn view_header() -> El<Msg> {
-    nav![
-        class!["navbar", "navbar-light"],
-        div![
-            class!["container"],
-            a![
-                class!["navbar-brand"],
-                attrs!{At::Href => "/"},
-                "conduit"
-            ],
-            ul![
-                class!["nav navbar-nav pull-xs-right"],
-                li![
-                    class!["nav-item"],
-                    a![
-                        // add "active" class when you're on that page"
-                        class!["nav-link", "active"],
-                        attrs!{At::Href => ""},
-                        "Home"
-                    ],
-                ],
-                li![
-                    class!["nav-item"],
-                    a![
-                        class!["nav-link"],
-                        attrs!{At::Href => ""},
-                        i![
-                            class!["ion-compose"]
-                        ],
-                        El::from_html("&nbsp;"),
-                        "New Post"
-                    ],
-                ],
-                li![
-                    class!["nav-item"],
-                    a![
-                        class!["nav-link"],
-                        attrs!{At::Href => ""},
-                        i![
-                            class!["ion-gear-a"]
-                        ],
-                        El::from_html("&nbsp;"),
-                        "Settings"
-                    ],
-                ]
-            ],
-        ]
-    ]
-}
-
-fn view_footer() -> El<Msg> {
-    footer![
-        div![
-            class!["container"],
-            a![
-                class!["logo-font"],
-                attrs!{At::Href => "/"},
-                "conduit"
-            ],
-            span![
-                class!["attribution"],
-                "An interactive learning project from ",
-                a![
-                    attrs!{At::Href => "https://thinkster.io"},
-                    "Thinkster"
-                ],
-                ". Code & design licensed under MIT."
-            ]
-        ]
-    ]
+    let viewer = None;
+    match model {
+        Model::Redirect(_) => page::Page::Other.view(viewer, page::blank::view()),
+        Model::NotFound(_) => page::Page::Other.view(viewer, page::not_found::view()),
+    }
 }
 
 fn view_home_page() -> El<Msg> {
@@ -943,7 +865,7 @@ fn view_not_found_page() -> El<Msg> {
 #[wasm_bindgen]
 pub fn render() {
     seed::App::build(Model::default(), update, view)
-        .routes(routes)
+        .routes(|url| route::url_to_msg_with_route(url, Msg::ChangedRoute))
         .finish()
         .run();
 

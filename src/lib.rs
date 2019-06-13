@@ -14,8 +14,6 @@ mod route;
 
 // Model
 
-// @TODO: remove all Clone
-#[derive(Clone)]
 enum Model {
     Redirect(session::Session),
     NotFound(session::Session),
@@ -29,21 +27,22 @@ impl Default for Model {
 
 // Update
 
-#[derive(Clone)]
 enum Msg {
     ChangedRoute(Option<route::Route>)
 }
 
-fn update(msg: Msg, model: &mut Model, _: &mut Orders<Msg>) {
+fn update(msg: Msg, option_model: &mut Option<Model>, _: &mut Orders<Msg>) {
     match msg {
-        Msg::ChangedRoute(route) => change_route_to(route, model),
+        Msg::ChangedRoute(route) => change_route_to(route, option_model),
     }
 }
 
-fn change_route_to(route: Option<route::Route>, model: &mut Model) {
-    let session = session::Session::from(model.clone());
-    if let None = route {
-        *model = Model::NotFound(session);
+fn change_route_to(route: Option<route::Route>, option_model: &mut Option<Model>) {
+    if let Some(model) = option_model.take() {
+        let session = session::Session::from(model);
+        if let None = route {
+            *option_model = Some(Model::NotFound(session));
+        }
     }
 }
 
@@ -58,11 +57,15 @@ impl From<Model> for session::Session {
 
 // View
 
-fn view(model: &Model) -> impl ElContainer<Msg> {
-    let viewer = None;
-    match model {
-        Model::Redirect(_) => page::Page::Other.view(viewer, page::blank::view()),
-        Model::NotFound(_) => page::Page::Other.view(viewer, page::not_found::view()),
+fn view(option_model: &Option<Model>) -> impl ElContainer<Msg> {
+    if let Some(model) = option_model {
+        let viewer = None;
+        match model {
+            Model::Redirect(_) => page::Page::Other.view(viewer, page::blank::view()),
+            Model::NotFound(_) => page::Page::Other.view(viewer, page::not_found::view()),
+        }
+    } else {
+        page::Page::Other.view(None, page::blank::view())
     }
 }
 
@@ -856,17 +859,10 @@ fn view_article_page() -> El<Msg> {
     ]
 }
 
-fn view_not_found_page() -> El<Msg> {
-    h2![
-        "404"
-    ]
-}
-
 #[wasm_bindgen]
 pub fn render() {
-    seed::App::build(Model::default(), update, view)
+    seed::App::build(Some(Model::default()), update, view)
         .routes(|url| route::url_to_msg_with_route(url, Msg::ChangedRoute))
         .finish()
         .run();
-
 }

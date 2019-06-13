@@ -1,6 +1,5 @@
 use crate::asset;
 
-#[derive(Clone)]
 pub struct Avatar(String);
 
 impl Avatar {

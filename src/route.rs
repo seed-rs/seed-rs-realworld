@@ -1,6 +1,5 @@
 use seed;
 
-#[derive(Clone, Copy)]
 pub enum Route {
 }
 

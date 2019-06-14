@@ -14,6 +14,10 @@ impl From<Model> for session::Session {
     }
 }
 
+pub fn init(session: session::Session) -> Model {
+    Model { session }
+}
+
 // View
 
 pub fn view<Ms>() -> ViewPage<Ms> {

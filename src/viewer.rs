@@ -1,6 +1,6 @@
 use crate::{avatar, api};
 
-pub struct Viewer {
-    avatar: avatar::Avatar,
-    credentials: api::Credentials
+pub struct Viewer<'a> {
+    avatar: avatar::Avatar<'a>,
+    credentials: api::Credentials<'a>
 }

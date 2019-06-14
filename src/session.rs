@@ -1,12 +1,12 @@
 use crate::viewer;
 
-pub enum Session {
-    LoggedIn(viewer::Viewer),
+pub enum Session<'a> {
+    LoggedIn(viewer::Viewer<'a>),
     Guest
 }
 
-impl From<Option<viewer::Viewer>> for Session {
-    fn from(viewer: Option<viewer::Viewer>) -> Session {
+impl<'a> From<Option<viewer::Viewer<'a>>> for Session<'a> {
+    fn from(viewer: Option<viewer::Viewer<'a>>) -> Session<'a> {
         match viewer {
             Some(viewer) => Session::LoggedIn(viewer),
             None => Session::Guest

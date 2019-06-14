@@ -1,6 +1,6 @@
 use crate::username;
 
-pub struct Credentials {
-    username: username::Username,
-    auth_token: String
+pub struct Credentials<'a> {
+    username: username::Username<'a>,
+    auth_token: &'a str
 }

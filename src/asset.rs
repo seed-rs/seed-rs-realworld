@@ -8,6 +8,10 @@ impl Image {
     pub fn url(&self) -> &str {
         &self.0
     }
+
+    pub fn into_url(self) -> String {
+        self.0
+    }
 }
 
 // Images

@@ -22,7 +22,7 @@ pub enum Page<'a> {
     Login,
     Register,
     Settings,
-    Profile(&'a username::Username),
+    Profile(&'a username::Username<'a>),
     NewArticle
 }
 

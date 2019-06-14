@@ -4,12 +4,12 @@ use crate::session;
 
 // Model
 
-pub struct Model {
-    session: session::Session
+pub struct Model<'a> {
+    session: session::Session<'a>
 }
 
-impl From<Model> for session::Session {
-    fn from(model: Model) -> session::Session {
+impl<'a> From<Model<'a>> for session::Session<'a> {
+    fn from(model: Model<'a>) -> session::Session<'a> {
         model.session
     }
 }

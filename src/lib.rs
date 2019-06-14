@@ -14,33 +14,33 @@ mod route;
 
 // Model
 
-enum Model {
+enum Model<'a> {
     None,
-    Redirect(session::Session),
-    NotFound(session::Session),
-    Home(page::home::Model),
-    Settings(page::settings::Model),
-    Login(page::login::Model),
-    Register(page::register::Model),
-    Profile(username::Username, page::profile::Model),
-    Article(page::article::Model),
-    ArticleEditor(Option<article::slug::Slug>, page::article_editor::Model)
+    Redirect(session::Session<'a>),
+    NotFound(session::Session<'a>),
+    Home(page::home::Model<'a>),
+    Settings(page::settings::Model<'a>),
+    Login(page::login::Model<'a>),
+    Register(page::register::Model<'a>),
+    Profile(username::Username<'a>, page::profile::Model<'a>),
+    Article(page::article::Model<'a>),
+    ArticleEditor(Option<article::slug::Slug<'a>>, page::article_editor::Model<'a>)
 }
 
-impl Model {
-    pub fn take(&mut self) -> Model {
+impl<'a> Model<'a> {
+    pub fn take(&mut self) -> Model<'a> {
         std::mem::replace(self, Model::None)
     }
 }
 
-impl Default for Model {
+impl<'a> Default for Model<'a> {
     fn default() -> Self {
         Model::None
     }
 }
 
-impl From<Model> for session::Session {
-    fn from(model: Model) -> session::Session {
+impl<'a> From<Model<'a>> for session::Session<'a> {
+    fn from(model: Model<'a>) -> session::Session<'a> {
         match model {
             Model::None => None.into(),
             Model::Redirect(session) => session,
@@ -58,17 +58,17 @@ impl From<Model> for session::Session {
 
 // Update
 
-enum Msg {
-    ChangedRoute(Option<route::Route>)
+enum Msg<'a> {
+    ChangedRoute(Option<route::Route<'a>>),
 }
 
-fn update(msg: Msg, model: &mut Model, _: &mut Orders<Msg>) {
+fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, _: &mut Orders<Msg>) {
     match msg {
         Msg::ChangedRoute(route) => change_route_to(route, model),
     }
 }
 
-fn change_route_to(route: Option<route::Route>, model: &mut Model) {
+fn change_route_to<'a>(route: Option<route::Route<'a>>, model: &mut Model<'a>) {
     match route {
         None => { *model = Model::NotFound(model.take().into()) },
         Some(route) => match route {
@@ -106,7 +106,7 @@ fn change_route_to(route: Option<route::Route>, model: &mut Model) {
 
 // View
 
-fn view(model: &Model) -> impl ElContainer<Msg> {
+fn view<'a>(model: &Model) -> impl ElContainer<Msg<'a>> {
     let viewer = None;
     match model {
         Model::None => vec![],

@@ -1,7 +1,11 @@
-pub struct Slug(String);
+use std::borrow::Cow;
 
-impl From<String> for Slug {
-    fn from(string: String) -> Slug {
-        Slug(string)
+pub struct Slug<'a>(Cow<'a, str>);
+
+impl<'a, T> From<T> for Slug<'a>
+    where T: Into<Cow<'a, str>>
+{
+    fn from(value: T) -> Slug<'a> {
+        Slug(value.into())
     }
 }

@@ -1,6 +1,6 @@
 use seed::prelude::*;
-use crate::asset;
 use super::ViewPage;
+use crate::asset;
 
 // View
 

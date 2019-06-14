@@ -15,6 +15,7 @@ pub enum Route {
 }
 
 pub fn url_to_msg_with_route<Ms>(url: &seed::Url, msg_constructor: fn(Option<Route>) -> Ms) -> Ms  {
+    // @TODO: we need into_iter? (is iter not enough?)
     let mut path = url.path.clone().into_iter();
     let route = match path.next().unwrap().as_str() {
         "" => Some(Route::Home),

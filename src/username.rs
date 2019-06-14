@@ -1,3 +1,5 @@
+// @TODO Get rid of clone.
+#[derive(Clone)]
 pub struct Username(String);
 
 // @TODO do we need new (check everything)?

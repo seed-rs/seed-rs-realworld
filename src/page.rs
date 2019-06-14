@@ -1,5 +1,5 @@
 use seed::prelude::*;
-use crate::viewer;
+use crate::{viewer, username};
 
 pub mod article;
 pub mod article_editor;
@@ -17,7 +17,13 @@ pub struct ViewPage<Ms: 'static> {
 }
 
 pub enum Page {
-    Other
+    Other,
+    Home,
+    Login,
+    Register,
+    Settings,
+    Profile(username::Username),
+    NewArticle
 }
 
 impl Page {

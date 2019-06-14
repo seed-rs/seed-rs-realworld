@@ -7,10 +7,9 @@ pub enum Session {
 
 impl From<Option<viewer::Viewer>> for Session {
     fn from(viewer: Option<viewer::Viewer>) -> Session {
-        if let Some(viewer) = viewer {
-            Session::LoggedIn(viewer)
-        } else {
-            Session::Guest
+        match viewer {
+            Some(viewer) => Session::LoggedIn(viewer),
+            None => Session::Guest
         }
     }
 }

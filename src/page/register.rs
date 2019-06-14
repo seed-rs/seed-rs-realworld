@@ -20,9 +20,9 @@ pub fn init(session: session::Session) -> Model {
 
 // View
 
-pub fn view<Ms>() -> ViewPage<Ms> {
+pub fn view<Ms>() -> ViewPage<'static, Ms> {
     ViewPage {
-        title: "Register".into(),
+        title: "Register",
         content: view_content()
     }
 }

@@ -108,7 +108,6 @@ fn change_route_to(route: Option<route::Route>, model: &mut Model) {
 
 fn view(model: &Model) -> impl ElContainer<Msg> {
     let viewer = None;
-    // @TODO refactor? How to get rid of clone?
     match model {
         Model::None => vec![],
         Model::Redirect(_) => page::Page::Other.view(viewer, page::blank::view()),
@@ -117,7 +116,7 @@ fn view(model: &Model) -> impl ElContainer<Msg> {
         Model::Home(_) => page::Page::Settings.view(viewer,page::home::view()),
         Model::Login(_) => page::Page::Settings.view(viewer,page::login::view()),
         Model::Register(_) => page::Page::Settings.view(viewer,page::register::view()),
-        Model::Profile(username, _) => page::Page::Profile(username.clone()).view(viewer,page::profile::view()),
+        Model::Profile(username, _) => page::Page::Profile(username).view(viewer,page::profile::view()),
         Model::Article(_) => page::Page::Other.view(viewer,page::article::view()),
         Model::ArticleEditor(None, _) => page::Page::NewArticle.view(viewer,page::article_editor::view()),
         Model::ArticleEditor(Some(_), _) => page::Page::Other.view(viewer,page::article_editor::view()),

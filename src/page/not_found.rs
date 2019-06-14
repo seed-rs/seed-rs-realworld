@@ -4,9 +4,9 @@ use crate::asset;
 
 // View
 
-pub fn view<Ms>() -> ViewPage<Ms> {
+pub fn view<Ms>() -> ViewPage<'static, Ms> {
     ViewPage {
-        title: "Page Not Found".into(),
+        title: "Page Not Found",
         content: view_content()
     }
 }

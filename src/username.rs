@@ -1,8 +1,5 @@
-// @TODO Get rid of clone.
-#[derive(Clone)]
 pub struct Username(String);
 
-// @TODO do we need new (check everything)?
 impl Username {
     pub fn new(username: String) -> Self {
         Username(username)

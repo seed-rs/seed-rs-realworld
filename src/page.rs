@@ -11,22 +11,22 @@ pub mod profile;
 pub mod register;
 pub mod settings;
 
-pub struct ViewPage<Ms: 'static> {
-    pub title: String,
+pub struct ViewPage<'a, Ms: 'static> {
+    pub title: &'a str,
     pub content: El<Ms>
 }
 
-pub enum Page {
+pub enum Page<'a> {
     Other,
     Home,
     Login,
     Register,
     Settings,
-    Profile(username::Username),
+    Profile(&'a username::Username),
     NewArticle
 }
 
-impl Page {
+impl<'a> Page<'a> {
     pub fn view<Ms>(&self, viewer: Option<viewer::Viewer>, view_page: ViewPage<Ms>) -> Vec<El<Ms>> {
         // @TODO set title  ` { title = title ++ " - Conduit"`
         vec![

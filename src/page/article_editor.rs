@@ -44,28 +44,28 @@ fn view_content<Ms>() -> El<Ms> {
                                 class!["form-group"],
                                 input![
                                     class!["form-control", "form-control-lg"],
-                                    attrs!{At::Type => "text"; At::PlaceHolder => "Article Title"}
+                                    attrs!{At::Type => "text"; At::Placeholder => "Article Title"}
                                 ]
                             ],
                             fieldset![
                                 class!["form-group"],
                                 input![
                                     class!["form-control"],
-                                    attrs!{At::Type => "text"; At::PlaceHolder => "What's this article about?"}
+                                    attrs!{At::Type => "text"; At::Placeholder => "What's this article about?"}
                                 ]
                             ],
                             fieldset![
                                 class!["form-group"],
                                 textarea![
                                     class!["form-control"],
-                                    attrs!{At::Rows => 8; At::PlaceHolder => "Write your article (in markdown)"}
+                                    attrs!{At::Rows => 8; At::Placeholder => "Write your article (in markdown)"}
                                 ]
                             ],
                             fieldset![
                                 class!["form-group"],
                                 input![
                                     class!["form-control"],
-                                    attrs!{At::Type => "text"; At::PlaceHolder => "Enter tags"}
+                                    attrs!{At::Type => "text"; At::Placeholder => "Enter tags"}
                                 ],
                                 div![
                                     class!["tag-list"]

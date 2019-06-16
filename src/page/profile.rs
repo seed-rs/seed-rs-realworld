@@ -53,7 +53,7 @@ fn view_content<Ms>() -> El<Ms> {
                             i![
                                 class!["ion-plus-round"]
                             ],
-                            El::from_html("&nbsp;"),
+                            raw!("&nbsp;"),
                             "Follow Eric Simons"
                         ]
                     ]

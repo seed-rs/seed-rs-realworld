@@ -66,20 +66,20 @@ fn view_content<Ms>() -> El<Ms> {
                         i![
                             class!["ion-plus-round"]
                         ],
-                        El::from_html("&nbsp;"),
+                        raw!("&nbsp;"),
                         "Follow Eric Simons ",
                         span![
                             class!["counter"],
                             "(10)"
                         ]
                     ],
-                    El::from_html("&nbsp;&nbsp;"),
+                    raw!("&nbsp;&nbsp;"),
                     button![
                         class!["btn", "btn-sm", "btn-outline-primary"],
                         i![
                             class!["ion-heart"]
                         ],
-                        El::from_html("&nbsp;"),
+                        raw!("&nbsp;"),
                         "Favorite Post ",
                         span![
                             class!["counter"],
@@ -141,20 +141,20 @@ fn view_content<Ms>() -> El<Ms> {
                         i![
                             class!["ion-plus-round"]
                         ],
-                        El::from_html("&nbsp;"),
+                        raw!("&nbsp;"),
                         "Follow Eric Simons ",
                         span![
                             class!["counter"],
                             "(10)"
                         ]
                     ],
-                    El::from_html("&nbsp;&nbsp;"),
+                    raw!("&nbsp;&nbsp;"),
                     button![
                         class!["btn", "btn-sm", "btn-outline-primary"],
                         i![
                             class!["ion-heart"]
                         ],
-                        El::from_html("&nbsp;"),
+                        raw!("&nbsp;"),
                         "Favorite Post ",
                         span![
                             class!["counter"],
@@ -176,7 +176,7 @@ fn view_content<Ms>() -> El<Ms> {
                             class!["card-block"],
                             textarea![
                                 class!["form-control"],
-                                attrs!{At::Rows => 3; At::PlaceHolder => "Write a comment..."}
+                                attrs!{At::Rows => 3; At::Placeholder => "Write a comment..."}
                             ]
                         ],
                         div![
@@ -211,7 +211,7 @@ fn view_content<Ms>() -> El<Ms> {
                                     attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
                                 ]
                             ],
-                            El::from_html("&nbsp;"),
+                            raw!("&nbsp;"),
                             a![
                                 class!["comment-author"],
                                 attrs!{At::Href => ""},
@@ -243,7 +243,7 @@ fn view_content<Ms>() -> El<Ms> {
                                     attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
                                 ]
                             ],
-                            El::from_html("&nbsp;"),
+                            raw!("&nbsp;"),
                             a![
                                 class!["comment-author"],
                                 attrs!{At::Href => ""},

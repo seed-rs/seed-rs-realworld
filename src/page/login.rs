@@ -61,21 +61,21 @@ fn view_content<Ms>() -> El<Ms> {
                             class!["form-group"],
                             input![
                                 class!["form-control", "form-control-lg"],
-                                attrs!{At::Type => "text"; At::PlaceHolder => "Your Name"}
+                                attrs!{At::Type => "text"; At::Placeholder => "Your Name"}
                             ]
                         ],
                         fieldset![
                             class!["form-group"],
                             input![
                                 class!["form-control", "form-control-lg"],
-                                attrs!{At::Type => "text"; At::PlaceHolder => "Email"}
+                                attrs!{At::Type => "text"; At::Placeholder => "Email"}
                             ]
                         ],
                         fieldset![
                             class!["form-group"],
                             input![
                                 class!["form-control", "form-control-lg"],
-                                attrs!{At::Type => "password"; At::PlaceHolder => "Password"}
+                                attrs!{At::Type => "password"; At::Placeholder => "Password"}
                             ]
                         ],
                         button![

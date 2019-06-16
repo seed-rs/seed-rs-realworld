@@ -65,7 +65,7 @@ impl<'a> Page<'a> {
                             i![
                                 class!["ion-compose"]
                             ],
-                            El::from_html("&nbsp;"),
+                            raw!("&nbsp;"),
                             "New Post"
                         ],
                     ],
@@ -77,7 +77,7 @@ impl<'a> Page<'a> {
                             i![
                                 class!["ion-gear-a"]
                             ],
-                            El::from_html("&nbsp;"),
+                            raw!("&nbsp;"),
                             "Settings"
                         ],
                     ]

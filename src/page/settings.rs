@@ -48,35 +48,35 @@ fn view_content<Ms>() -> El<Ms> {
                                 class!["form-group"],
                                 input![
                                     class!["form-control"],
-                                    attrs!{At::Type => "text"; At::PlaceHolder => "URL of profile picture"}
+                                    attrs!{At::Type => "text"; At::Placeholder => "URL of profile picture"}
                                 ]
                             ],
                             fieldset![
                                 class!["form-group"],
                                 input![
                                     class!["form-control", "form-control-lg"],
-                                    attrs!{At::Type => "text"; At::PlaceHolder => "Your Name"}
+                                    attrs!{At::Type => "text"; At::Placeholder => "Your Name"}
                                 ]
                             ],
                             fieldset![
                                 class!["form-group"],
                                 textarea![
                                     class!["form-control", "form-control-lg"],
-                                    attrs!{At::Rows => 8; At::PlaceHolder => "Short bio about you"}
+                                    attrs!{At::Rows => 8; At::Placeholder => "Short bio about you"}
                                 ]
                             ],
                             fieldset![
                                 class!["form-group"],
                                 input![
                                     class!["form-control", "form-control-lg"],
-                                    attrs!{At::Type => "text"; At::PlaceHolder => "Email"}
+                                    attrs!{At::Type => "text"; At::Placeholder => "Email"}
                                 ]
                             ],
                             fieldset![
                                 class!["form-group"],
                                 input![
                                     class!["form-control", "form-control-lg"],
-                                    attrs!{At::Type => "password"; At::PlaceHolder => "Password"}
+                                    attrs!{At::Type => "password"; At::Placeholder => "Password"}
                                 ]
                             ],
                             button![

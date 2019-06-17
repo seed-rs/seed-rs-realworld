@@ -8,6 +8,10 @@ impl<'a> Username<'a> {
     {
         Username(username.into())
     }
+
+    pub fn as_str(&'a self) -> &'a str {
+        self.as_str()
+    }
 }
 
 impl<'a, T> From<T> for Username<'a>

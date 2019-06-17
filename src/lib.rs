@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate seed;
 use seed::prelude::*;
+use std::convert::TryInto;
 
 mod asset;
 mod avatar;
@@ -77,6 +78,7 @@ enum Msg<'a> {
     ChangedRoute(Option<route::Route<'a>>),
     // @TODO Browser.UrlRequest?
     ClickedLink,
+    GotSession(session::Session<'a>),
     GotHomeMsg(page::home::Msg),
     GotSettingsMsg(page::settings::Msg),
     GotLoginMsg(page::login::Msg),
@@ -84,7 +86,6 @@ enum Msg<'a> {
     GotProfileMsg(page::profile::Msg),
     GotArticleMsg(page::article::Msg),
     GotArticleEditorMsg(page::article_editor::Msg),
-    GotSession(session::Session<'a>),
 }
 
 fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut Orders<Msg<'static>>) {
@@ -92,6 +93,10 @@ fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut Orders<Msg<'stat
         Msg::ChangedRoute(route) => change_route_to(route, model),
         // @TODOs
         Msg::ClickedLink => (),
+        Msg::GotSession(session) => {
+            *model = Model::Redirect(session);
+            route::replace_url(route::Route::Home);
+        },
         Msg::GotHomeMsg(sub_msg) => {
             if let Model::Home(model) = model {
                 *orders = call_update(page::home::update, sub_msg, model).map_message(Msg::GotHomeMsg);
@@ -113,7 +118,7 @@ fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut Orders<Msg<'stat
             }
         },
         Msg::GotProfileMsg(sub_msg) => {
-            if let Model::Profile(model, username) = model {
+            if let Model::Profile(model, _) = model {
                 *orders = call_update(page::profile::update, sub_msg, model).map_message(Msg::GotProfileMsg)
             }
         },
@@ -123,11 +128,10 @@ fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut Orders<Msg<'stat
             }
         },
         Msg::GotArticleEditorMsg(sub_msg) => {
-            if let Model::ArticleEditor(model, slug) = model {
+            if let Model::ArticleEditor(model, _) = model {
                 *orders = call_update(page::article_editor::update, sub_msg, model).map_message(Msg::GotArticleEditorMsg)
             }
         },
-        Msg::GotSession(session) => (),
     }
 }
 
@@ -136,7 +140,7 @@ fn change_route_to<'a>(route: Option<route::Route<'a>>, model: &mut Model<'a>) {
         None => { *model = Model::NotFound(model.take().into()) },
         Some(route) => match route {
             route::Route::Root => {
-                *model = Model::Home(page::home::init(model.take().into()))
+                route::replace_url(route::Route::Home)
             },
             route::Route::Logout => (),
             route::Route::NewArticle => {
@@ -189,7 +193,7 @@ fn view<'a>(model: &Model) -> impl ElContainer<Msg<'a>> {
 #[wasm_bindgen]
 pub fn render() {
     seed::App::build(Model::default(), update, view)
-        .routes(|url| route::url_to_msg_with_route(url, Msg::ChangedRoute))
+        .routes(|url| Msg::ChangedRoute(url.try_into().ok()))
         .finish()
         .run();
 }

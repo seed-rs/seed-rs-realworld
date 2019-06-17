@@ -5,10 +5,7 @@ use crate::asset;
 // View
 
 pub fn view<Ms>() -> ViewPage<'static, Ms> {
-    ViewPage {
-        title: "Page Not Found",
-        content: view_content()
-    }
+    ViewPage::new("Page Not Found",view_content())
 }
 
 fn view_content<Ms>() -> El<Ms> {

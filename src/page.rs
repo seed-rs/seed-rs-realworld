@@ -12,8 +12,43 @@ pub mod register;
 pub mod settings;
 
 pub struct ViewPage<'a, Ms: 'static> {
-    pub title: &'a str,
-    pub content: El<Ms>
+    title_prefix: &'a str,
+    content: El<Ms>
+}
+
+impl<'a, Ms> ViewPage<'a, Ms> {
+    pub fn new(title_prefix: &'a str, content: El<Ms>) -> Self {
+        Self {
+            title_prefix,
+            content
+        }
+    }
+
+    pub fn title(&self) -> String {
+        format!("{} - Conduit", self.title_prefix)
+    }
+}
+
+pub struct InitPage<Md, Ms: 'static> {
+    model: Md,
+    orders: Orders<Ms>
+}
+
+impl<Md, Ms> InitPage<Md, Ms> {
+    pub fn new(model: Md) -> Self {
+        Self {
+            model,
+            orders: Orders::default()
+        }
+    }
+
+    pub fn orders_mut(&mut self) -> &mut Orders<Ms> {
+        &mut self.orders
+    }
+
+    pub fn into_tuple(self) -> (Md, Orders<Ms>) {
+        (self.model, self.orders)
+    }
 }
 
 pub enum Page<'a> {
@@ -28,8 +63,8 @@ pub enum Page<'a> {
 
 impl<'a> Page<'a> {
     pub fn view<Ms>(&self, viewer: Option<&viewer::Viewer>, view_page: ViewPage<Ms>) -> Vec<El<Ms>> {
-        seed::document().set_title(format!("{} - Conduit", view_page.title).as_str());
-        
+        seed::document().set_title(&view_page.title());
+
         vec![
             self.view_header(),
             view_page.content,

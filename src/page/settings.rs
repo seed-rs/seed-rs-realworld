@@ -1,5 +1,5 @@
 use seed::prelude::*;
-use super::ViewPage;
+use super::{ViewPage, InitPage};
 use crate::session;
 
 // Model
@@ -20,8 +20,8 @@ impl<'a> From<Model<'a>> for session::Session<'a> {
     }
 }
 
-pub fn init(session: session::Session) -> Model {
-    Model { session }
+pub fn init(session: session::Session) -> InitPage<Model, Msg> {
+    InitPage::new(Model { session })
 }
 
 // Update
@@ -37,10 +37,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>) {
 // View
 
 pub fn view<Ms>() -> ViewPage<'static, Ms> {
-    ViewPage {
-        title: "Settings",
-        content: view_content()
-    }
+    ViewPage::new("Settings",view_content())
 }
 
 fn view_content<Ms>() -> El<Ms> {

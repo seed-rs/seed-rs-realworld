@@ -88,7 +88,7 @@ enum Msg<'a> {
 
 fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut Orders<Msg<'static>>) {
     match msg {
-        Msg::ChangedRoute(route) => change_route_to(route, model),
+        Msg::ChangedRoute(route) => change_route_to(route, model, orders),
         Msg::GotSession(session) => {
             *model = Model::Redirect(session);
             route::replace_url(route::Route::Home);
@@ -131,37 +131,79 @@ fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut Orders<Msg<'stat
     }
 }
 
-fn change_route_to<'a>(route: Option<route::Route<'a>>, model: &mut Model<'a>) {
+fn change_route_to<'a>(route: Option<route::Route<'a>>, model: &mut Model<'a>, orders:&mut Orders<Msg<'static>>) {
     match route {
         None => { *model = Model::NotFound(model.take().into()) },
         Some(route) => match route {
             route::Route::Root => {
                 route::replace_url(route::Route::Home)
             },
-            route::Route::Logout => (),
+            route::Route::Logout => {
+                api::logout()
+            },
             route::Route::NewArticle => {
-                *model = Model::ArticleEditor(page::article_editor::init(model.take().into()), None)
+                let (page_model, page_orders) = page::article_editor::init_new(
+                    model.take().into()
+                ).into_tuple();
+
+                *model = Model::ArticleEditor(page_model, None);
+                *orders = page_orders.map_message(Msg::GotArticleEditorMsg);
             },
             route::Route::EditArticle(slug) => {
-                *model = Model::ArticleEditor(page::article_editor::init(model.take().into()), Some(slug))
+                let (page_model, page_orders) = page::article_editor::init_edit(
+                    model.take().into(), &slug
+                ).into_tuple();
+
+                *model = Model::ArticleEditor(page_model, Some(slug));
+                *orders = page_orders.map_message(Msg::GotArticleEditorMsg);
             },
             route::Route::Settings => {
-                *model = Model::Settings(page::settings::init(model.take().into()))
+                let (page_model, page_orders) = page::settings::init(
+                    model.take().into()
+                ).into_tuple();
+
+                *model = Model::Settings(page_model);
+                *orders = page_orders.map_message(Msg::GotSettingsMsg);
             },
             route::Route::Home => {
-                *model = Model::Home(page::home::init(model.take().into()))
+                let (page_model, page_orders) = page::home::init(
+                    model.take().into()
+                ).into_tuple();
+
+                *model = Model::Home(page_model);
+                *orders = page_orders.map_message(Msg::GotHomeMsg);
             },
             route::Route::Login => {
-                *model = Model::Login(page::login::init(model.take().into()))
+                let (page_model, page_orders) = page::login::init(
+                    model.take().into()
+                ).into_tuple();
+
+                *model = Model::Login(page_model);
+                *orders = page_orders.map_message(Msg::GotLoginMsg);
             },
             route::Route::Register => {
-                *model = Model::Register(page::register::init(model.take().into()))
+                let (page_model, page_orders) = page::register::init(
+                    model.take().into()
+                ).into_tuple();
+
+                *model = Model::Register(page_model);
+                *orders = page_orders.map_message(Msg::GotRegisterMsg);
             },
             route::Route::Profile(username) => {
-                *model = Model::Profile(page::profile::init(model.take().into()), username)
+                let (page_model, page_orders) = page::profile::init(
+                    model.take().into(), &username
+                ).into_tuple();
+
+                *model = Model::Profile(page_model, username);
+                *orders = page_orders.map_message(Msg::GotProfileMsg);
             },
-            route::Route::Article(_) => {
-                *model = Model::Article(page::article::init(model.take().into()))
+            route::Route::Article(slug) => {
+                let (page_model, page_orders) = page::article::init(
+                    model.take().into(), slug
+                ).into_tuple();
+
+                *model = Model::Article(page_model);
+                *orders = page_orders.map_message(Msg::GotArticleMsg);
             },
         }
     };

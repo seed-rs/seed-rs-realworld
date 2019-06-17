@@ -27,7 +27,7 @@ pub enum Page<'a> {
 }
 
 impl<'a> Page<'a> {
-    pub fn view<Ms>(&self, viewer: Option<viewer::Viewer>, view_page: ViewPage<Ms>) -> Vec<El<Ms>> {
+    pub fn view<Ms>(&self, viewer: Option<&viewer::Viewer>, view_page: ViewPage<Ms>) -> Vec<El<Ms>> {
         // @TODO set title  ` { title = title ++ " - Conduit"`
         vec![
             self.view_header(),

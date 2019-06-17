@@ -8,6 +8,12 @@ pub struct Model<'a> {
     session: session::Session<'a>
 }
 
+impl<'a> Model<'a> {
+    pub fn session(&self) -> &session::Session {
+        &self.session
+    }
+}
+
 impl<'a> From<Model<'a>> for session::Session<'a> {
     fn from(model: Model<'a>) -> session::Session<'a> {
         model.session
@@ -16,6 +22,16 @@ impl<'a> From<Model<'a>> for session::Session<'a> {
 
 pub fn init(session: session::Session) -> Model {
     Model { session }
+}
+
+// Update
+
+pub enum Msg {
+
+}
+
+pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>) {
+
 }
 
 // View

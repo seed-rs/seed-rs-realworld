@@ -28,7 +28,8 @@ pub enum Page<'a> {
 
 impl<'a> Page<'a> {
     pub fn view<Ms>(&self, viewer: Option<&viewer::Viewer>, view_page: ViewPage<Ms>) -> Vec<El<Ms>> {
-        // @TODO set title  ` { title = title ++ " - Conduit"`
+        seed::document().set_title(format!("{} - Conduit", view_page.title).as_str());
+        
         vec![
             self.view_header(),
             view_page.content,

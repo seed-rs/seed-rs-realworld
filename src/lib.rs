@@ -76,8 +76,6 @@ impl<'a> From<Model<'a>> for session::Session<'a> {
 
 enum Msg<'a> {
     ChangedRoute(Option<route::Route<'a>>),
-    // @TODO Browser.UrlRequest?
-    ClickedLink,
     GotSession(session::Session<'a>),
     GotHomeMsg(page::home::Msg),
     GotSettingsMsg(page::settings::Msg),
@@ -91,8 +89,6 @@ enum Msg<'a> {
 fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut Orders<Msg<'static>>) {
     match msg {
         Msg::ChangedRoute(route) => change_route_to(route, model),
-        // @TODOs
-        Msg::ClickedLink => (),
         Msg::GotSession(session) => {
             *model = Model::Redirect(session);
             route::replace_url(route::Route::Home);

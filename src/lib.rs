@@ -215,16 +215,16 @@ fn view<'a>(model: &Model) -> impl ElContainer<Msg<'a>> {
     let viewer = model.session().and_then(session::Session::viewer);
     match model {
         Model::None => vec![],
-        Model::Redirect(_) => page::Page::Other.view(viewer, page::blank::view()),
-        Model::NotFound(_) => page::Page::Other.view(viewer, page::not_found::view()),
-        Model::Settings(_) => page::Page::Settings.view(viewer,page::settings::view()),
-        Model::Home(_) => page::Page::Settings.view(viewer,page::home::view()),
-        Model::Login(_) => page::Page::Settings.view(viewer,page::login::view()),
-        Model::Register(_) => page::Page::Settings.view(viewer,page::register::view()),
-        Model::Profile(_, username) => page::Page::Profile(username).view(viewer,page::profile::view()),
-        Model::Article(_) => page::Page::Other.view(viewer,page::article::view()),
-        Model::ArticleEditor(_, None) => page::Page::NewArticle.view(viewer,page::article_editor::view()),
-        Model::ArticleEditor(_, Some(_)) => page::Page::Other.view(viewer,page::article_editor::view()),
+        Model::Redirect(_) => page::Page::Other(page::blank::view()).view(viewer),
+        Model::NotFound(_) => page::Page::Other(page::not_found::view()).view(viewer),
+        Model::Settings(_) => page::Page::Settings.view(viewer),
+        Model::Home(_) => page::Page::Home.view(viewer),
+        Model::Login(_) => page::Page::Login.view(viewer),
+        Model::Register(_) => page::Page::Register.view(viewer),
+        Model::Profile(_, username) => page::Page::Profile(username).view(viewer),
+        Model::Article(_) => page::Page::Other(page::article::view()).view(viewer),
+        Model::ArticleEditor(_, None) => page::Page::NewArticle.view(viewer),
+        Model::ArticleEditor(_, Some(_)) => page::Page::Other(page::article_editor::view()).view(viewer),
     }
 }
 

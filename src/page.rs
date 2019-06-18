@@ -34,8 +34,8 @@ impl<'a, Ms> ViewPage<'a, Ms> {
 }
 
 pub struct InitPage<Md, Ms: 'static> {
-    model: Md,
-    orders: Orders<Ms>
+    pub model: Md,
+    pub orders: Orders<Ms>
 }
 
 impl<Md, Ms> InitPage<Md, Ms> {
@@ -48,10 +48,6 @@ impl<Md, Ms> InitPage<Md, Ms> {
 
     pub fn orders_mut(&mut self) -> &mut Orders<Ms> {
         &mut self.orders
-    }
-
-    pub fn into_tuple(self) -> (Md, Orders<Ms>) {
-        (self.model, self.orders)
     }
 }
 

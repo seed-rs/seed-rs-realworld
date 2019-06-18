@@ -2,6 +2,6 @@ use super::ViewPage;
 
 // View
 
-pub fn view<Ms>() -> ViewPage<'static, Ms> {
+pub fn view<'a, Ms>() -> ViewPage<'a, Ms> {
     ViewPage::new("Blank", empty!())
 }

@@ -55,8 +55,8 @@ impl<Md, Ms> InitPage<Md, Ms> {
     }
 }
 
-pub enum Page<'a, Ms: 'static> {
-    Other(ViewPage<'a, Ms>),
+pub enum Page<'a> {
+    Other,
     Home,
     Login,
     Register,
@@ -65,37 +65,18 @@ pub enum Page<'a, Ms: 'static> {
     NewArticle
 }
 
-impl<'a, Ms> From<Page<'a, Ms>> for ViewPage<'a, Ms> {
-    fn from(page: Page<'a, Ms>) -> Self {
-        match page {
-            Page::Other(view_page) => view_page,
-            Page::Home => home::view(),
-            Page::Login => login::view(),
-            Page::Register => register::view(),
-            Page::Settings => settings::view(),
-            Page::Profile(username) => profile::view(),
-            Page::NewArticle => article_editor::view(),
-        }
-    }
+pub fn view<'a, Ms>(page: Page<'a>, view_page: ViewPage<'a, Ms>, viewer: Option<&viewer::Viewer>) -> Vec<El<Ms>> {
+    seed::document().set_title(&view_page.title());
+
+    vec![
+        view_header(),
+        view_page.into_content(),
+        view_footer(),
+    ]
 }
 
-impl<'a, Ms> Page<'a, Ms> {
-    pub fn view(self, viewer: Option<&viewer::Viewer>) -> Vec<El<Ms>> {
-        let header = self.view_header();
-        let footer = self.view_footer();
-
-        let view_page = ViewPage::from(self);
-        seed::document().set_title(&view_page.title());
-
-        vec![
-            header,
-            view_page.into_content(),
-            footer,
-        ]
-    }
-
-    fn view_header(&self) -> El<Ms> {
-        nav![
+fn view_header<Ms>() -> El<Ms> {
+    nav![
             class!["navbar", "navbar-light"],
             div![
                 class!["container"],
@@ -142,10 +123,10 @@ impl<'a, Ms> Page<'a, Ms> {
                 ],
             ]
         ]
-    }
+}
 
-    fn view_footer(&self) -> El<Ms> {
-        footer![
+fn view_footer<Ms>() -> El<Ms> {
+    footer![
             div![
                 class!["container"],
                 a![
@@ -164,5 +145,4 @@ impl<'a, Ms> Page<'a, Ms> {
                 ]
             ]
         ]
-    }
 }

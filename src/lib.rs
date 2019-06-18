@@ -211,20 +211,80 @@ fn change_route_to<'a>(route: Option<route::Route<'a>>, model: &mut Model<'a>, o
 
 // View
 
-fn view<'a>(model: &Model) -> impl ElContainer<Msg<'a>> {
+fn view<'a>(model: &Model) -> impl ElContainer<Msg<'static>> {
     let viewer = model.session().and_then(session::Session::viewer);
     match model {
         Model::None => vec![],
-        Model::Redirect(_) => page::Page::Other(page::blank::view()).view(viewer),
-        Model::NotFound(_) => page::Page::Other(page::not_found::view()).view(viewer),
-        Model::Settings(_) => page::Page::Settings.view(viewer),
-        Model::Home(_) => page::Page::Home.view(viewer),
-        Model::Login(_) => page::Page::Login.view(viewer),
-        Model::Register(_) => page::Page::Register.view(viewer),
-        Model::Profile(_, username) => page::Page::Profile(username).view(viewer),
-        Model::Article(_) => page::Page::Other(page::article::view()).view(viewer),
-        Model::ArticleEditor(_, None) => page::Page::NewArticle.view(viewer),
-        Model::ArticleEditor(_, Some(_)) => page::Page::Other(page::article_editor::view()).view(viewer),
+        Model::Redirect(_) => {
+            page::view(
+                page::Page::Other,
+                page::blank::view(),
+                viewer,
+            )
+        },
+        Model::NotFound(_) => {
+            page::view(
+                page::Page::Other,
+                page::not_found::view(),
+                viewer,
+            )
+        },
+        Model::Settings(model) => {
+            page::view(
+                page::Page::Settings,
+                page::settings::view(model),
+                viewer,
+            ).map_message(Msg::GotSettingsMsg)
+        },
+        Model::Home(model) => {
+            page::view(
+                page::Page::Home,
+                page::home::view(model),
+                viewer,
+            ).map_message(Msg::GotHomeMsg)
+        },
+        Model::Login(model) => {
+            page::view(
+                page::Page::Login,
+                page::login::view(model),
+                viewer,
+            ).map_message(Msg::GotLoginMsg)
+        },
+        Model::Register(model) => {
+            page::view(
+                page::Page::Register,
+                page::register::view(model),
+                viewer,
+            ).map_message(Msg::GotRegisterMsg)
+        },
+        Model::Profile(model, username) => {
+            page::view(
+                page::Page::Profile(username),
+                page::profile::view(model),
+                viewer,
+            ).map_message(Msg::GotProfileMsg)
+        },
+        Model::Article(model) => {
+            page::view(
+                page::Page::Other,
+                page::article::view(model),
+                viewer,
+            ).map_message(Msg::GotArticleMsg)
+        },
+        Model::ArticleEditor(model, None) => {
+            page::view(
+                page::Page::NewArticle,
+                page::article_editor::view(model),
+                viewer,
+            ).map_message(Msg::GotArticleEditorMsg)
+        },
+        Model::ArticleEditor(model, Some(_)) => {
+            page::view(
+                page::Page::Other,
+                page::article_editor::view(model),
+                viewer,
+            ).map_message(Msg::GotArticleEditorMsg)
+        },
     }
 }
 

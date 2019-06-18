@@ -39,11 +39,11 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>) {
 
 // View
 
-pub fn view<Ms>() -> ViewPage<'static, Ms> {
+pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
     ViewPage::new("@TODO",view_content())
 }
 
-fn view_content<Ms>() -> El<Ms> {
+fn view_content() -> El<Msg> {
     div![
         class!["editor-page"],
         div![

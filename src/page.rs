@@ -1,5 +1,5 @@
 use seed::prelude::*;
-use crate::{viewer, username};
+use crate::{viewer, username, route};
 
 pub mod article;
 pub mod article_editor;
@@ -51,6 +51,16 @@ impl<Md, Ms> InitPage<Md, Ms> {
     }
 }
 
+pub fn view<'a, Ms>(page: Page<'a>, view_page: ViewPage<'a, Ms>, viewer: Option<&viewer::Viewer>) -> Vec<El<Ms>> {
+    seed::document().set_title(&view_page.title());
+
+    vec![
+        page.view_header(viewer),
+        view_page.into_content(),
+        page.view_footer(),
+    ]
+}
+
 pub enum Page<'a> {
     Other,
     Home,
@@ -61,18 +71,92 @@ pub enum Page<'a> {
     NewArticle
 }
 
-pub fn view<'a, Ms>(page: Page<'a>, view_page: ViewPage<'a, Ms>, viewer: Option<&viewer::Viewer>) -> Vec<El<Ms>> {
-    seed::document().set_title(&view_page.title());
+impl<'a> Page<'a> {
+    fn is_active(&self, route: &route::Route) -> bool {
+        match (self, route) {
+            (Page::Home, route::Route::Home) => true,
+            (Page::Login, route::Route::Login) => true,
+            (Page::Register, route::Route::Register) => true,
+            (Page::Settings, route::Route::Settings) => true,
+            (Page::Profile(username), route::Route::Profile(route_username)) => {
+                *username == route_username
+            },
+            (Page::NewArticle, route::Route::NewArticle) => true,
+            _ => false,
+        }
+    }
 
-    vec![
-        view_header(),
-        view_page.into_content(),
-        view_footer(),
-    ]
-}
+    fn view_navbar_link<Ms>(&self, route: &route::Route, mapper: impl Fn(&mut El<Ms>)) -> El<Ms> {
+        let mut link = a![
+            class![
+                "nav-link",
+                if self.is_active(route) { "active" } else { "" },
+            ],
+            attrs!{At::Href => route.to_string()},
+        ];
+        mapper(&mut link);
 
-fn view_header<Ms>() -> El<Ms> {
-    nav![
+        li![
+            class!["nav-item"],
+            link,
+        ]
+    }
+
+    fn view_menu<Ms>(&self, viewer: Option<&viewer::Viewer>) -> Vec<El<Ms>> {
+        match viewer {
+            None => {
+                vec![
+                    self.view_navbar_link(
+                        &route::Route::Login,
+                        |link| link.set_text("Sign in")
+                    ),
+                    self.view_navbar_link(
+                        &route::Route::Register,
+                        |link| link.set_text("Sign up")
+                    ),
+                ]
+            },
+            Some(viewer) => {
+                vec![
+                    self.view_navbar_link(
+                        &route::Route::NewArticle,
+                        |link| {
+                            link.add_child(i![
+                                class!["ion-compose"]
+                            ]);
+                            link.set_text("\u{00A0}New Post")
+                        }
+                    ),
+                    self.view_navbar_link(
+                        &route::Route::Settings,
+                        |link| {
+                            link.add_child(i![
+                                class!["ion-gear-a"]
+                            ]);
+                            link.set_text("\u{00A0}Settings")
+                        }
+                    ),
+                    self.view_navbar_link(
+                        &route::Route::Profile(*viewer.username()),
+                        |link| {
+                            link.add_child(img![
+                                class!["user-pic"],
+                                attrs!{At::Src => viewer.avatar().src()}
+                            ]);
+                            link.set_text(viewer.username().as_str())
+                        }
+                    ),
+                    self.view_navbar_link(
+                        &route::Route::Logout,
+                        |link | link.set_text("Sign out")
+                    ),
+                ]
+            }
+        }
+    }
+
+    fn view_header<Ms>(&self, viewer: Option<&viewer::Viewer>) -> El<Ms> {
+        nav![
             class!["navbar", "navbar-light"],
             div![
                 class!["container"],
@@ -83,46 +167,15 @@ fn view_header<Ms>() -> El<Ms> {
                 ],
                 ul![
                     class!["nav navbar-nav pull-xs-right"],
-                    li![
-                        class!["nav-item"],
-                        a![
-                            // add "active" class when you're on that page"
-                            class!["nav-link", "active"],
-                            attrs!{At::Href => ""},
-                            "Home"
-                        ],
-                    ],
-                    li![
-                        class!["nav-item"],
-                        a![
-                            class!["nav-link"],
-                            attrs!{At::Href => ""},
-                            i![
-                                class!["ion-compose"]
-                            ],
-                            raw!("&nbsp;"),
-                            "New Post"
-                        ],
-                    ],
-                    li![
-                        class!["nav-item"],
-                        a![
-                            class!["nav-link"],
-                            attrs!{At::Href => ""},
-                            i![
-                                class!["ion-gear-a"]
-                            ],
-                            raw!("&nbsp;"),
-                            "Settings"
-                        ],
-                    ]
+                    self.view_navbar_link(&route::Route::Home, |link| link.set_text("Home")),
+                    self.view_menu(viewer),
                 ],
             ]
         ]
-}
+    }
 
-fn view_footer<Ms>() -> El<Ms> {
-    footer![
+    fn view_footer<Ms>(&self) -> El<Ms> {
+        footer![
             div![
                 class!["container"],
                 a![
@@ -141,4 +194,5 @@ fn view_footer<Ms>() -> El<Ms> {
                 ]
             ]
         ]
+    }
 }

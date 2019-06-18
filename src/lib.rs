@@ -181,7 +181,7 @@ fn change_route_to<'a>(route: Option<route::Route<'a>>, model: &mut Model<'a>, o
             },
             route::Route::Profile(username) => {
                 let init_page = page::profile::init(session(), &username);
-                *model = Model::Profile(init_page.model, username);
+                *model = Model::Profile(init_page.model, username.into_owned());
                 *orders = init_page.orders.map_message(Msg::GotProfileMsg);
             },
             route::Route::Article(slug) => {

@@ -1,5 +1,6 @@
 use seed::prelude::*;
 use crate::{viewer, username, route};
+use core::borrow::Borrow;
 
 pub mod article;
 pub mod article_editor;
@@ -79,26 +80,24 @@ impl<'a> Page<'a> {
             (Page::Register, route::Route::Register) => true,
             (Page::Settings, route::Route::Settings) => true,
             (Page::Profile(username), route::Route::Profile(route_username)) => {
-                *username == route_username
+                *username == route_username.borrow()
             },
             (Page::NewArticle, route::Route::NewArticle) => true,
             _ => false,
         }
     }
 
-    fn view_navbar_link<Ms>(&self, route: &route::Route, mapper: impl Fn(&mut El<Ms>)) -> El<Ms> {
-        let mut link = a![
-            class![
-                "nav-link",
-                if self.is_active(route) { "active" } else { "" },
-            ],
-            attrs!{At::Href => route.to_string()},
-        ];
-        mapper(&mut link);
-
+    fn view_navbar_link<Ms>(&self, route: &route::Route, link_content: impl UpdateEl<El<Ms>>) -> El<Ms> {
         li![
             class!["nav-item"],
-            link,
+            a![
+                class![
+                    "nav-link",
+                    if self.is_active(route) { "active" } else { "" },
+                ],
+                attrs!{At::Href => route.to_string()},
+                link_content
+            ]
         ]
     }
 
@@ -106,50 +105,41 @@ impl<'a> Page<'a> {
         match viewer {
             None => {
                 vec![
-                    self.view_navbar_link(
-                        &route::Route::Login,
-                        |link| link.set_text("Sign in")
-                    ),
-                    self.view_navbar_link(
-                        &route::Route::Register,
-                        |link| link.set_text("Sign up")
-                    ),
+                    self.view_navbar_link(&route::Route::Login, "Sign in"),
+                    self.view_navbar_link(&route::Route::Register, "Sign up"),
                 ]
             },
             Some(viewer) => {
                 vec![
                     self.view_navbar_link(
                         &route::Route::NewArticle,
-                        |link| {
-                            link.add_child(i![
+                        vec![
+                            i![
                                 class!["ion-compose"]
-                            ]);
-                            link.set_text("\u{00A0}New Post")
-                        }
+                            ],
+                            El::new_text("\u{00A0}New Post")
+                        ]
                     ),
                     self.view_navbar_link(
                         &route::Route::Settings,
-                        |link| {
-                            link.add_child(i![
+                        vec![
+                            i![
                                 class!["ion-gear-a"]
-                            ]);
-                            link.set_text("\u{00A0}Settings")
-                        }
+                            ],
+                            El::new_text("\u{00A0}Settings")
+                        ]
                     ),
                     self.view_navbar_link(
-                        &route::Route::Profile(*viewer.username()),
-                        |link| {
-                            link.add_child(img![
+                        &route::Route::Profile(std::borrow::Cow::Borrowed(viewer.username())),
+                        vec![
+                            img![
                                 class!["user-pic"],
                                 attrs!{At::Src => viewer.avatar().src()}
-                            ]);
-                            link.set_text(viewer.username().as_str())
-                        }
+                            ],
+                            El::new_text(viewer.username().as_str())
+                        ]
                     ),
-                    self.view_navbar_link(
-                        &route::Route::Logout,
-                        |link | link.set_text("Sign out")
-                    ),
+                    self.view_navbar_link(&route::Route::Logout, "Sign out"),
                 ]
             }
         }
@@ -167,7 +157,7 @@ impl<'a> Page<'a> {
                 ],
                 ul![
                     class!["nav navbar-nav pull-xs-right"],
-                    self.view_navbar_link(&route::Route::Home, |link| link.set_text("Home")),
+                    self.view_navbar_link(&route::Route::Home, "Home"),
                     self.view_menu(viewer),
                 ],
             ]

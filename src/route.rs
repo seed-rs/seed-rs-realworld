@@ -1,8 +1,7 @@
 use seed;
 use crate::{username, article};
 use tool::non_empty;
-use std::convert::TryFrom;
-use std::fmt;
+use std::{convert::TryFrom, fmt, borrow::Cow};
 
 type Path<'a> = Vec<&'a str>;
 
@@ -14,7 +13,7 @@ pub enum Route<'a> {
     Register,
     Settings,
     Article(article::slug::Slug<'a>),
-    Profile(username::Username<'a>),
+    Profile(Cow<'a, username::Username<'a>>),
     NewArticle,
     EditArticle(article::slug::Slug<'a>)
 }
@@ -64,6 +63,7 @@ impl<'a> TryFrom<seed::Url> for Route<'a> {
                     .next()
                     .filter(non_empty)
                     .map(username::Username::from)
+                    .map(Cow::Owned)
                     .map(Route::Profile)
             },
             Some("register") => Some(Route::Register),

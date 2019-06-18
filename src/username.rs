@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Clone)]
 pub struct Username<'a>(Cow<'a, str>);
 
 impl<'a> Username<'a> {

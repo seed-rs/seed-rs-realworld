@@ -1,11 +1,30 @@
 use seed::prelude::*;
 use super::{ViewPage, InitPage};
-use crate::session;
+use crate::{session, route, viewer};
 
 // Model
 
+enum ValidatedField {
+    Email,
+    Password,
+}
+
+enum Problem {
+    InvalidEntry(ValidatedField, String),
+    ServerError(String)
+}
+
+#[derive(Default)]
+struct Form {
+    email: String,
+    password: String
+}
+
+#[derive(Default)]
 pub struct Model<'a> {
-    session: session::Session<'a>
+    session: session::Session<'a>,
+    problems: Vec<Problem>,
+    form: Form,
 }
 
 impl<'a> Model<'a> {
@@ -21,26 +40,72 @@ impl<'a> From<Model<'a>> for session::Session<'a> {
 }
 
 pub fn init(session: session::Session) -> InitPage<Model, Msg> {
-    InitPage::new(Model { session })
+    InitPage::new(Model {
+        session,
+        ..Model::default()
+    })
 }
 
 // Update
 
 pub enum Msg {
-
+    SubmittedForm,
+    EnteredEmail(String),
+    EnteredPassword(String),
+    CompletedLogin(seed::fetch::ResponseResult<viewer::Viewer<'static>>),
+    GotSession(session::Session<'static>),
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>) {
-
+    match msg {
+        Msg::SubmittedForm => {},
+        Msg::EnteredEmail(email) => {},
+        Msg::EnteredPassword(password) => {},
+        Msg::CompletedLogin(Ok(response)) => {},
+        Msg::CompletedLogin(Err(fail_reason)) => {}
+        Msg::GotSession(session) => {
+            model.session = session;
+            route::replace_url(route::Route::Home)
+        }
+    }
 }
 
 // View
 
 pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
-    ViewPage::new("Login", view_content())
+    ViewPage::new("Login", view_content(model))
 }
 
-fn view_content() -> El<Msg> {
+fn view_form(form: &Form) -> El<Msg> {
+    form![
+        fieldset![
+            class!["form-group"],
+            input![
+                class!["form-control", "form-control-lg"],
+                attrs!{At::Type => "text"; At::Placeholder => "Email"}
+            ]
+        ],
+        fieldset![
+            class!["form-group"],
+            input![
+                class!["form-control", "form-control-lg"],
+                attrs!{At::Type => "password"; At::Placeholder => "Password"}
+            ]
+        ],
+        button![
+            class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
+            "Sign in"
+        ]
+    ]
+}
+
+fn view_problem<'a>(problem: &Problem) -> El<Msg> {
+    li![
+        "That email is already taken"
+    ]
+}
+
+fn view_content<'a>(model: &Model) -> El<Msg> {
     div![
         class!["auth-page"],
         div![
@@ -52,50 +117,22 @@ fn view_content() -> El<Msg> {
                     class!["col-md-6", "offset-md-3", "col-x32-12"],
                     h1![
                         class!["text-xs-center"],
-                        "Sign up"
+                        "Sign in"
                     ],
                     p![
                         class!["text-xs-center"],
                         a![
-                            attrs!{At::Href => ""},
-                            "Have an account?"
+                            attrs!{At::Href => route::Route::Register.to_string()},
+                            "Need an account?"
                         ]
                     ],
 
                     ul![
                         class!["error-messages"],
-                        li![
-                            "That email is already taken"
-                        ]
+                        model.problems.iter().map(view_problem)
                     ],
 
-                    form![
-                        fieldset![
-                            class!["form-group"],
-                            input![
-                                class!["form-control", "form-control-lg"],
-                                attrs!{At::Type => "text"; At::Placeholder => "Your Name"}
-                            ]
-                        ],
-                        fieldset![
-                            class!["form-group"],
-                            input![
-                                class!["form-control", "form-control-lg"],
-                                attrs!{At::Type => "text"; At::Placeholder => "Email"}
-                            ]
-                        ],
-                        fieldset![
-                            class!["form-group"],
-                            input![
-                                class!["form-control", "form-control-lg"],
-                                attrs!{At::Type => "password"; At::Placeholder => "Password"}
-                            ]
-                        ],
-                        button![
-                            class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
-                            "Sign up"
-                        ]
-                    ]
+                    view_form(&model.form)
                 ]
 
             ]

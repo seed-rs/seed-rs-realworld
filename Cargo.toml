@@ -10,11 +10,7 @@ crate-type = ["cdylib"]
 
 
 [dependencies]
-#seed = "^0.3.6"
+#seed = "^0.3.7"
 seed = { git = "https://github.com/David-OConnor/seed" }
 wasm-bindgen = "^0.2.45"
 tool = "0.2.1"
-
-#web-sys = "^0.3.22"
-#serde = { version = "^1.0.92", features = ['derive'] }
-#futures = "^0.1.27"

@@ -117,7 +117,7 @@ impl<'a> Page<'a> {
                             i![
                                 class!["ion-compose"]
                             ],
-                            El::new_text("\u{00A0}New Post")
+                            plain!("\u{00A0}New Post")
                         ]
                     ),
                     self.view_navbar_link(
@@ -126,7 +126,7 @@ impl<'a> Page<'a> {
                             i![
                                 class!["ion-gear-a"]
                             ],
-                            El::new_text("\u{00A0}Settings")
+                            plain!("\u{00A0}Settings")
                         ]
                     ),
                     self.view_navbar_link(
@@ -136,7 +136,7 @@ impl<'a> Page<'a> {
                                 class!["user-pic"],
                                 attrs!{At::Src => viewer.avatar().src()}
                             ],
-                            El::new_text(viewer.username().as_str())
+                            plain!(viewer.username().as_str())
                         ]
                     ),
                     self.view_navbar_link(&route::Route::Logout, "Sign out"),
@@ -152,7 +152,7 @@ impl<'a> Page<'a> {
                 class!["container"],
                 a![
                     class!["navbar-brand"],
-                    attrs!{At::Href => "/"},
+                    attrs!{At::Href => route::Route::Home.to_string()},
                     "conduit"
                 ],
                 ul![
@@ -170,7 +170,7 @@ impl<'a> Page<'a> {
                 class!["container"],
                 a![
                     class!["logo-font"],
-                    attrs!{At::Href => "/"},
+                    attrs!{At::Href => route::Route::Home.to_string()},
                     "conduit"
                 ],
                 span![

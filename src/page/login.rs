@@ -52,16 +52,20 @@ pub enum Msg {
     SubmittedForm,
     EnteredEmail(String),
     EnteredPassword(String),
-    CompletedLogin(seed::fetch::ResponseResult<viewer::Viewer<'static>>),
+    CompletedLogin(seed::fetch::ResponseDataResult<viewer::Viewer<'static>>),
     GotSession(session::Session<'static>),
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>) {
     match msg {
         Msg::SubmittedForm => {},
-        Msg::EnteredEmail(email) => {},
-        Msg::EnteredPassword(password) => {},
-        Msg::CompletedLogin(Ok(response)) => {},
+        Msg::EnteredEmail(email) => {
+            model.form.email = email;
+        },
+        Msg::EnteredPassword(password) => {
+            model.form.password = password;
+        },
+        Msg::CompletedLogin(Ok(viewer)) => {},
         Msg::CompletedLogin(Err(fail_reason)) => {}
         Msg::GotSession(session) => {
             model.session = session;
@@ -82,14 +86,16 @@ fn view_form(form: &Form) -> El<Msg> {
             class!["form-group"],
             input![
                 class!["form-control", "form-control-lg"],
-                attrs!{At::Type => "text"; At::Placeholder => "Email"}
+                attrs!{At::Type => "text"; At::Placeholder => "Email"},
+                input_ev(Ev::Input, Msg::EnteredEmail),
             ]
         ],
         fieldset![
             class!["form-group"],
             input![
                 class!["form-control", "form-control-lg"],
-                attrs!{At::Type => "password"; At::Placeholder => "Password"}
+                attrs!{At::Type => "password"; At::Placeholder => "Password"},
+                input_ev(Ev::Input, Msg::EnteredPassword),
             ]
         ],
         button![

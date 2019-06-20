@@ -93,7 +93,7 @@ impl<'a> Page<'a> {
             a![
                 class![
                     "nav-link",
-                    if self.is_active(route) { "active" } else { "" },
+                    "active" => self.is_active(route),
                 ],
                 attrs!{At::Href => route.to_string()},
                 link_content

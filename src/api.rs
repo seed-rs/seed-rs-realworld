@@ -1,11 +1,13 @@
 use crate::username;
+use serde::Deserialize;
 
-pub struct Credentials<'a> {
-    username: username::Username<'a>,
-    auth_token: &'a str
+#[derive(Clone, Debug, Deserialize)]
+pub struct Credentials {
+    username: username::Username<'static>,
+    auth_token: String
 }
 
-impl<'a> Credentials<'a>{
+impl Credentials{
     pub fn username(&self) -> &username::Username {
         &self.username
     }

@@ -1,11 +1,13 @@
 use crate::{avatar, api, username};
+use serde::Deserialize;
 
-pub struct Viewer<'a> {
-    avatar: avatar::Avatar<'a>,
-    credentials: api::Credentials<'a>
+#[derive(Clone, Debug, Deserialize)]
+pub struct Viewer {
+    avatar: avatar::Avatar,
+    credentials: api::Credentials
 }
 
-impl<'a> Viewer<'a> {
+impl Viewer {
     pub fn username(&self) -> &username::Username {
         self.credentials.username()
     }

@@ -1,11 +1,13 @@
 use std::borrow::Cow;
 use crate::asset;
+use serde::Deserialize;
 
-pub struct Avatar<'a>(Cow<'a, str>);
+#[derive(Clone, Debug, Deserialize)]
+pub struct Avatar(Cow<'static, str>);
 
-impl<'a> Avatar<'a> {
+impl Avatar {
     pub fn new<T>(url: Option<T>) -> Self
-        where T: Into<Cow<'a, str>>
+        where T: Into<Cow<'static, str>>
     {
         match url {
             Some(url) => Avatar(url.into()),

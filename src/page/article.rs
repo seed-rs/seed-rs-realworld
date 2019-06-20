@@ -4,23 +4,23 @@ use crate::{session, article};
 
 // Model
 
-pub struct Model<'a> {
-    session: session::Session<'a>
+pub struct Model {
+    session: session::Session
 }
 
-impl<'a> Model<'a> {
+impl<'a> Model {
     pub fn session(&self) -> &session::Session {
         &self.session
     }
 }
 
-impl<'a> From<Model<'a>> for session::Session<'a> {
-    fn from(model: Model<'a>) -> session::Session<'a> {
+impl<'a> From<Model> for session::Session {
+    fn from(model: Model) -> session::Session {
         model.session
     }
 }
 
-pub fn init<'a>(session: session::Session<'a>, slug: article::slug::Slug) -> InitPage<Model<'a>, Msg> {
+pub fn init<'a>(session: session::Session, slug: article::slug::Slug) -> InitPage<Model, Msg> {
     InitPage::new(Model { session })
 }
 

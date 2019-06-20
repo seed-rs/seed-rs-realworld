@@ -17,15 +17,15 @@ mod route;
 
 enum Model<'a> {
     None,
-    Redirect(session::Session<'a>),
-    NotFound(session::Session<'a>),
-    Home(page::home::Model<'a>),
-    Settings(page::settings::Model<'a>),
-    Login(page::login::Model<'a>),
-    Register(page::register::Model<'a>),
-    Profile(page::profile::Model<'a>, username::Username<'a>),
-    Article(page::article::Model<'a>),
-    ArticleEditor(page::article_editor::Model<'a>, Option<article::slug::Slug<'a>>)
+    Redirect(session::Session),
+    NotFound(session::Session),
+    Home(page::home::Model),
+    Settings(page::settings::Model),
+    Login(page::login::Model),
+    Register(page::register::Model),
+    Profile(page::profile::Model, username::Username<'a>),
+    Article(page::article::Model),
+    ArticleEditor(page::article_editor::Model, Option<article::slug::Slug<'a>>)
 }
 
 impl<'a> Default for Model<'a> {
@@ -55,8 +55,8 @@ impl<'a> Model<'a> {
     }
 }
 
-impl<'a> From<Model<'a>> for session::Session<'a> {
-    fn from(model: Model<'a>) -> session::Session<'a> {
+impl<'a> From<Model<'a>> for session::Session {
+    fn from(model: Model<'a>) -> session::Session {
         match model {
             Model::None => session::Session::default(),
             Model::Redirect(session) => session,
@@ -76,7 +76,7 @@ impl<'a> From<Model<'a>> for session::Session<'a> {
 
 enum Msg<'a> {
     ChangedRoute(Option<route::Route<'a>>),
-    GotSession(session::Session<'a>),
+    GotSession(session::Session),
     GotHomeMsg(page::home::Msg),
     GotSettingsMsg(page::settings::Msg),
     GotLoginMsg(page::login::Msg),

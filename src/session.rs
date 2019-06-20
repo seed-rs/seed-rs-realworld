@@ -1,17 +1,18 @@
 use crate::viewer;
 
-pub enum Session<'a> {
-    LoggedIn(viewer::Viewer<'a>),
+#[derive(Clone)]
+pub enum Session {
+    LoggedIn(viewer::Viewer),
     Guest
 }
 
-impl<'a> Default for Session<'a> {
+impl<'a> Default for Session {
     fn default() -> Self {
         Session::Guest
     }
 }
 
-impl<'a> Session<'a> {
+impl<'a> Session {
     pub fn viewer(&self) -> Option<&viewer::Viewer> {
         match self {
             Session::LoggedIn(viewer) => Some(viewer),
@@ -20,8 +21,8 @@ impl<'a> Session<'a> {
     }
 }
 
-impl<'a> From<Option<viewer::Viewer<'a>>> for Session<'a> {
-    fn from(viewer: Option<viewer::Viewer<'a>>) -> Session<'a> {
+impl<'a> From<Option<viewer::Viewer>> for Session {
+    fn from(viewer: Option<viewer::Viewer>) -> Session {
         match viewer {
             Some(viewer) => Session::LoggedIn(viewer),
             None => Session::default()

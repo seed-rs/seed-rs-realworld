@@ -1,11 +1,10 @@
 use seed::{prelude::*, fetch};
 use super::{ViewPage, InitPage};
-use crate::{session, route, viewer, api};
+use crate::{session, route, viewer, api, avatar, username};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use serde::de::Unexpected::Str;
 
 // Model
 
@@ -44,13 +43,13 @@ enum Problem {
 
 
 struct Form {
-    fields: IndexMap<Field, String>
+    user: IndexMap<Field, String>
 }
 
 impl Default for Form {
     fn default() -> Self {
         Self {
-            fields: vec![
+            user: vec![
                 (Field::Email, "".to_string()),
                 (Field::Password, "".to_string()),
             ].into_iter().collect()
@@ -62,9 +61,9 @@ impl Default for Form {
 impl Form {
     fn trim_fields(&self) -> TrimmedForm {
         TrimmedForm {
-            fields:
+            user:
                 self
-                    .fields
+                    .user
                     .iter()
                     .map(|(field, value)|(field,value.trim()))
                     .collect()
@@ -73,14 +72,14 @@ impl Form {
 }
 
 struct TrimmedForm<'a> {
-    fields: IndexMap<&'a Field, &'a str>
+    user: IndexMap<&'a Field, &'a str>
 }
 
 impl<'a> TrimmedForm<'a> {
     fn validate(&'a self) -> Result<ValidForm, Vec<Problem>> {
         let invalid_entries =
             self
-                .fields
+                .user
                 .iter()
                 .filter_map(|(field,value)| {
                     field.validate(value)
@@ -89,9 +88,9 @@ impl<'a> TrimmedForm<'a> {
 
         if invalid_entries.is_empty() {
             Ok(ValidForm {
-                fields:
+                user:
                 self.
-                    fields
+                    user
                     .iter()
                     .map(|(field, value)| (**field, (*value).to_owned()))
                     .collect()
@@ -104,7 +103,7 @@ impl<'a> TrimmedForm<'a> {
 
 #[derive(Serialize)]
 struct ValidForm {
-    fields: IndexMap<Field, String>
+    user: IndexMap<Field, String>
 }
 
 #[derive(Default)]
@@ -138,6 +137,37 @@ struct ServerErrorData {
     errors: IndexMap<String, Vec<String>>
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ServerData {
+    user: ServerDataFields
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ServerDataFields {
+    id: i32,
+    email: String,
+    created_at: String,
+    updated_at: String,
+    username: String,
+    bio: Option<String>,
+    image: Option<String>,
+    token: String,
+}
+
+impl ServerData {
+    fn into_viewer(self) -> viewer::Viewer {
+        viewer::Viewer {
+            avatar: avatar::Avatar::new(self.user.image),
+            credentials: api::Credentials {
+                username: username::Username::new(self.user.username),
+                auth_token: self.user.token
+            }
+        }
+    }
+}
+
 // Update
 
 #[derive(Clone)]
@@ -146,7 +176,6 @@ pub enum Msg {
     EnteredEmail(String),
     EnteredPassword(String),
     CompletedLogin(fetch::FetchResult<String>),
-    GotSession(session::Session),
 }
 
 fn login(valid_form: &ValidForm) -> impl Future<Item=Msg, Error=Msg>  {
@@ -173,10 +202,10 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>) {
             }
         },
         Msg::EnteredEmail(email) => {
-            model.form.fields.insert(Field::Email, email);
+            model.form.user.insert(Field::Email, email);
         },
         Msg::EnteredPassword(password) => {
-            model.form.fields.insert(Field::Password, password);
+            model.form.user.insert(Field::Password, password);
         },
         Msg::CompletedLogin(Ok(response)) => {
             match response.status.category {
@@ -186,13 +215,20 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>) {
                             .data
                             .map_err(|_|())
                             .and_then(|string| {
-                                serde_json::from_str::<viewer::Viewer>(string.as_str())
-                                    .map_err(|_|())
+                                serde_json::from_str::<ServerData>(string.as_str())
+                                    .map_err(|error| {
+                                        log!(error);
+                                        ()
+                                    })
+                            })
+                            .map(|server_data| {
+                               server_data.into_viewer()
                             });
 
                     match viewer {
                         Ok(viewer) => {
-                            //
+                            viewer.store();
+                            route::replace_url(route::Route::Home);
                         },
                         Err(_) => {
                             model.problems.push(Problem::ServerError("Data error".into()))
@@ -231,10 +267,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>) {
         Msg::CompletedLogin(Err(request_error)) => {
             model.problems.push(Problem::ServerError("Request error".into()));
         }
-        Msg::GotSession(session) => {
-            model.session = session;
-            route::replace_url(route::Route::Home)
-        }
     }
 }
 
@@ -257,7 +289,7 @@ fn view_form(form: &Form) -> El<Msg> {
                 attrs!{
                     At::Type => "text",
                     At::Placeholder => "Email",
-                    At::Value => form.fields.get(&Field::Email).unwrap()
+                    At::Value => form.user.get(&Field::Email).unwrap()
                 },
                 input_ev(Ev::Input, Msg::EnteredEmail),
             ]
@@ -269,7 +301,7 @@ fn view_form(form: &Form) -> El<Msg> {
                 attrs!{
                     At::Type => "password",
                     At::Placeholder => "Password",
-                    At::Value => form.fields.get(&Field::Password).unwrap()
+                    At::Value => form.user.get(&Field::Password).unwrap()
                 },
                 input_ev(Ev::Input, Msg::EnteredPassword),
             ]

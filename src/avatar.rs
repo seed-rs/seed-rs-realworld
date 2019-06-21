@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 use crate::asset;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Avatar(Cow<'static, str>);
 
 impl Avatar {

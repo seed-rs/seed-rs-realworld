@@ -1,10 +1,14 @@
-use crate::username;
-use serde::Deserialize;
+use crate::{username, viewer};
+use serde::{Deserialize, Serialize};
+use seed::storage;
+use serde_json;
 
-#[derive(Clone, Debug, Deserialize)]
+const STORAGE_KEY: &'static str = "conduit";
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Credentials {
-    username: username::Username<'static>,
-    auth_token: String
+    pub username: username::Username<'static>,
+    pub auth_token: String
 }
 
 impl Credentials{
@@ -13,6 +17,23 @@ impl Credentials{
     }
 }
 
-pub fn logout() {
+pub fn load_viewer() -> Option<viewer::Viewer> {
+    local_storage()
+        .get_item(STORAGE_KEY)
+        .expect("try to get local storage item failed")
+        .map(|serialized_item|{
+            serde_json::from_str(&serialized_item).expect("viewer deserialization failed")
+        })
+}
 
+pub fn store_viewer(viewer: &viewer::Viewer) {
+    storage::store_data(&local_storage(), STORAGE_KEY, viewer);
+}
+
+pub fn logout() {
+    local_storage().remove_item(STORAGE_KEY);
+}
+
+fn local_storage() -> storage::Storage {
+    storage::get_storage().expect("get local storage failed")
 }

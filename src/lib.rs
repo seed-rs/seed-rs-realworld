@@ -75,8 +75,8 @@ impl<'a> From<Model<'a>> for session::Session {
 // Update
 
 enum Msg<'a> {
+    Init,
     ChangedRoute(Option<route::Route<'a>>),
-    GotSession(session::Session),
     GotHomeMsg(page::home::Msg),
     GotSettingsMsg(page::settings::Msg),
     GotLoginMsg(page::login::Msg),
@@ -88,11 +88,12 @@ enum Msg<'a> {
 
 fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut Orders<Msg<'static>>) {
     match msg {
-        Msg::ChangedRoute(route) => change_route_to(route, model, orders),
-        Msg::GotSession(session) => {
-            *model = Model::Redirect(session);
+        Msg::Init => {
+            *model = Model::Redirect(api::load_viewer().into());
             route::replace_url(route::Route::Home);
+            change_route_to(Some(route::Route::Home), model, orders)
         },
+        Msg::ChangedRoute(route) => change_route_to(route, model, orders),
         Msg::GotHomeMsg(sub_msg) => {
             if let Model::Home(model) = model {
                 *orders = call_update(page::home::update, sub_msg, model)
@@ -274,8 +275,10 @@ fn view<'a>(model: &Model) -> impl ElContainer<Msg<'static>> {
 
 #[wasm_bindgen]
 pub fn render() {
-    seed::App::build(Model::default(), update, view)
+    let app = seed::App::build(Model::default(), update, view)
         .routes(|url| Msg::ChangedRoute(url.try_into().ok()))
         .finish()
         .run();
+
+    app.update(Msg::Init);
 }

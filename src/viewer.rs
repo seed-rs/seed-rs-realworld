@@ -1,10 +1,10 @@
 use crate::{avatar, api, username};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Viewer {
-    avatar: avatar::Avatar,
-    credentials: api::Credentials
+    pub avatar: avatar::Avatar,
+    pub credentials: api::Credentials
 }
 
 impl Viewer {
@@ -14,5 +14,9 @@ impl Viewer {
 
     pub fn avatar(&self) -> &avatar::Avatar {
         &self.avatar
+    }
+
+    pub fn store(&self) {
+        api::store_viewer(self);
     }
 }

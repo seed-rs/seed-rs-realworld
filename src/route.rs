@@ -1,10 +1,11 @@
-use seed;
-use crate::{username, article};
+use seed::prelude::*;
+use crate::{username, article, SubMsg, Subs};
 use tool::non_empty;
 use std::{convert::TryFrom, fmt, borrow::Cow};
 
 type Path<'a> = Vec<&'a str>;
 
+#[derive(Clone)]
 pub enum Route<'a> {
     Home,
     Root,
@@ -88,6 +89,7 @@ impl<'a> TryFrom<seed::Url> for Route<'a> {
 
 // Public helpers
 
-pub fn replace_url(route: Route) {
-    seed::push_route(route);
+pub fn go_to(route: Route<'static>, subs: &mut Subs) {
+    seed::push_route(route.clone());
+    subs.add(SubMsg::RoutePushed(route));
 }

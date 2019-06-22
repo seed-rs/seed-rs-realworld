@@ -72,11 +72,83 @@ impl<'a> From<Model<'a>> for session::Session {
     }
 }
 
+// Subscriptions
+
+pub struct Subs(Vec<SubMsg>);
+
+impl Default for Subs {
+    fn default() -> Self {
+        Subs(Vec::new())
+    }
+}
+
+impl Subs {
+    pub fn add(&mut self, sub_msg: SubMsg) {
+        self.0.push(sub_msg);
+    }
+}
+
+#[derive(Clone)]
+pub enum SubMsg {
+    RoutePushed(route::Route<'static>),
+    SessionChanged(session::Session, HasSessionChangedOnInit)
+}
+
+pub type HasSessionChangedOnInit = bool;
+
+fn subscriptions<'a>(sub_msg: SubMsg, model: &mut Model<'a>, orders: &mut Orders<Msg<'static>>) {
+    match sub_msg.clone() {
+        SubMsg::RoutePushed(route) => {
+            orders.send_msg(Msg::ChangedRoute(Some(route)));
+        },
+        _ => ()
+    }
+
+    match model {
+        Model::None => {},
+        Model::NotFound(_) => {},
+        Model::Redirect(_) => {
+            if let SubMsg::SessionChanged(session, false) = sub_msg {
+                orders.send_msg(Msg::GotSession(session));
+            }
+        },
+        Model::Settings(model) => {
+            page::settings::subscriptions(sub_msg, &model)
+                .map(|module_msg| orders.send_msg(Msg::GotSettingsMsg(module_msg)));
+        },
+        Model::Home(model) => {
+            page::home::subscriptions(sub_msg, &model)
+                .map(|module_msg| orders.send_msg(Msg::GotHomeMsg(module_msg)));
+        },
+        Model::Login(model) => {
+            page::login::subscriptions(sub_msg, &model)
+                .map(|module_msg| orders.send_msg(Msg::GotLoginMsg(module_msg)));
+        },
+        Model::Register(model) => {
+            page::register::subscriptions(sub_msg, &model)
+                .map(|module_msg| orders.send_msg(Msg::GotRegisterMsg(module_msg)));
+        },
+        Model::Profile(model, _) => {
+            page::profile::subscriptions(sub_msg, &model)
+                .map(|module_msg| orders.send_msg(Msg::GotProfileMsg(module_msg)));
+        },
+        Model::Article(model) => {
+            page::article::subscriptions(sub_msg, &model)
+            .map(|module_msg| orders.send_msg(Msg::GotArticleMsg(module_msg)));
+        },
+        Model::ArticleEditor(model, _) => {
+            page::article_editor::subscriptions(sub_msg, &model)
+            .map(|module_msg| orders.send_msg(Msg::GotArticleEditorMsg(module_msg)));
+        },
+    }
+}
+
 // Update
 
 enum Msg<'a> {
     Init,
     ChangedRoute(Option<route::Route<'a>>),
+    GotSession(session::Session),
     GotHomeMsg(page::home::Msg),
     GotSettingsMsg(page::settings::Msg),
     GotLoginMsg(page::login::Msg),
@@ -89,66 +161,123 @@ enum Msg<'a> {
 fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut Orders<Msg<'static>>) {
     match msg {
         Msg::Init => {
-            *model = Model::Redirect(api::load_viewer().into());
-            route::replace_url(route::Route::Home);
-            change_route_to(Some(route::Route::Home), model, orders)
+            let session = session::Session::from(api::load_viewer());
+            subscriptions(SubMsg::SessionChanged(session, true), model, orders);
         },
-        Msg::ChangedRoute(route) => change_route_to(route, model, orders),
-        Msg::GotHomeMsg(sub_msg) => {
-            if let Model::Home(model) = model {
-                *orders = call_update(page::home::update, sub_msg, model)
-                    .map_message(Msg::GotHomeMsg);
+        Msg::ChangedRoute(route) => {
+            let mut subs = Subs::default();
+            change_route_to(route, model, orders, &mut subs);
+            for sub_msg in subs.0 {
+                subscriptions(sub_msg, model, orders)
             }
         },
-        Msg::GotSettingsMsg(sub_msg) => {
-            if let Model::Settings(model) = model {
-                *orders = call_update(page::settings::update, sub_msg, model)
-                    .map_message(Msg::GotSettingsMsg);
+        Msg::GotSession(session) => {
+            if let Model::Redirect(_) = model {
+                *model = Model::Redirect(session);
+                let mut subs = Subs::default();
+                route::go_to(route::Route::Home, &mut subs);
+                for sub_msg in subs.0 {
+                    subscriptions(sub_msg, model, orders)
+                }
+            }
+        }
+        Msg::GotHomeMsg(module_msg) => {
+            if let Model::Home(module_model) = model {
+                let mut module_orders = Orders::default();
+                let mut subs = Subs::default();
+                page::home::update(module_msg, module_model, &mut module_orders, &mut subs);
+                *orders = module_orders.map_message(Msg::GotHomeMsg);
+                for sub_msg in subs.0 {
+                    subscriptions(sub_msg, model, orders)
+                }
             }
         },
-        Msg::GotLoginMsg(sub_msg) => {
-            if let Model::Login(model) = model {
-                *orders = call_update(page::login::update, sub_msg, model)
-                    .map_message(Msg::GotLoginMsg)
+        Msg::GotSettingsMsg(module_msg) => {
+            if let Model::Settings(module_model) = model {
+                let mut module_orders = Orders::default();
+                let mut subs = Subs::default();
+                page::settings::update(module_msg, module_model, &mut module_orders, &mut subs);
+                *orders = module_orders.map_message(Msg::GotSettingsMsg);
+                for sub_msg in subs.0 {
+                    subscriptions(sub_msg, model, orders)
+                }
             }
         },
-        Msg::GotRegisterMsg(sub_msg) => {
-            if let Model::Register(model) = model {
-                *orders = call_update(page::register::update, sub_msg, model)
-                    .map_message(Msg::GotRegisterMsg)
+        Msg::GotLoginMsg(module_msg) => {
+            if let Model::Login(module_model) = model {
+                let mut module_orders = Orders::default();
+                let mut subs = Subs::default();
+                page::login::update(module_msg, module_model, &mut module_orders, &mut subs);
+                *orders = module_orders.map_message(Msg::GotLoginMsg);
+                for sub_msg in subs.0 {
+                    subscriptions(sub_msg, model, orders)
+                }
             }
         },
-        Msg::GotProfileMsg(sub_msg) => {
-            if let Model::Profile(model, _) = model {
-                *orders = call_update(page::profile::update, sub_msg, model)
-                    .map_message(Msg::GotProfileMsg)
+        Msg::GotRegisterMsg(module_msg) => {
+            if let Model::Register(module_model) = model {
+                let mut module_orders = Orders::default();
+                let mut subs = Subs::default();
+                page::register::update(module_msg, module_model, &mut module_orders, &mut subs);
+                *orders = module_orders.map_message(Msg::GotRegisterMsg);
+                for sub_msg in subs.0 {
+                    subscriptions(sub_msg, model, orders)
+                }
             }
         },
-        Msg::GotArticleMsg(sub_msg) => {
-            if let Model::Article(model) = model {
-                *orders = call_update(page::article::update, sub_msg, model)
-                    .map_message(Msg::GotArticleMsg)
+        Msg::GotProfileMsg(module_msg) => {
+            if let Model::Profile(module_model, _) = model {
+                let mut module_orders = Orders::default();
+                let mut subs = Subs::default();
+                page::profile::update(module_msg, module_model, &mut module_orders, &mut subs);
+                *orders = module_orders.map_message(Msg::GotProfileMsg);
+                for sub_msg in subs.0 {
+                    subscriptions(sub_msg, model, orders)
+                }
             }
         },
-        Msg::GotArticleEditorMsg(sub_msg) => {
-            if let Model::ArticleEditor(model, _) = model {
-                *orders = call_update(page::article_editor::update, sub_msg, model)
-                    .map_message(Msg::GotArticleEditorMsg)
+        Msg::GotArticleMsg(module_msg) => {
+            if let Model::Article(module_model) = model {
+                let mut module_orders = Orders::default();
+                let mut subs = Subs::default();
+                page::article::update(module_msg, module_model, &mut module_orders, &mut subs);
+                *orders = module_orders.map_message(Msg::GotArticleMsg);
+                for sub_msg in subs.0 {
+                    subscriptions(sub_msg, model, orders)
+                }
+            }
+        },
+        Msg::GotArticleEditorMsg(module_msg) => {
+            if let Model::ArticleEditor(module_model, _) = model {
+                let mut module_orders = Orders::default();
+                let mut subs = Subs::default();
+                page::article_editor::update(module_msg, module_model, &mut module_orders, &mut subs);
+                *orders = module_orders.map_message(Msg::GotArticleEditorMsg);
+                for sub_msg in subs.0 {
+                    subscriptions(sub_msg, model, orders)
+                }
             }
         },
     }
 }
 
-fn change_route_to<'a>(route: Option<route::Route<'a>>, model: &mut Model<'a>, orders:&mut Orders<Msg<'static>>) {
+fn change_route_to<'a>(
+    route: Option<route::Route<'a>>,
+    model: &mut Model<'a>,
+    orders:&mut Orders<Msg<'static>>,
+    subs: &mut Subs,
+) {
     let mut session = || session::Session::from(model.take());
     match route {
         None => { *model = Model::NotFound(session()) },
         Some(route) => match route {
             route::Route::Root => {
-                route::replace_url(route::Route::Home)
+                route::go_to(route::Route::Home, subs)
             },
             route::Route::Logout => {
-                api::logout()
+                api::logout();
+                subs.add(SubMsg::SessionChanged(None.into(), false));
+                route::go_to(route::Route::Home, subs)
             },
             route::Route::NewArticle => {
                 let init_page = page::article_editor::init_new(session());
@@ -276,7 +405,9 @@ fn view<'a>(model: &Model) -> impl ElContainer<Msg<'static>> {
 #[wasm_bindgen]
 pub fn render() {
     let app = seed::App::build(Model::default(), update, view)
-        .routes(|url| Msg::ChangedRoute(url.try_into().ok()))
+        .routes(|url| {
+            Msg::ChangedRoute(url.try_into().ok())
+        })
         .finish()
         .run();
 

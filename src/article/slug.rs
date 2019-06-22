@@ -1,10 +1,11 @@
-use std::borrow::Cow;
+use std::borrow::{Borrow, Cow};
 
+#[derive(Clone)]
 pub struct Slug<'a>(Cow<'a, str>);
 
 impl<'a> Slug<'a> {
     pub fn as_str(&'a self) -> &'a str {
-        self.as_str()
+        self.0.borrow()
     }
 }
 

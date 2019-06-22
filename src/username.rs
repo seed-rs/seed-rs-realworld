@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::borrow::{Borrow, Cow};
 use serde::{Deserialize, Serialize};
 
 #[derive(Eq, PartialEq, Clone, Debug, Deserialize, Serialize)]
@@ -12,7 +12,7 @@ impl<'a> Username<'a> {
     }
 
     pub fn as_str(&'a self) -> &'a str {
-        self.as_str()
+        self.0.borrow()
     }
 }
 

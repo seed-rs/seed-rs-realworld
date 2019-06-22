@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::{ViewPage, InitPage};
-use crate::session;
+use crate::{session, SubMsg, Subs, route, HasSessionChangedOnInit};
 
 // Model
 
@@ -24,14 +24,31 @@ pub fn init(session: session::Session) -> InitPage<Model, Msg> {
     InitPage::new(Model { session })
 }
 
+// Subscriptions
+
+pub fn subscriptions(sub_msg: SubMsg, _: &Model) -> Option<Msg> {
+    match sub_msg {
+        SubMsg::SessionChanged(session, on_init) => {
+            Some(Msg::GotSession(session, on_init))
+        }
+        _ => None
+    }
+}
+
 // Update
 
 pub enum Msg {
-
+    GotSession(session::Session, HasSessionChangedOnInit),
 }
 
-pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>) {
-
+pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>, subs: &mut Subs) {
+    match msg {
+        Msg::GotSession(session, on_init) => {
+            if !on_init {
+                model.session = session;
+            }
+        }
+    }
 }
 
 // View

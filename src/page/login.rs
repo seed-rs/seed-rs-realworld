@@ -1,6 +1,6 @@
 use seed::{prelude::*, fetch};
 use super::{ViewPage, InitPage};
-use crate::{session, route, viewer, api, avatar, username};
+use crate::{session, route, viewer, api, avatar, username, SubMsg, Subs, HasSessionChangedOnInit};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -168,6 +168,17 @@ impl ServerData {
     }
 }
 
+// Subscriptions
+
+pub fn subscriptions(sub_msg: SubMsg, _: &Model) -> Option<Msg> {
+    match sub_msg {
+        SubMsg::SessionChanged(session, on_init) => {
+            Some(Msg::GotSession(session, on_init))
+        }
+        _ => None
+    }
+}
+
 // Update
 
 #[derive(Clone)]
@@ -176,6 +187,7 @@ pub enum Msg {
     EnteredEmail(String),
     EnteredPassword(String),
     CompletedLogin(fetch::FetchResult<String>),
+    GotSession(session::Session, HasSessionChangedOnInit),
 }
 
 fn login(valid_form: &ValidForm) -> impl Future<Item=Msg, Error=Msg>  {
@@ -188,7 +200,7 @@ fn login(valid_form: &ValidForm) -> impl Future<Item=Msg, Error=Msg>  {
         })
 }
 
-pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>) {
+pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>, subs: &mut Subs) {
     match msg {
         Msg::SubmittedForm => {
             match model.form.trim_fields().validate() {
@@ -228,7 +240,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>) {
                     match viewer {
                         Ok(viewer) => {
                             viewer.store();
-                            route::replace_url(route::Route::Home);
+                            subs.add(SubMsg::SessionChanged(Some(viewer).into(), false));
                         },
                         Err(_) => {
                             model.problems.push(Problem::ServerError("Data error".into()))
@@ -266,6 +278,12 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>) {
         },
         Msg::CompletedLogin(Err(request_error)) => {
             model.problems.push(Problem::ServerError("Request error".into()));
+        },
+        Msg::GotSession(session, on_init) => {
+            model.session = session;
+            if !on_init {
+                route::go_to(route::Route::Home, subs);
+            }
         }
     }
 }

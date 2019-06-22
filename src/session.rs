@@ -1,6 +1,6 @@
 use crate::viewer;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Session {
     LoggedIn(viewer::Viewer),
     Guest

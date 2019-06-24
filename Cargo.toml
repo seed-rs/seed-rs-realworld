@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 #seed = "^0.3.7"
-seed = { git = "https://github.com/David-OConnor/seed" }
+seed = { git = "https://github.com/MartinKavik/seed", branch="feat/architecture-update" }
 wasm-bindgen = "^0.2.45"
 tool = "0.2.1"
 indexmap = { version = "1.0.2", features = [ "serde-1" ] }

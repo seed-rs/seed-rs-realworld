@@ -1,6 +1,6 @@
 use seed::{prelude::*, fetch};
 use super::{ViewPage, InitPage};
-use crate::{session, route, viewer, api, avatar, username, SubMsg, Subs, HasSessionChangedOnInit};
+use crate::{session, route, viewer, api, avatar, username, GMsg, HasSessionChangedOnInit};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -169,14 +169,17 @@ impl ServerData {
     }
 }
 
-// Subscriptions
+// Global msg handler
 
-pub fn subscriptions(sub_msg: SubMsg, _: &Model) -> Option<Msg> {
-    match sub_msg {
-        SubMsg::SessionChanged(session, on_init) => {
-            Some(Msg::GotSession(session, on_init))
+pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut Orders<Msg, GMsg>) {
+    match g_msg {
+        GMsg::SessionChanged(session, on_init) => {
+            model.session = session;
+            if !on_init {
+                route::go_to(route::Route::Home, orders);
+            }
         }
-        _ => None
+        _ => ()
     }
 }
 
@@ -188,7 +191,6 @@ pub enum Msg {
     EnteredEmail(String),
     EnteredPassword(String),
     CompletedLogin(fetch::FetchResult<String>),
-    GotSession(session::Session, HasSessionChangedOnInit),
 }
 
 fn login(valid_form: &ValidForm) -> impl Future<Item=Msg, Error=Msg>  {
@@ -201,7 +203,7 @@ fn login(valid_form: &ValidForm) -> impl Future<Item=Msg, Error=Msg>  {
         })
 }
 
-pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>, subs: &mut Subs) {
+pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg, GMsg>) {
     match msg {
         Msg::SubmittedForm => {
             match model.form.trim_fields().validate() {
@@ -239,7 +241,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>, subs: &mut 
                     match viewer {
                         Ok(viewer) => {
                             viewer.store();
-                            subs.add(SubMsg::SessionChanged(Some(viewer).into(), false));
+                            orders.send_g_msg(GMsg::SessionChanged(Some(viewer).into(), false));
                         },
                         Err(data_error) => {
                             log!(data_error);
@@ -281,12 +283,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>, subs: &mut 
         Msg::CompletedLogin(Err(request_error)) => {
             model.problems.push(Problem::ServerError("Request error".into()));
         },
-        Msg::GotSession(session, on_init) => {
-            model.session = session;
-            if !on_init {
-                route::go_to(route::Route::Home, subs);
-            }
-        }
     }
 }
 

@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::{ViewPage, InitPage};
-use crate::{session, article, SubMsg, Subs, route, HasSessionChangedOnInit};
+use crate::{session, article, GMsg, route, HasSessionChangedOnInit};
 
 // Model
 
@@ -28,32 +28,26 @@ pub fn init_edit<'a>(session: session::Session, slug: &article::slug::Slug) -> I
     InitPage::new(Model { session })
 }
 
-// Subscriptions
+// Global msg handler
 
-pub fn subscriptions(sub_msg: SubMsg, _: &Model) -> Option<Msg> {
-    match sub_msg {
-        SubMsg::SessionChanged(session, on_init) => {
-            Some(Msg::GotSession(session, on_init))
+pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut Orders<Msg, GMsg>) {
+    match g_msg {
+        GMsg::SessionChanged(session, on_init) => {
+            model.session = session;
+            if !on_init {
+                route::go_to(route::Route::Home, orders);
+            }
         }
-        _ => None
+        _ => ()
     }
 }
 
 // Update
 
 pub enum Msg {
-    GotSession(session::Session, HasSessionChangedOnInit),
 }
 
-pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>, subs: &mut Subs) {
-    match msg {
-        Msg::GotSession(session, on_init) => {
-            model.session = session;
-            if !on_init {
-                route::go_to(route::Route::Home, subs);
-            }
-        }
-    }
+pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg, GMsg>) {
 }
 
 // View

@@ -1,5 +1,5 @@
 use seed::prelude::*;
-use crate::{username, article, SubMsg, Subs};
+use crate::{username, article, GMsg};
 use tool::non_empty;
 use std::{convert::TryFrom, fmt, borrow::Cow};
 
@@ -89,7 +89,7 @@ impl<'a> TryFrom<seed::Url> for Route<'a> {
 
 // Public helpers
 
-pub fn go_to(route: Route<'static>, subs: &mut Subs) {
+pub fn go_to<Ms: 'static>(route: Route<'static>, orders: &mut Orders<Ms, GMsg>) {
     seed::push_route(route.clone());
-    subs.add(SubMsg::RoutePushed(route));
+    orders.send_g_msg(GMsg::RoutePushed(route));
 }

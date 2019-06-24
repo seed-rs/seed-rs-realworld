@@ -1,5 +1,5 @@
 use seed::prelude::*;
-use crate::{viewer, username, route};
+use crate::{viewer, username, route, GMsg};
 use core::borrow::Borrow;
 
 pub mod article;
@@ -36,7 +36,7 @@ impl<'a, Ms> ViewPage<'a, Ms> {
 
 pub struct InitPage<Md, Ms: 'static> {
     pub model: Md,
-    pub orders: Orders<Ms>
+    pub orders: Orders<Ms, GMsg>
 }
 
 impl<Md, Ms> InitPage<Md, Ms> {
@@ -47,7 +47,7 @@ impl<Md, Ms> InitPage<Md, Ms> {
         }
     }
 
-    pub fn orders_mut(&mut self) -> &mut Orders<Ms> {
+    pub fn orders_mut(&mut self) -> &mut Orders<Ms, GMsg> {
         &mut self.orders
     }
 }

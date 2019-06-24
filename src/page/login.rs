@@ -5,6 +5,7 @@ use indexmap::IndexMap;
 use futures::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json;
+use std::rc::Rc;
 
 // Model
 
@@ -225,12 +226,10 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>, subs: &mut 
                     let viewer =
                         response
                             .data
-                            .map_err(|_|())
                             .and_then(|string| {
                                 serde_json::from_str::<ServerData>(string.as_str())
                                     .map_err(|error| {
-                                        log!(error);
-                                        ()
+                                        fetch::DataError::SerdeError(Rc::new(error))
                                     })
                             })
                             .map(|server_data| {
@@ -242,19 +241,21 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>, subs: &mut 
                             viewer.store();
                             subs.add(SubMsg::SessionChanged(Some(viewer).into(), false));
                         },
-                        Err(_) => {
+                        Err(data_error) => {
+                            log!(data_error);
                             model.problems.push(Problem::ServerError("Data error".into()))
                         }
                     }
                 },
                 _ => {
-                    let error_messages: Result<Vec<String>, ()> =
+                    let error_messages: Result<Vec<String>, fetch::DataError> =
                         response
                             .data
-                            .map_err(|_|())
                             .and_then(|string| {
                                 serde_json::from_str::<ServerErrorData>(string.as_str())
-                                    .map_err(|_|())
+                                    .map_err(|error| {
+                                        fetch::DataError::SerdeError(Rc::new(error))
+                                    })
                             }).and_then(|server_error_data| {
                                 Ok(server_error_data.errors.into_iter().map(|(field, errors)| {
                                     format!("{} {}", field, errors.join(", "))
@@ -269,8 +270,9 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg>, subs: &mut 
                                 }).collect();
                             model.problems.append(&mut new_problems);
                         },
-                        Err(_) => {
-                            model.problems.push(Problem::ServerError("Server error".into()))
+                        Err(data_error) => {
+                            log!(data_error);
+                            model.problems.push(Problem::ServerError("Data error".into()))
                         }
                     }
                 }

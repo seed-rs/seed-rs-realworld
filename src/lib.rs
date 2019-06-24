@@ -16,7 +16,6 @@ mod route;
 // Model
 
 enum Model<'a> {
-    None,
     Redirect(session::Session),
     NotFound(session::Session),
     Home(page::home::Model),
@@ -30,18 +29,17 @@ enum Model<'a> {
 
 impl<'a> Default for Model<'a> {
     fn default() -> Self {
-        Model::None
+        Model::Redirect(session::Session::default())
     }
 }
 
 impl<'a> Model<'a> {
     pub fn take(&mut self) -> Model<'a> {
-        std::mem::replace(self, Model::None)
+        std::mem::replace(self, Model::default())
     }
 
     pub fn session(&self) -> Option<&session::Session> {
         match &self {
-            Model::None => None,
             Model::Redirect(session) => Some(session),
             Model::NotFound(session) => Some(session),
             Model::Home(model) => Some(model.session()),
@@ -58,7 +56,6 @@ impl<'a> Model<'a> {
 impl<'a> From<Model<'a>> for session::Session {
     fn from(model: Model<'a>) -> session::Session {
         match model {
-            Model::None => session::Session::default(),
             Model::Redirect(session) => session,
             Model::NotFound(session) => session,
             Model::Home(model) => model.into(),
@@ -105,7 +102,6 @@ fn subscriptions<'a>(sub_msg: SubMsg, model: &mut Model<'a>, orders: &mut Orders
     }
 
     match model {
-        Model::None => {},
         Model::NotFound(_) => {},
         Model::Redirect(_) => {
             if let SubMsg::SessionChanged(session, false) = sub_msg {
@@ -328,7 +324,6 @@ fn change_route_to<'a>(
 fn view<'a>(model: &Model) -> impl ElContainer<Msg<'static>> {
     let viewer = || model.session().and_then(session::Session::viewer);
     match model {
-        Model::None => vec![],
         Model::Redirect(_) => {
             page::view(
                 page::Page::Other,

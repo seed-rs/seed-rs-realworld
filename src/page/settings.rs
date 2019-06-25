@@ -26,7 +26,7 @@ pub fn init(session: session::Session) -> InitPage<Model, Msg> {
 
 // Global msg handler
 
-pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut Orders<Msg, GMsg>) {
+pub fn g_msg_handler<PMsg>(g_msg: GMsg, model: &mut Model, orders: &mut OrdersProxy<Msg, PMsg, GMsg>) {
     match g_msg {
         GMsg::SessionChanged(session, on_init) => {
             model.session = session;
@@ -43,7 +43,7 @@ pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut Orders<Msg, GM
 pub enum Msg {
 }
 
-pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg, GMsg>) {
+pub fn update<PMsg>(msg: Msg, model: &mut Model, orders: &mut OrdersProxy<Msg, PMsg, GMsg>) {
 
 }
 

@@ -105,39 +105,25 @@ fn g_msg_handler<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut Orders<Msg
             }
         },
         Model::Settings(model) => {
-            let mut module_orders = Orders::default();
-            page::settings::g_msg_handler(g_msg, model, &mut module_orders);
-            *orders = module_orders.map_message(Msg::GotSettingsMsg);
+            page::settings::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::GotSettingsMsg));
         },
         Model::Home(model) => {
-            let mut module_orders = Orders::default();
-            page::home::g_msg_handler(g_msg, model, &mut module_orders);
-            *orders = module_orders.map_message(Msg::GotHomeMsg);
+            page::home::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::GotHomeMsg));
         },
         Model::Login(model) => {
-            let mut module_orders = Orders::default();
-            page::login::g_msg_handler(g_msg, model, &mut module_orders);
-            *orders = module_orders.map_message(Msg::GotLoginMsg);
+            page::login::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::GotLoginMsg));
         },
         Model::Register(model) => {
-            let mut module_orders = Orders::default();
-            page::register::g_msg_handler(g_msg, model, &mut module_orders);
-            *orders = module_orders.map_message(Msg::GotRegisterMsg);
+            page::register::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::GotRegisterMsg));
         },
         Model::Profile(model, _) => {
-            let mut module_orders = Orders::default();
-            page::profile::g_msg_handler(g_msg, model, &mut module_orders);
-            *orders = module_orders.map_message(Msg::GotProfileMsg);
+            page::profile::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::GotProfileMsg));
         },
         Model::Article(model) => {
-            let mut module_orders = Orders::default();
-            page::article::g_msg_handler(g_msg, model, &mut module_orders);
-            *orders = module_orders.map_message(Msg::GotArticleMsg);
+            page::article::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::GotArticleMsg));
         },
         Model::ArticleEditor(model, _) => {
-            let mut module_orders = Orders::default();
-            page::article_editor::g_msg_handler(g_msg, model, &mut module_orders);
-            *orders = module_orders.map_message(Msg::GotArticleEditorMsg);
+            page::article_editor::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::GotArticleEditorMsg));
         },
     }
 }
@@ -174,51 +160,37 @@ fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut Orders<Msg<'stat
         }
         Msg::GotHomeMsg(module_msg) => {
             if let Model::Home(module_model) = model {
-                let mut module_orders = Orders::default();
-                page::home::update(module_msg, module_model, &mut module_orders);
-                *orders = module_orders.map_message(Msg::GotHomeMsg);
+                page::home::update(module_msg, module_model, &mut orders.proxy(Msg::GotHomeMsg));
             }
         },
         Msg::GotSettingsMsg(module_msg) => {
             if let Model::Settings(module_model) = model {
-                let mut module_orders = Orders::default();
-                page::settings::update(module_msg, module_model, &mut module_orders);
-                *orders = module_orders.map_message(Msg::GotSettingsMsg);
+                page::settings::update(module_msg, module_model, &mut orders.proxy(Msg::GotSettingsMsg));
             }
         },
         Msg::GotLoginMsg(module_msg) => {
             if let Model::Login(module_model) = model {
-                let mut module_orders = Orders::default();
-                page::login::update(module_msg, module_model, &mut module_orders);
-                *orders = module_orders.map_message(Msg::GotLoginMsg);
+                page::login::update(module_msg, module_model, &mut orders.proxy(Msg::GotLoginMsg));
             }
         },
         Msg::GotRegisterMsg(module_msg) => {
             if let Model::Register(module_model) = model {
-                let mut module_orders = Orders::default();
-                page::register::update(module_msg, module_model, &mut module_orders);
-                *orders = module_orders.map_message(Msg::GotRegisterMsg);
+                page::register::update(module_msg, module_model, &mut orders.proxy(Msg::GotRegisterMsg));
             }
         },
         Msg::GotProfileMsg(module_msg) => {
             if let Model::Profile(module_model, _) = model {
-                let mut module_orders = Orders::default();
-                page::profile::update(module_msg, module_model, &mut module_orders);
-                *orders = module_orders.map_message(Msg::GotProfileMsg);
+                page::profile::update(module_msg, module_model, &mut orders.proxy(Msg::GotProfileMsg));
             }
         },
         Msg::GotArticleMsg(module_msg) => {
             if let Model::Article(module_model) = model {
-                let mut module_orders = Orders::default();
-                page::article::update(module_msg, module_model, &mut module_orders);
-                *orders = module_orders.map_message(Msg::GotArticleMsg);
+                page::article::update(module_msg, module_model, &mut orders.proxy(Msg::GotArticleMsg));
             }
         },
         Msg::GotArticleEditorMsg(module_msg) => {
             if let Model::ArticleEditor(module_model, _) = model {
-                let mut module_orders = Orders::default();
-                page::article_editor::update(module_msg, module_model, &mut module_orders);
-                *orders = module_orders.map_message(Msg::GotArticleEditorMsg);
+                page::article_editor::update(module_msg, module_model, &mut orders.proxy(Msg::GotArticleEditorMsg));
             }
         },
     }

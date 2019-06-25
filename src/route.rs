@@ -89,7 +89,7 @@ impl<'a> TryFrom<seed::Url> for Route<'a> {
 
 // Public helpers
 
-pub fn go_to<Ms: 'static>(route: Route<'static>, orders: &mut Orders<Ms, GMsg>) {
+pub fn go_to<Ms: 'static>(route: Route<'static>, orders: &mut impl OrdersTrait<Ms, GMsg>) {
     seed::push_route(route.clone());
     orders.send_g_msg(GMsg::RoutePushed(route));
 }

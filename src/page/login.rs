@@ -171,7 +171,7 @@ impl ServerData {
 
 // Global msg handler
 
-pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut Orders<Msg, GMsg>) {
+pub fn g_msg_handler<PMsg>(g_msg: GMsg, model: &mut Model, orders: &mut OrdersProxy<Msg, PMsg, GMsg>) {
     match g_msg {
         GMsg::SessionChanged(session, on_init) => {
             model.session = session;
@@ -203,7 +203,7 @@ fn login(valid_form: &ValidForm) -> impl Future<Item=Msg, Error=Msg>  {
         })
 }
 
-pub fn update(msg: Msg, model: &mut Model, orders: &mut Orders<Msg, GMsg>) {
+pub fn update<PMsg>(msg: Msg, model: &mut Model, orders: &mut OrdersProxy<Msg, PMsg, GMsg>) {
     match msg {
         Msg::SubmittedForm => {
             match model.form.trim_fields().validate() {

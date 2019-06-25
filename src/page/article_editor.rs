@@ -1,5 +1,5 @@
 use seed::prelude::*;
-use super::{ViewPage, InitPage};
+use super::ViewPage;
 use crate::{session, article, GMsg, route, HasSessionChangedOnInit};
 
 // Model
@@ -20,17 +20,21 @@ impl<'a> From<Model> for session::Session {
     }
 }
 
-pub fn init_new(session: session::Session) -> InitPage<Model, Msg> {
-    InitPage::new(Model { session })
+pub fn init_new(session: session::Session, _: &mut impl OrdersTrait<Msg, GMsg>) -> Model {
+    Model { session }
 }
 
-pub fn init_edit<'a>(session: session::Session, slug: &article::slug::Slug) -> InitPage<Model, Msg> {
-    InitPage::new(Model { session })
+pub fn init_edit<'a>(
+    session: session::Session,
+    slug: &article::slug::Slug,
+    _: &mut impl OrdersTrait<Msg, GMsg>
+) -> Model {
+    Model { session }
 }
 
 // Global msg handler
 
-pub fn g_msg_handler<PMsg>(g_msg: GMsg, model: &mut Model, orders: &mut OrdersProxy<Msg, PMsg, GMsg>) {
+pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg>) {
     match g_msg {
         GMsg::SessionChanged(session, on_init) => {
             model.session = session;
@@ -47,7 +51,7 @@ pub fn g_msg_handler<PMsg>(g_msg: GMsg, model: &mut Model, orders: &mut OrdersPr
 pub enum Msg {
 }
 
-pub fn update<PMsg>(msg: Msg, model: &mut Model, orders: &mut OrdersProxy<Msg, PMsg, GMsg>) {
+pub fn update(msg: Msg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg>) {
 }
 
 // View

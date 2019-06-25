@@ -1,5 +1,5 @@
 use seed::{prelude::*, fetch};
-use super::{ViewPage, InitPage};
+use super::ViewPage;
 use crate::{session, route, viewer, api, avatar, username, GMsg, HasSessionChangedOnInit};
 use indexmap::IndexMap;
 use futures::prelude::*;
@@ -126,11 +126,11 @@ impl From<Model> for session::Session {
     }
 }
 
-pub fn init<'a>(session: session::Session) -> InitPage<Model, Msg> {
-    InitPage::new(Model {
+pub fn init<'a>(session: session::Session, _: &mut impl OrdersTrait<Msg, GMsg>) -> Model {
+    Model {
         session,
         ..Model::default()
-    })
+    }
 }
 
 #[derive(Deserialize)]
@@ -171,7 +171,7 @@ impl ServerData {
 
 // Global msg handler
 
-pub fn g_msg_handler<PMsg>(g_msg: GMsg, model: &mut Model, orders: &mut OrdersProxy<Msg, PMsg, GMsg>) {
+pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg>) {
     match g_msg {
         GMsg::SessionChanged(session, on_init) => {
             model.session = session;
@@ -203,7 +203,7 @@ fn login(valid_form: &ValidForm) -> impl Future<Item=Msg, Error=Msg>  {
         })
 }
 
-pub fn update<PMsg>(msg: Msg, model: &mut Model, orders: &mut OrdersProxy<Msg, PMsg, GMsg>) {
+pub fn update(msg: Msg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg>) {
     match msg {
         Msg::SubmittedForm => {
             match model.form.trim_fields().validate() {

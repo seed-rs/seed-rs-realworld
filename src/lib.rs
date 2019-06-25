@@ -73,15 +73,6 @@ impl<'a> From<Model<'a>> for session::Session {
 
 // Global msg handler
 
-#[derive(Default)]
-pub struct GMsgs(VecDeque<GMsg>);
-
-impl GMsgs {
-    pub fn send_g_msg(&mut self, g_msg: GMsg) {
-        self.0.push_back(g_msg);
-    }
-}
-
 #[derive(Clone)]
 pub enum GMsg {
     RoutePushed(route::Route<'static>),
@@ -214,44 +205,53 @@ fn change_route_to<'a>(
                 route::go_to(route::Route::Home, orders)
             },
             route::Route::NewArticle => {
-                let init_page = page::article_editor::init_new(session());
-                *model = Model::ArticleEditor(init_page.model, None);
-                *orders = init_page.orders.map_message(Msg::GotArticleEditorMsg);
+                *model = Model::ArticleEditor(
+                    page::article_editor::init_new(
+                    session(), &mut orders.proxy(Msg::GotArticleEditorMsg)
+                    ),
+                    None
+                );
             },
             route::Route::EditArticle(slug) => {
-                let init_page = page::article_editor::init_edit(session(), &slug);
-                *model = Model::ArticleEditor(init_page.model, Some(slug));
-                *orders = init_page.orders.map_message(Msg::GotArticleEditorMsg);
+                *model = Model::ArticleEditor(
+                    page::article_editor::init_edit(
+                        session(), &slug, &mut orders.proxy(Msg::GotArticleEditorMsg)
+                    ),
+                    Some(slug)
+                );
             },
             route::Route::Settings => {
-                let init_page = page::settings::init(session());
-                *model = Model::Settings(init_page.model);
-                *orders = init_page.orders.map_message(Msg::GotSettingsMsg);
+                *model = Model::Settings(page::settings::init(
+                    session(), &mut orders.proxy(Msg::GotSettingsMsg)
+                ));
             },
             route::Route::Home => {
-                let init_page = page::home::init(session());
-                *model = Model::Home(init_page.model);
-                *orders = init_page.orders.map_message(Msg::GotHomeMsg);
+                *model = Model::Home(
+                    page::home::init(session(), &mut orders.proxy(Msg::GotHomeMsg))
+                );
             },
             route::Route::Login => {
-                let init_page = page::login::init(session());
-                *model = Model::Login(init_page.model);
-                *orders = init_page.orders.map_message(Msg::GotLoginMsg);
+                *model = Model::Login(
+                    page::login::init(session(), &mut orders.proxy(Msg::GotLoginMsg))
+                );
             },
             route::Route::Register => {
-                let init_page = page::register::init(session());
-                *model = Model::Register(init_page.model);
-                *orders = init_page.orders.map_message(Msg::GotRegisterMsg);
+                *model = Model::Register(
+                    page::register::init(session(),&mut orders.proxy(Msg::GotRegisterMsg))
+                );
             },
             route::Route::Profile(username) => {
-                let init_page = page::profile::init(session(), &username);
-                *model = Model::Profile(init_page.model, username.into_owned());
-                *orders = init_page.orders.map_message(Msg::GotProfileMsg);
+                *model = Model::Profile(
+                    page::profile::init(
+                        session(), &username, &mut orders.proxy(Msg::GotProfileMsg)
+                    ),
+                    username.into_owned()
+                );
             },
             route::Route::Article(slug) => {
-                let init_page = page::article::init(session(), slug);
-                *model = Model::Article(init_page.model);
-                *orders = init_page.orders.map_message(Msg::GotArticleMsg);
+                *model = Model::Article(
+                    page::article::init(session(), slug, &mut orders.proxy(Msg::GotArticleMsg))
+                );
             },
         }
     };

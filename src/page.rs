@@ -24,31 +24,11 @@ impl<'a, Ms> ViewPage<'a, Ms> {
             content
         }
     }
-
     pub fn title(&self) -> String {
         format!("{} - Conduit", self.title_prefix)
     }
-
     pub fn into_content(self) -> El<Ms> {
         self.content
-    }
-}
-
-pub struct InitPage<Md, Ms: 'static> {
-    pub model: Md,
-    pub orders: Orders<Ms, GMsg>
-}
-
-impl<Md, Ms> InitPage<Md, Ms> {
-    pub fn new(model: Md) -> Self {
-        Self {
-            model,
-            orders: Orders::default()
-        }
-    }
-
-    pub fn orders_mut(&mut self) -> &mut Orders<Ms, GMsg> {
-        &mut self.orders
     }
 }
 

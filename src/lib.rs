@@ -39,20 +39,6 @@ impl<'a> Model<'a> {
     pub fn take(&mut self) -> Model<'a> {
         std::mem::replace(self, Model::default())
     }
-
-    pub fn session(&self) -> &session::Session {
-        match &self {
-            Model::Redirect(session) => session,
-            Model::NotFound(session) => session,
-            Model::Home(model) => model.session(),
-            Model::Settings(model) => model.session(),
-            Model::Login(model) => model.session(),
-            Model::Register(model) => model.session(),
-            Model::Profile(model, _) => model.session(),
-            Model::Article(model) => model.session(),
-            Model::ArticleEditor(model, _) => model.session(),
-        }
-    }
 }
 
 impl<'a> From<Model<'a>> for session::Session {
@@ -131,10 +117,10 @@ enum Msg<'a> {
     GotArticleEditorMsg(page::article_editor::Msg),
 }
 
-fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut Orders<Msg<'static>, GMsg>) {
+fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut impl OrdersTrait<Msg<'static>, GMsg>) {
     match msg {
         Msg::ChangedRoute(route) => {
-            change_route_to(route, model, orders);
+            change_model_by_route(route, model, orders);
         },
         Msg::GotSession(session) => {
             if let Model::Redirect(_) = model {
@@ -180,10 +166,10 @@ fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut Orders<Msg<'stat
     }
 }
 
-fn change_route_to<'a>(
+fn change_model_by_route<'a>(
     route: Option<route::Route<'a>>,
     model: &mut Model<'a>,
-    orders:&mut Orders<Msg<'static>, GMsg>,
+    orders:&mut impl OrdersTrait<Msg<'static>, GMsg>,
 ) {
     let mut session = || session::Session::from(model.take());
     match route {
@@ -254,18 +240,18 @@ fn change_route_to<'a>(
 
 fn view<'a>(model: &Model) -> impl ElContainer<Msg<'static>> {
     match model {
-        Model::Redirect(_) => {
+        Model::Redirect(session) => {
             page::view(
                 page::Page::Other,
                 page::blank::view(),
-                model.session().viewer(),
+                session.viewer(),
             )
         },
-        Model::NotFound(_) => {
+        Model::NotFound(session) => {
             page::view(
                 page::Page::Other,
                 page::not_found::view(),
-                model.session().viewer(),
+                session.viewer(),
             )
         },
         Model::Settings(model) => {

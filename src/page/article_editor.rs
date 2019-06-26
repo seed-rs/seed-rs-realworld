@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, article, GMsg, route, HasSessionChangedOnInit};
+use crate::{session, article, GMsg, route};
 
 // Model
 
@@ -20,27 +20,25 @@ impl<'a> From<Model> for session::Session {
     }
 }
 
-pub fn init_new(session: session::Session, _: &mut impl OrdersTrait<Msg, GMsg>) -> Model {
+pub fn init_new<RMsg>(session: session::Session, _: &mut impl OrdersTrait<Msg, GMsg, RMsg>) -> Model {
     Model { session }
 }
 
-pub fn init_edit<'a>(
+pub fn init_edit<'a, RMsg>(
     session: session::Session,
     slug: &article::slug::Slug,
-    _: &mut impl OrdersTrait<Msg, GMsg>
+    _: &mut impl OrdersTrait<Msg, GMsg, RMsg>
 ) -> Model {
     Model { session }
 }
 
 // Global msg handler
 
-pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg>) {
+pub fn g_msg_handler<RMsg>(g_msg: GMsg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg, RMsg>) {
     match g_msg {
-        GMsg::SessionChanged(session, on_init) => {
+        GMsg::SessionChanged(session) => {
             model.session = session;
-            if !on_init {
-                route::go_to(route::Route::Home, orders);
-            }
+            route::go_to(route::Route::Home, orders);
         }
         _ => ()
     }
@@ -51,7 +49,7 @@ pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl OrdersTra
 pub enum Msg {
 }
 
-pub fn update(msg: Msg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg>) {
+pub fn update<RMsg>(msg: Msg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg, RMsg>) {
 }
 
 // View

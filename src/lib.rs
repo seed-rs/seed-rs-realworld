@@ -40,17 +40,17 @@ impl<'a> Model<'a> {
         std::mem::replace(self, Model::default())
     }
 
-    pub fn session(&self) -> Option<&session::Session> {
+    pub fn session(&self) -> &session::Session {
         match &self {
-            Model::Redirect(session) => Some(session),
-            Model::NotFound(session) => Some(session),
-            Model::Home(model) => Some(model.session()),
-            Model::Settings(model) => Some(model.session()),
-            Model::Login(model) => Some(model.session()),
-            Model::Register(model) => Some(model.session()),
-            Model::Profile(model, _) => Some(model.session()),
-            Model::Article(model) => Some(model.session()),
-            Model::ArticleEditor(model, _) => Some(model.session()),
+            Model::Redirect(session) => session,
+            Model::NotFound(session) => session,
+            Model::Home(model) => model.session(),
+            Model::Settings(model) => model.session(),
+            Model::Login(model) => model.session(),
+            Model::Register(model) => model.session(),
+            Model::Profile(model, _) => model.session(),
+            Model::Article(model) => model.session(),
+            Model::ArticleEditor(model, _) => model.session(),
         }
     }
 }
@@ -76,12 +76,10 @@ impl<'a> From<Model<'a>> for session::Session {
 #[derive(Clone)]
 pub enum GMsg {
     RoutePushed(route::Route<'static>),
-    SessionChanged(session::Session, HasSessionChangedOnInit)
+    SessionChanged(session::Session)
 }
 
-pub type HasSessionChangedOnInit = bool;
-
-fn g_msg_handler<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut Orders<Msg<'static>, GMsg>) {
+fn g_msg_handler<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl OrdersTrait<Msg<'static>, GMsg>) {
     match g_msg.clone() {
         GMsg::RoutePushed(route) => {
             orders.send_msg(Msg::ChangedRoute(Some(route)));
@@ -91,7 +89,7 @@ fn g_msg_handler<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut Orders<Msg
 
     match model {
         Model::NotFound(_) | Model::Redirect(_) => {
-            if let GMsg::SessionChanged(session, false) = g_msg {
+            if let GMsg::SessionChanged(session) = g_msg {
                 orders.send_msg(Msg::GotSession(session));
             }
         },
@@ -122,7 +120,6 @@ fn g_msg_handler<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut Orders<Msg
 // Update
 
 enum Msg<'a> {
-    Init,
     ChangedRoute(Option<route::Route<'a>>),
     GotSession(session::Session),
     GotHomeMsg(page::home::Msg),
@@ -136,10 +133,6 @@ enum Msg<'a> {
 
 fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut Orders<Msg<'static>, GMsg>) {
     match msg {
-        Msg::Init => {
-            let session = session::Session::from(api::load_viewer());
-            orders.send_g_msg(GMsg::SessionChanged(session, true));
-        },
         Msg::ChangedRoute(route) => {
             change_route_to(route, model, orders);
         },
@@ -201,7 +194,7 @@ fn change_route_to<'a>(
             },
             route::Route::Logout => {
                 api::logout();
-                orders.send_g_msg(GMsg::SessionChanged(None.into(), false));
+                orders.send_g_msg(GMsg::SessionChanged(None.into()));
                 route::go_to(route::Route::Home, orders)
             },
             route::Route::NewArticle => {
@@ -260,90 +253,94 @@ fn change_route_to<'a>(
 // View
 
 fn view<'a>(model: &Model) -> impl ElContainer<Msg<'static>> {
-    let viewer = || model.session().and_then(session::Session::viewer);
     match model {
         Model::Redirect(_) => {
             page::view(
                 page::Page::Other,
                 page::blank::view(),
-                viewer(),
+                model.session().viewer(),
             )
         },
         Model::NotFound(_) => {
             page::view(
                 page::Page::Other,
                 page::not_found::view(),
-                viewer(),
+                model.session().viewer(),
             )
         },
         Model::Settings(model) => {
             page::view(
                 page::Page::Settings,
                 page::settings::view(model),
-                viewer(),
+                model.session().viewer(),
             ).map_message(Msg::GotSettingsMsg)
         },
         Model::Home(model) => {
             page::view(
                 page::Page::Home,
                 page::home::view(model),
-                viewer(),
+                model.session().viewer(),
             ).map_message(Msg::GotHomeMsg)
         },
         Model::Login(model) => {
             page::view(
                 page::Page::Login,
                 page::login::view(model),
-                viewer(),
+                model.session().viewer(),
             ).map_message(Msg::GotLoginMsg)
         },
         Model::Register(model) => {
             page::view(
                 page::Page::Register,
                 page::register::view(model),
-                viewer(),
+                model.session().viewer(),
             ).map_message(Msg::GotRegisterMsg)
         },
         Model::Profile(model, username) => {
             page::view(
                 page::Page::Profile(username),
                 page::profile::view(model),
-                viewer(),
+                model.session().viewer(),
             ).map_message(Msg::GotProfileMsg)
         },
         Model::Article(model) => {
             page::view(
                 page::Page::Other,
                 page::article::view(model),
-                viewer(),
+                model.session().viewer(),
             ).map_message(Msg::GotArticleMsg)
         },
         Model::ArticleEditor(model, None) => {
             page::view(
                 page::Page::NewArticle,
                 page::article_editor::view(model),
-                viewer(),
+                model.session().viewer(),
             ).map_message(Msg::GotArticleEditorMsg)
         },
         Model::ArticleEditor(model, Some(_)) => {
             page::view(
                 page::Page::Other,
                 page::article_editor::view(model),
-                viewer(),
+                model.session().viewer(),
             ).map_message(Msg::GotArticleEditorMsg)
         },
     }
 }
 
+// Init
+
+fn init(url: Url, orders: &mut impl OrdersTrait<Msg<'static>, GMsg>) -> Model<'static> {
+    orders.send_msg(Msg::ChangedRoute(url.try_into().ok()));
+    Model::Redirect(api::load_viewer().into())
+}
+
 #[wasm_bindgen]
 pub fn render() {
-    let app = seed::App::build(Model::default(), update, view)
+    seed::App::build(init, update, view)
         .routes(|url| {
             Msg::ChangedRoute(url.try_into().ok())
         })
         .g_msg_handler(g_msg_handler)
         .finish()
         .run();
-
-    app.update(Msg::Init);
 }

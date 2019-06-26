@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, GMsg, route, HasSessionChangedOnInit};
+use crate::{session, GMsg, route};
 
 // Model
 
@@ -20,15 +20,15 @@ impl From<Model> for session::Session {
     }
 }
 
-pub fn init(session: session::Session, _: &mut impl OrdersTrait<Msg, GMsg>) -> Model {
+pub fn init<RMsg>(session: session::Session, _: &mut impl OrdersTrait<Msg, GMsg, RMsg>) -> Model {
     Model { session }
 }
 
 // Global msg handler
 
-pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, _: &mut impl OrdersTrait<Msg, GMsg>) {
+pub fn g_msg_handler<RMsg>(g_msg: GMsg, model: &mut Model, _: &mut impl OrdersTrait<Msg, GMsg, RMsg>) {
     match g_msg {
-        GMsg::SessionChanged(session, on_init) => {
+        GMsg::SessionChanged(session) => {
             model.session = session;
         }
         _ => ()
@@ -40,7 +40,7 @@ pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, _: &mut impl OrdersTrait<Ms
 pub enum Msg {
 }
 
-pub fn update(msg: Msg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg>) {
+pub fn update<RMsg>(msg: Msg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg, RMsg>) {
 }
 
 // View

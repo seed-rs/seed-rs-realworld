@@ -1,6 +1,6 @@
 use seed::{prelude::*, fetch};
 use super::ViewPage;
-use crate::{session, route, viewer, api, avatar, username, GMsg, HasSessionChangedOnInit};
+use crate::{session, route, viewer, api, avatar, username, GMsg};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -126,7 +126,7 @@ impl From<Model> for session::Session {
     }
 }
 
-pub fn init<'a>(session: session::Session, _: &mut impl OrdersTrait<Msg, GMsg>) -> Model {
+pub fn init<'a, RMsg>(session: session::Session, _: &mut impl OrdersTrait<Msg, GMsg, RMsg>) -> Model {
     Model {
         session,
         ..Model::default()
@@ -171,13 +171,11 @@ impl ServerData {
 
 // Global msg handler
 
-pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg>) {
+pub fn g_msg_handler<RMsg>(g_msg: GMsg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg, RMsg>) {
     match g_msg {
-        GMsg::SessionChanged(session, on_init) => {
+        GMsg::SessionChanged(session) => {
             model.session = session;
-            if !on_init {
-                route::go_to(route::Route::Home, orders);
-            }
+            route::go_to(route::Route::Home, orders);
         }
         _ => ()
     }
@@ -203,7 +201,7 @@ fn login(valid_form: &ValidForm) -> impl Future<Item=Msg, Error=Msg>  {
         })
 }
 
-pub fn update(msg: Msg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg>) {
+pub fn update<RMsg>(msg: Msg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg, RMsg>) {
     match msg {
         Msg::SubmittedForm => {
             match model.form.trim_fields().validate() {
@@ -241,7 +239,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GM
                     match viewer {
                         Ok(viewer) => {
                             viewer.store();
-                            orders.send_g_msg(GMsg::SessionChanged(Some(viewer).into(), false));
+                            orders.send_g_msg(GMsg::SessionChanged(Some(viewer).into()));
                         },
                         Err(data_error) => {
                             log!(data_error);

@@ -1,16 +1,27 @@
 use serde::Serialize;
 use indexmap::IndexMap;
+use unicode_segmentation::UnicodeSegmentation;
+
+const MIN_PASSWORD_CHARS: usize = 6;
 
 #[derive(Hash, Eq, PartialEq, Copy, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Field {
+    Username,
     Email,
-    Password
+    Password,
 }
 
 impl Field {
     pub fn validate(&self, value: &str) -> Option<Problem> {
         match self {
+            Field::Username => {
+                if value.is_empty() {
+                    Some(Problem::InvalidEntry(*self, "username can't be blank.".into()))
+                } else {
+                    None
+                }
+            },
             Field::Email => {
                 if value.is_empty() {
                     Some(Problem::InvalidEntry(*self, "email can't be blank.".into()))
@@ -21,6 +32,11 @@ impl Field {
             Field::Password => {
                 if value.is_empty() {
                     Some(Problem::InvalidEntry(*self, "password can't be blank.".into()))
+                } else if value.graphemes(true).count() < MIN_PASSWORD_CHARS {
+                    Some(Problem::InvalidEntry(
+                        *self,
+                        format!("password must be at least {} characters long", MIN_PASSWORD_CHARS)
+                    ))
                 } else {
                     None
                 }
@@ -43,6 +59,7 @@ impl Default for Form {
     fn default() -> Self {
         Self {
             user: vec![
+                Field::Username,
                 Field::Email,
                 Field::Password,
             ]

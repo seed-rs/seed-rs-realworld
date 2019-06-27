@@ -12,6 +12,8 @@ mod viewer;
 mod session;
 mod login_form;
 mod login_fetch;
+mod register_form;
+mod register_fetch;
 mod page;
 mod article;
 mod route;
@@ -67,11 +69,8 @@ pub enum GMsg {
 }
 
 fn g_msg_handler<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl OrdersTrait<Msg<'static>, GMsg>) {
-    match g_msg.clone() {
-        GMsg::RoutePushed(route) => {
-            orders.send_msg(Msg::ChangedRoute(Some(route)));
-        },
-        _ => ()
+    if let GMsg::RoutePushed(route) = g_msg.clone() {
+        orders.send_msg(Msg::ChangedRoute(Some(route)));
     }
 
     match model {

@@ -92,6 +92,8 @@ pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
     ViewPage::new("Login", view_content(model))
 }
 
+//fn view_field(fi)
+
 fn view_form(form: &login_form::Form) -> El<Msg> {
     form![
         raw_ev(Ev::Submit, |event| {

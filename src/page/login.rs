@@ -29,7 +29,7 @@ impl From<Model> for session::Session {
 
 // Init
 
-pub fn init<'a, RMsg>(session: session::Session, _: &mut impl OrdersTrait<Msg, GMsg, RMsg>) -> Model {
+pub fn init(session: session::Session, _: &mut impl Orders<Msg, GMsg>) -> Model {
     Model {
         session,
         ..Model::default()
@@ -38,7 +38,7 @@ pub fn init<'a, RMsg>(session: session::Session, _: &mut impl OrdersTrait<Msg, G
 
 // Global msg handler
 
-pub fn g_msg_handler<RMsg>(g_msg: GMsg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg, RMsg>) {
+pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match g_msg {
         GMsg::SessionChanged(session) => {
             model.session = session;
@@ -57,7 +57,7 @@ pub enum Msg {
     CompletedLogin(Result<viewer::Viewer, Vec<login_form::Problem>>),
 }
 
-pub fn update<RMsg>(msg: Msg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg, RMsg>) {
+pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match msg {
         Msg::SubmittedForm => {
             match model.form.trim_fields().validate() {

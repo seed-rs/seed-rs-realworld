@@ -20,21 +20,18 @@ impl<'a> From<Model> for session::Session {
     }
 }
 
-pub fn init_new<RMsg>(session: session::Session, _: &mut impl OrdersTrait<Msg, GMsg, RMsg>) -> Model {
+pub fn init_new(session: session::Session, _: &mut impl Orders<Msg, GMsg>) -> Model {
     Model { session }
 }
 
-pub fn init_edit<'a, RMsg>(
-    session: session::Session,
-    slug: &article::slug::Slug,
-    _: &mut impl OrdersTrait<Msg, GMsg, RMsg>
+pub fn init_edit(session: session::Session, slug: &article::slug::Slug, _: &mut impl Orders<Msg, GMsg>
 ) -> Model {
     Model { session }
 }
 
 // Global msg handler
 
-pub fn g_msg_handler<RMsg>(g_msg: GMsg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg, RMsg>) {
+pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match g_msg {
         GMsg::SessionChanged(session) => {
             model.session = session;
@@ -49,7 +46,7 @@ pub fn g_msg_handler<RMsg>(g_msg: GMsg, model: &mut Model, orders: &mut impl Ord
 pub enum Msg {
 }
 
-pub fn update<RMsg>(msg: Msg, model: &mut Model, orders: &mut impl OrdersTrait<Msg, GMsg, RMsg>) {
+pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
 }
 
 // View

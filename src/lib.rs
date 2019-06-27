@@ -62,15 +62,14 @@ impl<'a> From<Model<'a>> for session::Session {
 
 // Global msg handler
 
-#[derive(Clone)]
 pub enum GMsg {
     RoutePushed(route::Route<'static>),
     SessionChanged(session::Session)
 }
 
-fn g_msg_handler<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl OrdersTrait<Msg<'static>, GMsg>) {
-    if let GMsg::RoutePushed(route) = g_msg.clone() {
-        orders.send_msg(Msg::ChangedRoute(Some(route)));
+fn g_msg_handler<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Orders<Msg<'static>, GMsg>) {
+    if let GMsg::RoutePushed(ref route) = g_msg {
+        orders.send_msg(Msg::ChangedRoute(Some(route.clone())));
     }
 
     match model {
@@ -117,7 +116,7 @@ enum Msg<'a> {
     GotArticleEditorMsg(page::article_editor::Msg),
 }
 
-fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut impl OrdersTrait<Msg<'static>, GMsg>) {
+fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut impl Orders<Msg<'static>, GMsg>) {
     match msg {
         Msg::ChangedRoute(route) => {
             change_model_by_route(route, model, orders);
@@ -169,7 +168,7 @@ fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut impl OrdersTrait
 fn change_model_by_route<'a>(
     route: Option<route::Route<'a>>,
     model: &mut Model<'a>,
-    orders:&mut impl OrdersTrait<Msg<'static>, GMsg>,
+    orders:&mut impl Orders<Msg<'static>, GMsg>,
 ) {
     let mut session = || session::Session::from(model.take());
     match route {
@@ -315,7 +314,7 @@ fn view<'a>(model: &Model) -> impl ElContainer<Msg<'static>> {
 
 // Init
 
-fn init(url: Url, orders: &mut impl OrdersTrait<Msg<'static>, GMsg>) -> Model<'static> {
+fn init(url: Url, orders: &mut impl Orders<Msg<'static>, GMsg>) -> Model<'static> {
     orders.send_msg(Msg::ChangedRoute(url.try_into().ok()));
     Model::Redirect(api::load_viewer().into())
 }

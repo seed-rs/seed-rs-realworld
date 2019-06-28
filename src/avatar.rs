@@ -6,8 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct Avatar(Cow<'static, str>);
 
 impl Avatar {
-    pub fn new<T>(url: Option<T>) -> Self
-        where T: Into<Cow<'static, str>>
+    pub fn new(url: Option<impl Into<Cow<'static, str>>>) -> Self
     {
         match url {
             Some(url) => Avatar(url.into()),

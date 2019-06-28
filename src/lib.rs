@@ -4,15 +4,14 @@ use seed::prelude::*;
 use std::convert::TryInto;
 use std::collections::VecDeque;
 
+mod form;
 mod asset;
 mod avatar;
 mod username;
 mod api;
 mod viewer;
 mod session;
-mod login_form;
 mod login_fetch;
-mod register_form;
 mod register_fetch;
 mod page;
 mod article;

@@ -5,8 +5,7 @@ use serde::{Deserialize, Serialize};
 pub struct Username<'a>(Cow<'a, str>);
 
 impl<'a> Username<'a> {
-    pub fn new<T>(username: T) -> Self
-    where T: Into<Cow<'a, str>>
+    pub fn new(username: impl Into<Cow<'a, str>>) -> Self
     {
         Username(username.into())
     }

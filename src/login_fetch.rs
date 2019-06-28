@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{viewer, avatar, username, api, login_form};
+use crate::{viewer, avatar, username, api, form::login as form};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
@@ -41,20 +41,20 @@ impl ServerData {
     }
 }
 
-pub fn login<Ms: 'static>(valid_form: &login_form::ValidForm, f: fn(Result<viewer::Viewer, Vec<login_form::Problem>>) -> Ms) -> impl Future<Item=Ms, Error=Ms>  {
+pub fn login<Ms: 'static>(valid_form: form::ValidForm, f: fn(Result<viewer::Viewer, Vec<form::Problem>>) -> Ms) -> impl Future<Item=Ms, Error=Ms>  {
     fetch::Request::new("https://conduit.productionready.io/api/users/login".into())
         .method(fetch::Method::Post)
         .timeout(5000)
-        .send_json(valid_form)
+        .send_json(&valid_form.dto())
         .fetch_string(move |fetch_object| {
             f(process_fetch_object(fetch_object))
         })
 }
 
-fn process_fetch_object(fetch_object: fetch::FetchObject<String>) -> Result<viewer::Viewer, Vec<login_form::Problem>> {
+fn process_fetch_object(fetch_object: fetch::FetchObject<String>) -> Result<viewer::Viewer, Vec<form::Problem>> {
     match fetch_object.result {
         Err(request_error) => {
-            Err(vec![login_form::Problem::ServerError("Request error".into())])
+            Err(vec![form::Problem::new_server_error("Request error")])
         },
         Ok(response) => {
             if response.status.is_ok() {
@@ -76,7 +76,7 @@ fn process_fetch_object(fetch_object: fetch::FetchObject<String>) -> Result<view
                             Ok(viewer)
                         },
                         Err(data_error) => {
-                            Err(vec![login_form::Problem::ServerError("Data error".into())])
+                            Err(vec![form::Problem::new_server_error("Data error")])
                         }
                     }
             } else {
@@ -98,12 +98,12 @@ fn process_fetch_object(fetch_object: fetch::FetchObject<String>) -> Result<view
                         let problems = error_messages
                             .into_iter()
                             .map(|message| {
-                                login_form::Problem::ServerError(message)
+                                form::Problem::new_server_error(message)
                             }).collect();
                         Err(problems)
                     },
                     Err(data_error) => {
-                        Err(vec![login_form::Problem::ServerError("Data error".into())])
+                        Err(vec![form::Problem::new_server_error("Data error")])
                     }
                 }
             }

@@ -74,7 +74,8 @@ fn g_msg_handler<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Order
     match model {
         Model::NotFound(_) | Model::Redirect(_) => {
             if let GMsg::SessionChanged(session) = g_msg {
-                orders.send_msg(Msg::SessionChanged(session));
+                *model = Model::Redirect(session);
+                route::go_to(route::Route::Home, orders);
             }
         },
         Model::Settings(model) => {
@@ -105,7 +106,6 @@ fn g_msg_handler<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Order
 
 enum Msg<'a> {
     RouteChanged(Option<route::Route<'a>>),
-    SessionChanged(session::Session),
     HomeMsg(page::home::Msg),
     SettingsMsg(page::settings::Msg),
     LoginMsg(page::login::Msg),
@@ -120,12 +120,6 @@ fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut impl Orders<Msg<
         Msg::RouteChanged(route) => {
             change_model_by_route(route, model, orders);
         },
-        Msg::SessionChanged(session) => {
-            if let Model::Redirect(_) = model {
-                *model = Model::Redirect(session);
-                route::go_to(route::Route::Home, orders);
-            }
-        }
         Msg::HomeMsg(module_msg) => {
             if let Model::Home(module_model) = model {
                 page::home::update(module_msg, module_model, &mut orders.proxy(Msg::HomeMsg));

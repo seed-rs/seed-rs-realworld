@@ -61,7 +61,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             match model.form.trim_fields().validate() {
                 Ok(valid_form) => {
                     model.problems.clear();
-                    orders.perform_cmd(login_fetch::login(valid_form, Msg::CompletedLogin));
+                    orders.perform_cmd(login_fetch::login(&valid_form, Msg::CompletedLogin));
                 },
                 Err(problems) => {
                     model.problems = problems;

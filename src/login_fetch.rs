@@ -41,7 +41,7 @@ impl ServerData {
     }
 }
 
-pub fn login<Ms: 'static>(valid_form: form::ValidForm, f: fn(Result<viewer::Viewer, Vec<form::Problem>>) -> Ms) -> impl Future<Item=Ms, Error=Ms>  {
+pub fn login<Ms: 'static>(valid_form: &form::ValidForm, f: fn(Result<viewer::Viewer, Vec<form::Problem>>) -> Ms) -> impl Future<Item=Ms, Error=Ms>  {
     fetch::Request::new("https://conduit.productionready.io/api/users/login".into())
         .method(fetch::Method::Post)
         .timeout(5000)

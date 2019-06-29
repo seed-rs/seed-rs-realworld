@@ -6,7 +6,7 @@ use strum_macros::EnumIter;
 use unicode_segmentation::UnicodeSegmentation;
 use crate::form::{self, FormField};
 
-const MIN_PASSWORD_CHARS: usize = 6;
+const MIN_PASSWORD_LENGTH: usize = 8;
 
 pub type Form = form::Form<Field>;
 pub type ValidForm = form::ValidForm<Field>;
@@ -72,10 +72,10 @@ impl FormField for Field {
                         self.key(),
                         "password can't be blank."
                     ))
-                } else if value.graphemes(true).count() < MIN_PASSWORD_CHARS {
+                } else if value.graphemes(true).count() < MIN_PASSWORD_LENGTH {
                     Some(form::Problem::new_invalid_field(
                         self.key(),
-                        format!("password must be at least {} characters long", MIN_PASSWORD_CHARS)
+                        format!("password is too short (minimum is {} characters)", MIN_PASSWORD_LENGTH)
                     ))
                 } else {
                     None

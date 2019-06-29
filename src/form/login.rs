@@ -9,11 +9,32 @@ pub type Form = form::Form<Field>;
 pub type ValidForm = form::ValidForm<Field>;
 pub type Problem = form::Problem;
 
+// ---- Form ----
+
 impl Default for Form {
     fn default() -> Self {
         Self::new(Field::iter())
     }
 }
+
+impl ValidForm {
+    pub fn dto(&self) -> ValidFormDTO {
+        ValidFormDTO {
+            user: self
+                .0
+                .iter()
+                .map(|(key, field)|(*key, field.value()))
+                .collect()
+        }
+    }
+}
+
+#[derive(Serialize)]
+pub struct ValidFormDTO<'a> {
+    user: IndexMap<&'a str, &'a str>
+}
+
+// ---- Field ----
 
 #[derive(Clone, EnumIter)]
 pub enum Field {

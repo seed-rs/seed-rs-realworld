@@ -1,12 +1,15 @@
 use serde::Serialize;
 use indexmap::IndexMap;
 use std::hash::{Hash, Hasher};
-use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use std::borrow::Cow;
 
 pub mod login;
 pub mod register;
+pub mod settings;
+
+const MIN_PASSWORD_LENGTH: usize = 8;
+const MAX_INVALID_PASSWORD_LENGTH: usize = MIN_PASSWORD_LENGTH - 1;
 
 // ----- Field -----
 
@@ -98,20 +101,3 @@ impl<T: FormField> TrimmedForm<T> {
 // ----- ValidForm -----
 
 pub struct ValidForm<T: FormField>(IndexMap<FieldKey, T>);
-
-impl<T: FormField> ValidForm<T> {
-    pub fn dto(&self) -> ValidFormDTO {
-        ValidFormDTO {
-            user: self
-                .0
-                .iter()
-                .map(|(key, field)|(*key, field.value()))
-                .collect()
-        }
-    }
-}
-
-#[derive(Serialize)]
-pub struct ValidFormDTO<'a> {
-    user: IndexMap<&'a str, &'a str>
-}

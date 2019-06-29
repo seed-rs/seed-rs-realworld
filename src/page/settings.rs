@@ -1,11 +1,30 @@
-use seed::prelude::*;
+use seed::{prelude::*, fetch};
 use super::ViewPage;
-use crate::{session, GMsg, route};
+use crate::{session, route, viewer, api, avatar, username, GMsg, form::settings as form, settings_fetch, settings_fetch_save, loading};
+use serde::{Deserialize, Serialize};
+use serde_json;
+use std::rc::Rc;
 
 // Model
 
+#[derive(Default)]
 pub struct Model {
-    session: session::Session
+    session: session::Session,
+    problems: Vec<form::Problem>,
+    status: Status,
+}
+
+enum Status {
+    Loading,
+    LoadingSlowly,
+    Loaded(form::Form),
+    Failed
+}
+
+impl Default for Status {
+    fn default() -> Self {
+        Status::Loading
+    }
 }
 
 impl Model {
@@ -20,13 +39,21 @@ impl From<Model> for session::Session {
     }
 }
 
-pub fn init(session: session::Session, _: &mut impl Orders<Msg, GMsg>) -> Model {
-    Model { session }
+// Init
+
+pub fn init<'a>(session: session::Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
+    orders
+        .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::NoOp))
+        .perform_cmd(settings_fetch::load_settings(&session, Msg::CompletedFormLoad));
+    Model {
+        session,
+        ..Model::default()
+    }
 }
 
 // Global msg handler
 
-pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
+pub fn g_msg_handler<'a>(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match g_msg {
         GMsg::SessionChanged(session) => {
             model.session = session;
@@ -39,76 +66,208 @@ pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Ms
 // Update
 
 pub enum Msg {
+    SubmittedForm,
+    FieldChanged(form::Field),
+    CompletedFormLoad(Result<form::Form, Vec<form::Problem>>),
+    CompletedSave(Result<viewer::Viewer, Vec<form::Problem>>),
+    SlowLoadThresholdPassed,
+    NoOp,
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
-
+    match msg {
+        Msg::SubmittedForm => {
+            if let Status::Loaded(form) = &model.status {
+                match form.trim_fields().validate() {
+                    Ok(valid_form) => {
+                        model.problems.clear();
+                        orders
+                            .perform_cmd(
+                                settings_fetch_save::save_settings(
+                                    &model.session,
+                                    &valid_form,
+                                    Msg::CompletedSave
+                                )
+                            );
+                    },
+                    Err(problems) => {
+                        model.problems = problems;
+                    }
+                }
+            }
+        }
+        Msg::FieldChanged(field) => {
+            if let Status::Loaded(form) = &mut model.status {
+                form.upsert_field(field);
+            }
+        }
+        Msg::CompletedFormLoad(Ok(form)) => {
+            model.status = Status::Loaded(form);
+        }
+        Msg::CompletedFormLoad(Err(problems)) => {
+            model.problems = problems;
+            model.status = Status::Failed;
+        }
+        Msg::CompletedSave(Ok(viewer)) => {
+            viewer.store();
+            orders.send_g_msg(GMsg::SessionChanged(Some(viewer).into()));
+        },
+        Msg::CompletedSave(Err(problems)) => {
+            model.problems = problems;
+        },
+        Msg::SlowLoadThresholdPassed => {
+            if let Status::Loading = model.status {
+                model.status = Status::LoadingSlowly
+            }
+        }
+        Msg::NoOp => (),
+    }
 }
 
 // View
 
 pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
-    ViewPage::new("Settings",view_content())
+    ViewPage::new("Settings", view_content(model))
 }
 
-fn view_content() -> El<Msg> {
+fn view_fieldset(field: &form::Field) -> El<Msg> {
+    match field {
+        form::Field::Avatar(value) => {
+            fieldset![
+                class!["form-group"],
+                input![
+                    class!["form-control"],
+                    attrs!{
+                        At::Type => "text",
+                        At::Placeholder => "URL of profile picture",
+                        At::Value => value
+                    },
+                    input_ev(Ev::Input, |new_value| Msg::FieldChanged(
+                        form::Field::Avatar(new_value)
+                    )),
+                ]
+            ]
+        }
+        form::Field::Username(value) => {
+            fieldset![
+                class!["form-group"],
+                input![
+                    class!["form-control", "form-control-lg"],
+                    attrs!{
+                        At::Type => "text",
+                        At::Placeholder => "Your Name",
+                        At::Value => value
+                    },
+                    input_ev(Ev::Input, |new_value| Msg::FieldChanged(
+                        form::Field::Username(new_value)
+                    )),
+                ]
+            ]
+        }
+        form::Field::Bio(value) => {
+            fieldset![
+                class!["form-group"],
+                textarea![
+                    class!["form-control", "form-control-lg"],
+                    attrs!{
+                        At::Rows => 8,
+                        At::Placeholder => "Short bio about you",
+                    },
+                    value,
+                    input_ev(Ev::Input, |new_value| Msg::FieldChanged(
+                        form::Field::Bio(new_value)
+                    )),
+                ]
+            ]
+        }
+        form::Field::Email(value) => {
+            fieldset![
+                class!["form-group"],
+                input![
+                    class!["form-control", "form-control-lg"],
+                    attrs!{
+                        At::Type => "text",
+                        At::Placeholder => "Email",
+                        At::Value => value
+                    },
+                    input_ev(Ev::Input, |new_value| Msg::FieldChanged(
+                        form::Field::Email(new_value)
+                    )),
+                ]
+            ]
+        }
+        form::Field::Password(value) => {
+            fieldset![
+                class!["form-group"],
+                input![
+                    class!["form-control", "form-control-lg"],
+                    attrs!{
+                        At::Type => "password",
+                        At::Placeholder => "Password",
+                        At::Value => value
+                    },
+                    input_ev(Ev::Input, |new_value| Msg::FieldChanged(
+                        form::Field::Password(new_value)
+                    )),
+                ]
+            ]
+        }
+    }
+}
+
+fn view_form<'a>(model: &Model, credentials: &api::Credentials) -> El<Msg> {
+    match &model.status {
+        Status::Loading => empty![],
+        Status::LoadingSlowly => loading::icon(),
+        Status::Loaded(form) => {
+            form![
+                raw_ev(Ev::Submit, |event| {
+                    event.prevent_default();
+                    Msg::SubmittedForm
+                }),
+                form.iter().map(view_fieldset),
+                button![
+                    class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
+                    "Update Settings"
+                ]
+            ]
+        },
+        Status::Failed => loading::error("page")
+    }
+}
+
+fn view_content<'a>(model: &Model) -> El<Msg> {
     div![
-        class!["settings-page"],
+        class!["auth-page"],
         div![
             class!["container", "page"],
             div![
                 class!["row"],
 
                 div![
-                    class!["col-md-6", "offset-md-3", "col-xs12"],
+                    class!["col-md-6", "offset-md-3", "col-x32-12"],
                     h1![
                         class!["text-xs-center"],
-                        "Your settings"
+                        "Your Settings"
                     ],
 
-                    form![
-                        fieldset![
-                            fieldset![
-                                class!["form-group"],
-                                input![
-                                    class!["form-control"],
-                                    attrs!{At::Type => "text"; At::Placeholder => "URL of profile picture"}
-                                ]
+                    if let Some(viewer) = model.session().viewer() {
+                        vec![
+                            ul![
+                                class!["error-messages"],
+                                model.problems.iter().map(|problem| li![
+                                    problem.message()
+                                ])
                             ],
-                            fieldset![
-                                class!["form-group"],
-                                input![
-                                    class!["form-control", "form-control-lg"],
-                                    attrs!{At::Type => "text"; At::Placeholder => "Your Name"}
-                                ]
-                            ],
-                            fieldset![
-                                class!["form-group"],
-                                textarea![
-                                    class!["form-control", "form-control-lg"],
-                                    attrs!{At::Rows => 8; At::Placeholder => "Short bio about you"}
-                                ]
-                            ],
-                            fieldset![
-                                class!["form-group"],
-                                input![
-                                    class!["form-control", "form-control-lg"],
-                                    attrs!{At::Type => "text"; At::Placeholder => "Email"}
-                                ]
-                            ],
-                            fieldset![
-                                class!["form-group"],
-                                input![
-                                    class!["form-control", "form-control-lg"],
-                                    attrs!{At::Type => "password"; At::Placeholder => "Password"}
-                                ]
-                            ],
-                            button![
-                                class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
-                                "Update Settings"
+                            view_form(model, &viewer.credentials),
+                        ]
+                    } else {
+                        vec![
+                            div![
+                                "Sign in to view your settings."
                             ]
                         ]
-                    ]
+                    }
                 ]
 
             ]

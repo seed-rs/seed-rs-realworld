@@ -4,6 +4,7 @@ use seed::prelude::*;
 use std::convert::TryInto;
 use std::collections::VecDeque;
 
+mod loading;
 mod form;
 mod asset;
 mod avatar;
@@ -13,6 +14,8 @@ mod viewer;
 mod session;
 mod login_fetch;
 mod register_fetch;
+mod settings_fetch;
+mod settings_fetch_save;
 mod page;
 mod article;
 mod route;

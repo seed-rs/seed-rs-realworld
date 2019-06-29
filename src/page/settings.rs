@@ -44,7 +44,7 @@ impl From<Model> for session::Session {
 pub fn init<'a>(session: session::Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::NoOp))
-        .perform_cmd(request::settings_load::load_settings(&session, Msg::CompletedFormLoad));
+        .perform_cmd(request::settings_load::load_settings(&session, Msg::FormLoadCompleted));
     Model {
         session,
         ..Model::default()
@@ -66,17 +66,17 @@ pub fn g_msg_handler<'a>(g_msg: GMsg, model: &mut Model, orders: &mut impl Order
 // Update
 
 pub enum Msg {
-    SubmittedForm,
+    FormSubmitted,
     FieldChanged(form::Field),
-    CompletedFormLoad(Result<form::Form, Vec<form::Problem>>),
-    CompletedSave(Result<viewer::Viewer, Vec<form::Problem>>),
+    FormLoadCompleted(Result<form::Form, Vec<form::Problem>>),
+    SaveCompleted(Result<viewer::Viewer, Vec<form::Problem>>),
     SlowLoadThresholdPassed,
     NoOp,
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match msg {
-        Msg::SubmittedForm => {
+        Msg::FormSubmitted => {
             if let Status::Loaded(form) = &model.status {
                 match form.trim_fields().validate() {
                     Ok(valid_form) => {
@@ -86,7 +86,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                                 request::settings_save::save_settings(
                                     &model.session,
                                     &valid_form,
-                                    Msg::CompletedSave
+                                    Msg::SaveCompleted
                                 )
                             );
                     },
@@ -101,18 +101,18 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 form.upsert_field(field);
             }
         }
-        Msg::CompletedFormLoad(Ok(form)) => {
+        Msg::FormLoadCompleted(Ok(form)) => {
             model.status = Status::Loaded(form);
         }
-        Msg::CompletedFormLoad(Err(problems)) => {
+        Msg::FormLoadCompleted(Err(problems)) => {
             model.problems = problems;
             model.status = Status::Failed;
         }
-        Msg::CompletedSave(Ok(viewer)) => {
+        Msg::SaveCompleted(Ok(viewer)) => {
             viewer.store();
             orders.send_g_msg(GMsg::SessionChanged(Some(viewer).into()));
         },
-        Msg::CompletedSave(Err(problems)) => {
+        Msg::SaveCompleted(Err(problems)) => {
             model.problems = problems;
         },
         Msg::SlowLoadThresholdPassed => {
@@ -223,7 +223,7 @@ fn view_form<'a>(model: &Model, credentials: &api::Credentials) -> El<Msg> {
             form![
                 raw_ev(Ev::Submit, |event| {
                     event.prevent_default();
-                    Msg::SubmittedForm
+                    Msg::FormSubmitted
                 }),
                 form.iter().map(view_fieldset),
                 button![

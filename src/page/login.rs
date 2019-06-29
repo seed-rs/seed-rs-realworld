@@ -50,19 +50,19 @@ pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Ms
 // Update
 
 pub enum Msg {
-    SubmittedForm,
+    FormSubmitted,
     FieldChanged(form::Field),
-    CompletedLogin(Result<viewer::Viewer, Vec<form::Problem>>),
+    LoginCompleted(Result<viewer::Viewer, Vec<form::Problem>>),
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match msg {
-        Msg::SubmittedForm => {
+        Msg::FormSubmitted => {
             match model.form.trim_fields().validate() {
                 Ok(valid_form) => {
                     model.problems.clear();
                     orders.perform_cmd(
-                        request::login::login(&valid_form, Msg::CompletedLogin)
+                        request::login::login(&valid_form, Msg::LoginCompleted)
                     );
                 },
                 Err(problems) => {
@@ -73,11 +73,11 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::FieldChanged(field) => {
             model.form.upsert_field(field);
         }
-        Msg::CompletedLogin(Ok(viewer)) => {
+        Msg::LoginCompleted(Ok(viewer)) => {
             viewer.store();
             orders.send_g_msg(GMsg::SessionChanged(Some(viewer).into()));
         },
-        Msg::CompletedLogin(Err(problems)) => {
+        Msg::LoginCompleted(Err(problems)) => {
             model.problems = problems;
         },
     }
@@ -130,7 +130,7 @@ fn view_form(form: &form::Form) -> El<Msg> {
     form![
         raw_ev(Ev::Submit, |event| {
             event.prevent_default();
-            Msg::SubmittedForm
+            Msg::FormSubmitted
         }),
         form.iter().map(view_fieldset),
         button![

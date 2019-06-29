@@ -68,35 +68,35 @@ pub enum GMsg {
 
 fn g_msg_handler<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Orders<Msg<'static>, GMsg>) {
     if let GMsg::RoutePushed(ref route) = g_msg {
-        orders.send_msg(Msg::ChangedRoute(Some(route.clone())));
+        orders.send_msg(Msg::RouteChanged(Some(route.clone())));
     }
 
     match model {
         Model::NotFound(_) | Model::Redirect(_) => {
             if let GMsg::SessionChanged(session) = g_msg {
-                orders.send_msg(Msg::GotSession(session));
+                orders.send_msg(Msg::SessionChanged(session));
             }
         },
         Model::Settings(model) => {
-            page::settings::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::GotSettingsMsg));
+            page::settings::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::SettingsMsg));
         },
         Model::Home(model) => {
-            page::home::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::GotHomeMsg));
+            page::home::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::HomeMsg));
         },
         Model::Login(model) => {
-            page::login::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::GotLoginMsg));
+            page::login::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::LoginMsg));
         },
         Model::Register(model) => {
-            page::register::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::GotRegisterMsg));
+            page::register::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::RegisterMsg));
         },
         Model::Profile(model, _) => {
-            page::profile::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::GotProfileMsg));
+            page::profile::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::ProfileMsg));
         },
         Model::Article(model) => {
-            page::article::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::GotArticleMsg));
+            page::article::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::ArticleMsg));
         },
         Model::ArticleEditor(model, _) => {
-            page::article_editor::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::GotArticleEditorMsg));
+            page::article_editor::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::ArticleEditorMsg));
         },
     }
 }
@@ -104,61 +104,61 @@ fn g_msg_handler<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Order
 // Update
 
 enum Msg<'a> {
-    ChangedRoute(Option<route::Route<'a>>),
-    GotSession(session::Session),
-    GotHomeMsg(page::home::Msg),
-    GotSettingsMsg(page::settings::Msg),
-    GotLoginMsg(page::login::Msg),
-    GotRegisterMsg(page::register::Msg),
-    GotProfileMsg(page::profile::Msg),
-    GotArticleMsg(page::article::Msg),
-    GotArticleEditorMsg(page::article_editor::Msg),
+    RouteChanged(Option<route::Route<'a>>),
+    SessionChanged(session::Session),
+    HomeMsg(page::home::Msg),
+    SettingsMsg(page::settings::Msg),
+    LoginMsg(page::login::Msg),
+    RegisterMsg(page::register::Msg),
+    ProfileMsg(page::profile::Msg),
+    ArticleMsg(page::article::Msg),
+    ArticleEditorMsg(page::article_editor::Msg),
 }
 
 fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut impl Orders<Msg<'static>, GMsg>) {
     match msg {
-        Msg::ChangedRoute(route) => {
+        Msg::RouteChanged(route) => {
             change_model_by_route(route, model, orders);
         },
-        Msg::GotSession(session) => {
+        Msg::SessionChanged(session) => {
             if let Model::Redirect(_) = model {
                 *model = Model::Redirect(session);
                 route::go_to(route::Route::Home, orders);
             }
         }
-        Msg::GotHomeMsg(module_msg) => {
+        Msg::HomeMsg(module_msg) => {
             if let Model::Home(module_model) = model {
-                page::home::update(module_msg, module_model, &mut orders.proxy(Msg::GotHomeMsg));
+                page::home::update(module_msg, module_model, &mut orders.proxy(Msg::HomeMsg));
             }
         },
-        Msg::GotSettingsMsg(module_msg) => {
+        Msg::SettingsMsg(module_msg) => {
             if let Model::Settings(module_model) = model {
-                page::settings::update(module_msg, module_model, &mut orders.proxy(Msg::GotSettingsMsg));
+                page::settings::update(module_msg, module_model, &mut orders.proxy(Msg::SettingsMsg));
             }
         },
-        Msg::GotLoginMsg(module_msg) => {
+        Msg::LoginMsg(module_msg) => {
             if let Model::Login(module_model) = model {
-                page::login::update(module_msg, module_model, &mut orders.proxy(Msg::GotLoginMsg));
+                page::login::update(module_msg, module_model, &mut orders.proxy(Msg::LoginMsg));
             }
         },
-        Msg::GotRegisterMsg(module_msg) => {
+        Msg::RegisterMsg(module_msg) => {
             if let Model::Register(module_model) = model {
-                page::register::update(module_msg, module_model, &mut orders.proxy(Msg::GotRegisterMsg));
+                page::register::update(module_msg, module_model, &mut orders.proxy(Msg::RegisterMsg));
             }
         },
-        Msg::GotProfileMsg(module_msg) => {
+        Msg::ProfileMsg(module_msg) => {
             if let Model::Profile(module_model, _) = model {
-                page::profile::update(module_msg, module_model, &mut orders.proxy(Msg::GotProfileMsg));
+                page::profile::update(module_msg, module_model, &mut orders.proxy(Msg::ProfileMsg));
             }
         },
-        Msg::GotArticleMsg(module_msg) => {
+        Msg::ArticleMsg(module_msg) => {
             if let Model::Article(module_model) = model {
-                page::article::update(module_msg, module_model, &mut orders.proxy(Msg::GotArticleMsg));
+                page::article::update(module_msg, module_model, &mut orders.proxy(Msg::ArticleMsg));
             }
         },
-        Msg::GotArticleEditorMsg(module_msg) => {
+        Msg::ArticleEditorMsg(module_msg) => {
             if let Model::ArticleEditor(module_model, _) = model {
-                page::article_editor::update(module_msg, module_model, &mut orders.proxy(Msg::GotArticleEditorMsg));
+                page::article_editor::update(module_msg, module_model, &mut orders.proxy(Msg::ArticleEditorMsg));
             }
         },
     }
@@ -184,7 +184,7 @@ fn change_model_by_route<'a>(
             route::Route::NewArticle => {
                 *model = Model::ArticleEditor(
                     page::article_editor::init_new(
-                    session(), &mut orders.proxy(Msg::GotArticleEditorMsg)
+                    session(), &mut orders.proxy(Msg::ArticleEditorMsg)
                     ),
                     None
                 );
@@ -192,42 +192,42 @@ fn change_model_by_route<'a>(
             route::Route::EditArticle(slug) => {
                 *model = Model::ArticleEditor(
                     page::article_editor::init_edit(
-                        session(), &slug, &mut orders.proxy(Msg::GotArticleEditorMsg)
+                        session(), &slug, &mut orders.proxy(Msg::ArticleEditorMsg)
                     ),
                     Some(slug)
                 );
             },
             route::Route::Settings => {
                 *model = Model::Settings(page::settings::init(
-                    session(), &mut orders.proxy(Msg::GotSettingsMsg)
+                    session(), &mut orders.proxy(Msg::SettingsMsg)
                 ));
             },
             route::Route::Home => {
                 *model = Model::Home(
-                    page::home::init(session(), &mut orders.proxy(Msg::GotHomeMsg))
+                    page::home::init(session(), &mut orders.proxy(Msg::HomeMsg))
                 );
             },
             route::Route::Login => {
                 *model = Model::Login(
-                    page::login::init(session(), &mut orders.proxy(Msg::GotLoginMsg))
+                    page::login::init(session(), &mut orders.proxy(Msg::LoginMsg))
                 );
             },
             route::Route::Register => {
                 *model = Model::Register(
-                    page::register::init(session(),&mut orders.proxy(Msg::GotRegisterMsg))
+                    page::register::init(session(),&mut orders.proxy(Msg::RegisterMsg))
                 );
             },
             route::Route::Profile(username) => {
                 *model = Model::Profile(
                     page::profile::init(
-                        session(), &username, &mut orders.proxy(Msg::GotProfileMsg)
+                        session(), &username, &mut orders.proxy(Msg::ProfileMsg)
                     ),
                     username.into_owned()
                 );
             },
             route::Route::Article(slug) => {
                 *model = Model::Article(
-                    page::article::init(session(), slug, &mut orders.proxy(Msg::GotArticleMsg))
+                    page::article::init(session(), slug, &mut orders.proxy(Msg::ArticleMsg))
                 );
             },
         }
@@ -257,56 +257,56 @@ fn view<'a>(model: &Model) -> impl ElContainer<Msg<'static>> {
                 page::Page::Settings,
                 page::settings::view(model),
                 model.session().viewer(),
-            ).map_message(Msg::GotSettingsMsg)
+            ).map_message(Msg::SettingsMsg)
         },
         Model::Home(model) => {
             page::view(
                 page::Page::Home,
                 page::home::view(model),
                 model.session().viewer(),
-            ).map_message(Msg::GotHomeMsg)
+            ).map_message(Msg::HomeMsg)
         },
         Model::Login(model) => {
             page::view(
                 page::Page::Login,
                 page::login::view(model),
                 model.session().viewer(),
-            ).map_message(Msg::GotLoginMsg)
+            ).map_message(Msg::LoginMsg)
         },
         Model::Register(model) => {
             page::view(
                 page::Page::Register,
                 page::register::view(model),
                 model.session().viewer(),
-            ).map_message(Msg::GotRegisterMsg)
+            ).map_message(Msg::RegisterMsg)
         },
         Model::Profile(model, username) => {
             page::view(
                 page::Page::Profile(username),
                 page::profile::view(model),
                 model.session().viewer(),
-            ).map_message(Msg::GotProfileMsg)
+            ).map_message(Msg::ProfileMsg)
         },
         Model::Article(model) => {
             page::view(
                 page::Page::Other,
                 page::article::view(model),
                 model.session().viewer(),
-            ).map_message(Msg::GotArticleMsg)
+            ).map_message(Msg::ArticleMsg)
         },
         Model::ArticleEditor(model, None) => {
             page::view(
                 page::Page::NewArticle,
                 page::article_editor::view(model),
                 model.session().viewer(),
-            ).map_message(Msg::GotArticleEditorMsg)
+            ).map_message(Msg::ArticleEditorMsg)
         },
         Model::ArticleEditor(model, Some(_)) => {
             page::view(
                 page::Page::Other,
                 page::article_editor::view(model),
                 model.session().viewer(),
-            ).map_message(Msg::GotArticleEditorMsg)
+            ).map_message(Msg::ArticleEditorMsg)
         },
     }
 }
@@ -314,7 +314,7 @@ fn view<'a>(model: &Model) -> impl ElContainer<Msg<'static>> {
 // Init
 
 fn init(url: Url, orders: &mut impl Orders<Msg<'static>, GMsg>) -> Model<'static> {
-    orders.send_msg(Msg::ChangedRoute(url.try_into().ok()));
+    orders.send_msg(Msg::RouteChanged(url.try_into().ok()));
     Model::Redirect(api::load_viewer().into())
 }
 
@@ -322,7 +322,7 @@ fn init(url: Url, orders: &mut impl Orders<Msg<'static>, GMsg>) -> Model<'static
 pub fn render() {
     seed::App::build(init, update, view)
         .routes(|url| {
-            Msg::ChangedRoute(url.try_into().ok())
+            Msg::RouteChanged(url.try_into().ok())
         })
         .g_msg_handler(g_msg_handler)
         .finish()

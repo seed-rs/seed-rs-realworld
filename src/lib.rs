@@ -28,7 +28,7 @@ enum Model<'a> {
     Register(page::register::Model),
     Profile(page::profile::Model, username::Username<'a>),
     Article(page::article::Model),
-    ArticleEditor(page::article_editor::Model, Option<article::slug::Slug<'a>>)
+    ArticleEditor(page::article_editor::Model, Option<article::slug::Slug>)
 }
 
 impl<'a> Default for Model<'a> {

@@ -10,18 +10,57 @@ use crate::{
     username,
     GMsg,
     form::article_editor as form,
+    loading,
+    request
 };
 use serde::{Deserialize, Serialize};
 use serde_json;
-use std::rc::Rc;
+use std::{rc::Rc, borrow::Cow, mem};
+use seed::dom_types::Optimize::Static;
 
 // Model
 
 #[derive(Default)]
 pub struct Model {
     session: session::Session,
-    problems: Vec<form::Problem>,
-    form: form::Form,
+    status: Status
+}
+
+type Slug = article::slug::Slug;
+
+enum Status {
+    Placeholder,
+    // -- edit article --
+    Loading(Slug),
+    LoadingSlowly(Slug),
+    LoadingFailed(Slug, Vec<form::Problem>),
+    Saving(Slug, form::Form),
+    Editing(Slug, Vec<form::Problem>, form::Form),
+    // -- new article --
+    EditingNew(Vec<form::Problem>, form::Form),
+    Creating(form::Form),
+}
+
+impl Status {
+    fn take(&mut self) -> Self {
+        mem::replace(self, Status::Placeholder)
+    }
+    fn slug(&self) -> Option<&Slug> {
+        match self {
+            Status::Loading(slug) => Some(slug),
+            Status::LoadingSlowly(slug) => Some(slug),
+            Status::LoadingFailed(slug, ..) => Some(slug),
+            Status::Saving(slug, ..) => Some(slug),
+            Status::Editing(slug, ..) => Some(slug),
+            Status::EditingNew(..) | Status::Creating(..) | Status::Placeholder => None,
+        }
+    }
+}
+
+impl Default for Status {
+    fn default() -> Self {
+        Status::EditingNew(Vec::default(), form::Form::default())
+    }
 }
 
 impl Model {
@@ -48,11 +87,14 @@ pub fn init_new(session: session::Session, _: &mut impl Orders<Msg, GMsg>) -> Mo
 pub fn init_edit(
     session: session::Session,
     slug: &article::slug::Slug,
-    _: &mut impl Orders<Msg, GMsg>,
+    orders: &mut impl Orders<Msg, GMsg>,
 ) -> Model {
+    orders
+        .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::NoOp))
+        .perform_cmd(request::article_load::load_article(&session, slug, Msg::ArticleLoadCompleted));
     Model {
         session,
-        ..Model::default()
+        status: Status::Loading(slug.clone())
     }
 }
 
@@ -70,42 +112,118 @@ pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Ms
 
 // Update
 
+#[derive(Clone)]
 pub enum Msg {
-    FormSubmitted,
     FieldChanged(form::Field),
-    LoginCompleted(Result<viewer::Viewer, Vec<form::Problem>>),
+    FormSubmitted,
+    CreateCompleted(Result<article::Article, Vec<form::Problem>>),
+    EditCompleted(Result<article::Article, Vec<form::Problem>>),
+    ArticleLoadCompleted(Result<article::Article, (article::slug::Slug, Vec<form::Problem>)>),
+    SlowLoadThresholdPassed,
+    NoOp,
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match msg {
-        Msg::FormSubmitted => {
-//            match model.form.trim_fields().validate() {
-//                Ok(valid_form) => {
-//                    model.problems.clear();
-//                    orders.perform_cmd(login_fetch::login(&valid_form, Msg::CompletedLogin));
-//                },
-//                Err(problems) => {
-//                    model.problems = problems;
-//                }
-//            }
-        },
         Msg::FieldChanged(field) => {
-//            model.form.upsert_field(field);
+            match &mut model.status {
+                Status::Editing(_, _, form) => {
+                    form.upsert_field(field);
+                },
+                Status::EditingNew(_, form) => {
+                    form.upsert_field(field);
+                },
+                _ => error!("Can't edit the form, status has to be Editing or EditingNew!")
+            }
         }
-        Msg::LoginCompleted(Ok(viewer)) => {
-            viewer.store();
-            orders.send_g_msg(GMsg::SessionChanged(Some(viewer).into()));
+        Msg::FormSubmitted => {
+            match model.status.take() {
+                Status::Editing(slug, _, form) => {
+                    match form.trim_fields().validate() {
+                        Ok(valid_form) => {
+                            orders.perform_cmd(
+                                request::article_update::update_article(
+                                    &model.session, &valid_form, &slug, Msg::EditCompleted
+                                )
+                            );
+                            model.status = Status::Saving(slug, form);
+                        },
+                        Err(problems) => {
+                            model.status = Status::Editing(slug, problems, form);
+                        }
+                    }
+                },
+                Status::EditingNew(problems, form) => {
+                    match form.trim_fields().validate() {
+                        Ok(valid_form) => {
+                            orders.perform_cmd(
+                                request::article_create::create_article(
+                                    &model.session, &valid_form, Msg::CreateCompleted
+                                )
+                            );
+                            model.status = Status::Creating(form);
+                        },
+                        Err(problems) => {
+                            model.status = Status::EditingNew(problems, form);
+                        }
+                    }
+                },
+                status@ _ => {
+                    model.status = status;
+                    error!("Can't save the form, status has to be Editing or EditingNew!")
+                }
+            }
         },
-        Msg::LoginCompleted(Err(problems)) => {
-            model.problems = problems;
+        Msg::CreateCompleted(Ok(article)) => {
+            route::go_to(route::Route::Article(article.slug), orders)
         },
+        Msg::CreateCompleted(Err(problems)) => {
+            match model.status.take() {
+                Status::Creating(form) => {
+                    model.status = Status::EditingNew(problems, form)
+                },
+                status @ _ => model.status = status
+            }
+        },
+        Msg::EditCompleted(Ok(article)) => {
+            route::go_to(route::Route::Article(article.slug), orders)
+        },
+        Msg::EditCompleted(Err(problems)) => {
+            match model.status.take() {
+                Status::Saving(slug, form) => {
+                    model.status = Status::Editing(slug, problems, form)
+                },
+                status @ _ => model.status = status
+            }
+        },
+        Msg::ArticleLoadCompleted(Ok(article)) => {
+            model.status = Status::Editing(article.slug.clone(), vec![], article.into_form());
+        },
+        Msg::ArticleLoadCompleted(Err((slug, problems))) => {
+            model.status = Status::LoadingFailed(slug, problems)
+        },
+        Msg::SlowLoadThresholdPassed => {
+            match model.status.take() {
+                Status::Loading(slug) => {
+                    model.status = Status::LoadingSlowly(slug);
+                }
+                status @ _ => model.status = status
+            }
+        },
+        Msg::NoOp => { panic!("NoOp!") },
     }
 }
 
 // View
 
 pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
-    ViewPage::new("@Todo", view_content(model))
+    let title: Cow<str> = match model.status.slug() {
+        Some(slug) => {
+            format!("Edit Article - {}", slug.as_str()).into()
+        }
+        None => "New Article".into()
+    };
+    ViewPage::new(title, view_content(model))
 }
 
 fn view_fieldset(field: &form::Field) -> El<Msg> {
@@ -180,22 +298,35 @@ fn view_fieldset(field: &form::Field) -> El<Msg> {
     }
 }
 
-fn view_form(form: &form::Form) -> El<Msg> {
+fn view_form(form: &form::Form, save_button: El<Msg>) -> El<Msg> {
     form![
         raw_ev(Ev::Submit, |event| {
             event.prevent_default();
             Msg::FormSubmitted
         }),
         form.iter().map(view_fieldset),
-        button![
-            class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
-            attrs!{At::Type => "button"},
-            "Publish Article"
-        ]
+        save_button,
     ]
 }
 
-fn view_content<'a>(model: &Model) -> El<Msg> {
+enum SaveButton {
+    CreateArticle,
+    UpdateArticle,
+}
+
+fn view_save_button(type_: SaveButton, disabled: bool) -> El<Msg> {
+    button![
+        class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
+        simple_ev(Ev::Click, Msg::FormSubmitted),
+        attrs!{At::Type => "button", At::Disabled => disabled},
+        match type_ {
+            SaveButton::CreateArticle => "Publish Article",
+            SaveButton::UpdateArticle => "Update Article",
+        }
+    ]
+}
+
+fn view_content(model: &Model) -> El<Msg> {
     div![
         class!["auth-page"],
         div![
@@ -206,17 +337,62 @@ fn view_content<'a>(model: &Model) -> El<Msg> {
                 div![
                     class!["col-md-6", "offset-md-3", "col-x32-12"],
 
-                    ul![
-                        class!["error-messages"],
-                        model.problems.iter().map(|problem| li![
-                            problem.message()
-                        ])
-                    ],
-
-                    view_form(&model.form)
+                    if let Some(viewer) = model.session().viewer() {
+                        view_authenticated(viewer, model)
+                    } else {
+                        vec![
+                            div![
+                                "Sign in to edit this article."
+                            ]
+                        ]
+                    }
                 ]
 
             ]
         ]
+    ]
+}
+
+fn view_authenticated(viewer: &viewer::Viewer, model: &Model) -> Vec<El<Msg>> {
+    match &model.status {
+        Status::Loading(_) | Status::Placeholder => {
+            vec![]
+        },
+        Status::LoadingSlowly(_) => {
+            vec![loading::icon()]
+        },
+        Status::LoadingFailed(slug, problems) => {
+            vec![
+                view_problems(problems),
+                loading::error("article")
+            ]
+        },
+        Status::Saving(_, form) => {
+            vec![view_form(form, view_save_button(SaveButton::UpdateArticle, true))]
+        },
+        Status::Editing(_, problems, form) => {
+            vec![
+                view_problems(problems),
+                view_form(form, view_save_button(SaveButton::UpdateArticle, false)),
+            ]
+        },
+        Status::EditingNew(problems, form) => {
+            vec![
+                view_problems(problems),
+                view_form(form, view_save_button(SaveButton::CreateArticle, false)),
+            ]
+        },
+        Status::Creating(form) => {
+            vec![view_form(form, view_save_button(SaveButton::CreateArticle, true))]
+        },
+    }
+}
+
+fn view_problems(problems: &[form::Problem]) -> El<Msg> {
+    ul![
+        class!["error-messages"],
+        problems.iter().map(|problem| li![
+            problem.message()
+        ])
     ]
 }

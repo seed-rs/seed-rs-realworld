@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{viewer, avatar, username, api, form::register as form};
+use crate::{avatar, username, api, form::article_editor as form, session, article};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
@@ -13,37 +13,70 @@ struct ServerErrorData {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ServerData {
-    user: ServerDataFields
+    article: ServerDataFields
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ServerDataFields {
-    id: i32,
-    email: String,
+    title: String,
+    slug: String,
+    body: String,
     created_at: String,
     updated_at: String,
+    tag_list: Vec<String>,
+    description: String,
+    author: ServerDataFieldAuthor,
+    favorited: bool,
+    favorites_count: usize,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ServerDataFieldAuthor {
     username: String,
-    bio: Option<String>,
-    image: Option<String>,
-    token: String,
+    bio: String,
+    image: String,
+    following: bool,
 }
 
 impl ServerData {
-    fn into_viewer(self) -> viewer::Viewer {
-        viewer::Viewer {
-            avatar: avatar::Avatar::new(self.user.image),
-            credentials: api::Credentials {
-                username: self.user.username.into(),
-                auth_token: self.user.token
-            }
+    fn into_article(self) -> article::Article {
+        article::Article {
+            title: self.article.title,
+            slug: self.article.slug.into(),
+            body: self.article.body,
+            created_at: self.article.created_at,
+            updated_at: self.article.updated_at,
+            tag_list: self.article.tag_list,
+            description: self.article.description,
+            author: article::Author {
+                username: self.article.author.username.into(),
+                bio: self.article.author.bio,
+                image: self.article.author.image,
+                following: self.article.author.following,
+            },
+            favorited: self.article.favorited,
+            favorites_count: self.article.favorites_count,
         }
     }
 }
 
-pub fn register<Ms: 'static>(valid_form: &form::ValidForm, f: fn(Result<viewer::Viewer, Vec<form::Problem>>) -> Ms) -> impl Future<Item=Ms, Error=Ms>  {
-    fetch::Request::new("https://conduit.productionready.io/api/users".into())
-        .method(fetch::Method::Post)
+pub fn update_article<Ms: 'static>(
+    session: &session::Session,
+    valid_form: &form::ValidForm,
+    slug: &article::slug::Slug,
+    f: fn(Result<article::Article, Vec<form::Problem>>) -> Ms
+) -> impl Future<Item=Ms, Error=Ms>  {
+    let auth_token =
+        session
+            .viewer()
+            .map(|viewer|viewer.credentials.auth_token.as_str())
+            .unwrap_or_default();
+
+    fetch::Request::new(format!("https://conduit.productionready.io/api/articles/{}", slug.as_str()))
+        .method(fetch::Method::Put)
+        .header("authorization", &format!("Token {}", auth_token))
         .timeout(5000)
         .send_json(&valid_form.dto())
         .fetch_string(move |fetch_object| {
@@ -51,14 +84,14 @@ pub fn register<Ms: 'static>(valid_form: &form::ValidForm, f: fn(Result<viewer::
         })
 }
 
-fn process_fetch_object(fetch_object: fetch::FetchObject<String>) -> Result<viewer::Viewer, Vec<form::Problem>> {
+fn process_fetch_object(fetch_object: fetch::FetchObject<String>) -> Result<article::Article, Vec<form::Problem>> {
     match fetch_object.result {
         Err(request_error) => {
             Err(vec![form::Problem::new_server_error("Request error")])
         },
         Ok(response) => {
             if response.status.is_ok() {
-                    let viewer =
+                    let article =
                         response
                             .data
                             .and_then(|string| {
@@ -68,12 +101,12 @@ fn process_fetch_object(fetch_object: fetch::FetchObject<String>) -> Result<view
                                     })
                             })
                             .map(|server_data| {
-                                server_data.into_viewer()
+                                server_data.into_article()
                             });
 
-                    match viewer {
-                        Ok(viewer) => {
-                            Ok(viewer)
+                    match article {
+                        Ok(article) => {
+                            Ok(article)
                         },
                         Err(data_error) => {
                             Err(vec![form::Problem::new_server_error("Data error")])

@@ -25,6 +25,7 @@ pub trait FormField: Clone {
 
 // ----- Problem -----
 
+#[derive(Clone)]
 pub enum Problem {
     InvalidField { field_key: &'static str, message: Cow<'static, str> },
     ServerError { message: Cow<'static, str> }
@@ -39,7 +40,7 @@ impl Problem {
     }
     pub fn message(&self) -> &str {
         match self {
-            Problem::InvalidField { field_key, message} => message,
+            Problem::InvalidField { message, ..} => message,
             Problem::ServerError { message} => message,
         }
     }

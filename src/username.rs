@@ -5,11 +5,6 @@ use serde::{Deserialize, Serialize};
 pub struct Username<'a>(Cow<'a, str>);
 
 impl<'a> Username<'a> {
-    pub fn new(username: impl Into<Cow<'a, str>>) -> Self
-    {
-        Username(username.into())
-    }
-
     pub fn as_str(&'a self) -> &'a str {
         self.0.borrow()
     }

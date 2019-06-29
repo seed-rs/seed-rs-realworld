@@ -20,18 +20,34 @@ impl Default for Form {
 impl ValidForm {
     pub fn dto(&self) -> ValidFormDTO {
         ValidFormDTO {
-            user: self
+            article: self
                 .0
                 .iter()
-                .map(|(key, field)|(*key, field.value()))
+                .map(|(key, field)|{
+                    match field {
+                        Field::Tags(tags) => {
+                            ("tagList", ValidFormDTOValue::Vector(field.value().split(" ").collect()))
+                        }
+                        _ => {
+                            (*key, ValidFormDTOValue::Text(field.value()))
+                        }
+                    }
+                })
                 .collect()
         }
     }
 }
 
 #[derive(Serialize)]
+#[serde(untagged)]
+pub enum ValidFormDTOValue<'a> {
+    Text(&'a str),
+    Vector(Vec<&'a str>)
+}
+
+#[derive(Serialize)]
 pub struct ValidFormDTO<'a> {
-    user: IndexMap<&'a str, &'a str>
+    article: IndexMap<&'a str, ValidFormDTOValue<'a>>
 }
 
 // ---- Field ----

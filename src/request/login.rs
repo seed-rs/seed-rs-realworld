@@ -34,7 +34,7 @@ impl ServerData {
         viewer::Viewer {
             avatar: avatar::Avatar::new(self.user.image),
             credentials: api::Credentials {
-                username: username::Username::new(self.user.username),
+                username: self.user.username.into(),
                 auth_token: self.user.token
             }
         }

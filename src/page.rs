@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use crate::{viewer, username, route, GMsg};
-use core::borrow::Borrow;
+use std::borrow::{Borrow, Cow};
 
 pub mod article;
 pub mod article_editor;
@@ -13,14 +13,14 @@ pub mod register;
 pub mod settings;
 
 pub struct ViewPage<'a, Ms: 'static> {
-    title_prefix: &'a str,
+    title_prefix: Cow<'a, str>,
     content: El<Ms>
 }
 
 impl<'a, Ms> ViewPage<'a, Ms> {
-    pub fn new(title_prefix: &'a str, content: El<Ms>) -> Self {
+    pub fn new(title_prefix: impl Into<Cow<'a, str>>, content: El<Ms>) -> Self {
         Self {
-            title_prefix,
+            title_prefix: title_prefix.into(),
             content
         }
     }

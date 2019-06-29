@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{viewer, avatar, username, api, form::register as form};
+use crate::{viewer, avatar, username, api, form::settings as form, session};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
@@ -41,9 +41,20 @@ impl ServerData {
     }
 }
 
-pub fn register<Ms: 'static>(valid_form: &form::ValidForm, f: fn(Result<viewer::Viewer, Vec<form::Problem>>) -> Ms) -> impl Future<Item=Ms, Error=Ms>  {
-    fetch::Request::new("https://conduit.productionready.io/api/users".into())
-        .method(fetch::Method::Post)
+pub fn update_settings<Ms: 'static>(
+    session: &session::Session,
+    valid_form: &form::ValidForm,
+    f: fn(Result<viewer::Viewer, Vec<form::Problem>>) -> Ms
+) -> impl Future<Item=Ms, Error=Ms>  {
+    let auth_token =
+        session
+            .viewer()
+            .map(|viewer|viewer.credentials.auth_token.as_str())
+            .unwrap_or_default();
+
+    fetch::Request::new("https://conduit.productionready.io/api/user".into())
+        .method(fetch::Method::Put)
+        .header("authorization", &format!("Token {}", auth_token))
         .timeout(5000)
         .send_json(&valid_form.dto())
         .fetch_string(move |fetch_object| {

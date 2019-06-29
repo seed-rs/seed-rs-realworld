@@ -83,7 +83,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                         model.problems.clear();
                         orders
                             .perform_cmd(
-                                request::settings_save::save_settings(
+                                request::settings_update::update_settings(
                                     &model.session,
                                     &valid_form,
                                     Msg::SaveCompleted
@@ -120,7 +120,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 model.status = Status::LoadingSlowly
             }
         }
-        Msg::NoOp => (),
+        Msg::NoOp => { orders.skip(); },
     }
 }
 

@@ -13,10 +13,10 @@ pub enum Route<'a> {
     Logout,
     Register,
     Settings,
-    Article(article::slug::Slug<'a>),
+    Article(article::slug::Slug),
     Profile(Cow<'a, username::Username<'a>>),
     NewArticle,
-    EditArticle(article::slug::Slug<'a>)
+    EditArticle(article::slug::Slug)
 }
 
 impl<'a> Route<'a> {

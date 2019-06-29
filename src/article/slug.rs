@@ -1,18 +1,18 @@
 use std::borrow::{Borrow, Cow};
 
 #[derive(Clone)]
-pub struct Slug<'a>(Cow<'a, str>);
+pub struct Slug(Cow<'static, str>);
 
-impl<'a> Slug<'a> {
-    pub fn as_str(&'a self) -> &'a str {
+impl Slug {
+    pub fn as_str(&self) -> &str {
         self.0.borrow()
     }
 }
 
-impl<'a, T> From<T> for Slug<'a>
-    where T: Into<Cow<'a, str>>
+impl<T> From<T> for Slug
+    where T: Into<Cow<'static, str>>
 {
-    fn from(value: T) -> Slug<'a> {
+    fn from(value: T) -> Slug {
         Slug(value.into())
     }
 }

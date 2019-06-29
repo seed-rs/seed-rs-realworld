@@ -38,48 +38,58 @@ pub struct ValidFormDTO<'a> {
 
 #[derive(Clone, EnumIter)]
 pub enum Field {
-    Email(String),
-    Password(String)
+    Title(String),
+    Description(String),
+    Body(String),
+    Tags(String),
 }
 
 impl FormField for Field {
     fn value(&self) -> &str {
         match self {
-            Field::Email(value) => value,
-            Field::Password(value) => value,
+            Field::Title(value) => value,
+            Field::Description(value) => value,
+            Field::Body(value) => value,
+            Field::Tags(value) => value,
         }
     }
 
     fn value_mut(&mut self) -> &mut String {
         match self {
-            Field::Email(value) => value,
-            Field::Password(value) => value,
+            Field::Title(value) => value,
+            Field::Description(value) => value,
+            Field::Body(value) => value,
+            Field::Tags(value) => value,
         }
     }
 
     fn key(&self) -> &'static str {
         match self {
-            Field::Email(_) => "email",
-            Field::Password(_) => "password",
+            Field::Title(_) => "title",
+            Field::Description(_) => "description",
+            Field::Body(_) => "body",
+            Field::Tags(_) => "tags",
         }
     }
 
     fn validate(&self) -> Option<form::Problem> {
         match self {
-            Field::Email(value) => {
+            Field::Title(value) => {
                 if value.is_empty() {
-                    Some(form::Problem::new_invalid_field(self.key(), "email can't be blank"))
+                    Some(form::Problem::new_invalid_field(self.key(), "title can't be blank"))
                 } else {
                     None
                 }
             },
-            Field::Password(value) => {
+            Field::Description(value) => None,
+            Field::Body(value) => {
                 if value.is_empty() {
-                    Some(form::Problem::new_invalid_field(self.key(), "password can't be blank"))
+                    Some(form::Problem::new_invalid_field(self.key(), "body can't be blank"))
                 } else {
                     None
                 }
-            }
+            },
+            Field::Tags(value) => None,
         }
     }
 }

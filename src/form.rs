@@ -7,6 +7,7 @@ use std::borrow::Cow;
 pub mod login;
 pub mod register;
 pub mod settings;
+pub mod article_editor;
 
 const MIN_PASSWORD_LENGTH: usize = 8;
 const MAX_INVALID_PASSWORD_LENGTH: usize = MIN_PASSWORD_LENGTH - 1;

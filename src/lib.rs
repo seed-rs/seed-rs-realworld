@@ -16,6 +16,7 @@ mod login_fetch;
 mod register_fetch;
 mod settings_fetch;
 mod settings_fetch_save;
+mod article_editor_fetch;
 mod page;
 mod article;
 mod route;

@@ -73,14 +73,14 @@ impl FormField for Field {
         match self {
             Field::Username(value) => {
                 if value.is_empty() {
-                    Some(form::Problem::new_invalid_field(self.key(), "username can't be blank."))
+                    Some(form::Problem::new_invalid_field(self.key(), "username can't be blank"))
                 } else {
                     None
                 }
             },
             Field::Email(value) => {
                 if value.is_empty() {
-                    Some(form::Problem::new_invalid_field(self.key(), "email can't be blank."))
+                    Some(form::Problem::new_invalid_field(self.key(), "email can't be blank"))
                 } else {
                     None
                 }
@@ -90,7 +90,7 @@ impl FormField for Field {
                     0 => {
                         Some(form::Problem::new_invalid_field(
                             self.key(),
-                            "password can't be blank."
+                            "password can't be blank"
                         ))
                     }
                     1...form::MAX_INVALID_PASSWORD_LENGTH => {

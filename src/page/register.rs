@@ -1,6 +1,6 @@
 use seed::{prelude::*, fetch};
 use super::ViewPage;
-use crate::{session, route, viewer, api, avatar, username, GMsg, form::register as form, register_fetch};
+use crate::{session, route, viewer, api, avatar, username, GMsg, form::register as form, request};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::rc::Rc;
@@ -61,7 +61,9 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             match model.form.trim_fields().validate() {
                 Ok(valid_form) => {
                     model.problems.clear();
-                    orders.perform_cmd(register_fetch::register(&valid_form, Msg::CompletedRegister));
+                    orders.perform_cmd(
+                        request::register::register(&valid_form, Msg::CompletedRegister)
+                    );
                 },
                 Err(problems) => {
                     model.problems = problems;

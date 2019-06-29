@@ -1,6 +1,16 @@
 use seed::{prelude::*, fetch};
 use super::ViewPage;
-use crate::{article, session, route, viewer, api, avatar, username, GMsg, form::article_editor as form, article_editor_fetch};
+use crate::{
+    article,
+    session,
+    route,
+    viewer,
+    api,
+    avatar,
+    username,
+    GMsg,
+    form::article_editor as form,
+};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::rc::Rc;

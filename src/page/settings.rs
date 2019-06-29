@@ -1,6 +1,6 @@
 use seed::{prelude::*, fetch};
 use super::ViewPage;
-use crate::{session, route, viewer, api, avatar, username, GMsg, form::settings as form, settings_fetch, settings_fetch_save, loading};
+use crate::{session, route, viewer, api, avatar, username, GMsg, form::settings as form, request, loading};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::rc::Rc;
@@ -44,7 +44,7 @@ impl From<Model> for session::Session {
 pub fn init<'a>(session: session::Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::NoOp))
-        .perform_cmd(settings_fetch::load_settings(&session, Msg::CompletedFormLoad));
+        .perform_cmd(request::settings_load::load_settings(&session, Msg::CompletedFormLoad));
     Model {
         session,
         ..Model::default()
@@ -83,7 +83,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                         model.problems.clear();
                         orders
                             .perform_cmd(
-                                settings_fetch_save::save_settings(
+                                request::settings_save::save_settings(
                                     &model.session,
                                     &valid_form,
                                     Msg::CompletedSave

@@ -5,3 +5,5 @@ pub mod login;
 pub mod register;
 pub mod settings_load;
 pub mod settings_update;
+pub mod author_load;
+pub mod feed_load;

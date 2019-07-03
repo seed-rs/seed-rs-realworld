@@ -46,18 +46,19 @@ pub fn load_settings<Ms: 'static>(
     session: &session::Session,
     f: fn(Result<form::Form, Vec<form::Problem>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
-    let auth_token =
-        session
-            .viewer()
-            .map(|viewer|viewer.credentials.auth_token.as_str())
-            .unwrap_or_default();
 
-    fetch::Request::new("https://conduit.productionready.io/api/user".into())
-        .header("authorization", &format!("Token {}", auth_token))
-        .timeout(5000)
-        .fetch_string(move |fetch_object| {
-            f(process_fetch_object(fetch_object))
-        })
+    let mut request = fetch::Request::new(
+        "https://conduit.productionready.io/api/user".into()
+    ).timeout(5000);
+
+    if let Some(viewer) = session.viewer() {
+        let auth_token = viewer.credentials.auth_token.as_str();
+        request = request.header("authorization", &format!("Token {}", auth_token));
+    }
+
+    request.fetch_string(move |fetch_object| {
+        f(process_fetch_object(fetch_object))
+    })
 }
 
 fn process_fetch_object(fetch_object: fetch::FetchObject<String>) -> Result<form::Form, Vec<form::Problem>> {

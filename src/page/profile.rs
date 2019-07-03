@@ -1,28 +1,93 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, username, GMsg, route};
+use crate::{session, username, GMsg, route, article, author, api, loading, request, paginated_list};
+use core::borrow::BorrowMut;
 
 // Model
 
-pub struct Model {
-    session: session::Session
+#[derive(Default)]
+pub struct Model<'a> {
+    session: session::Session,
+    time_zone: String,
+    errors: Vec<String>,
+    feed_tab: FeedTab,
+    feed_page: PageNumber,
+    author: Status<'a, author::Author<'a>>,
+    feed: Status<'a, article::feed::Model>
 }
 
-impl Model {
+pub enum FeedTab {
+    MyArticles,
+    FavoritedArticles
+}
+
+impl Default for FeedTab {
+    fn default() -> Self {
+        FeedTab::MyArticles
+    }
+}
+
+enum Status<'a, T> {
+    Loading(username::Username<'a>),
+    LoadingSlowly(username::Username<'a>),
+    Loaded(T),
+    Failed(username::Username<'a>),
+}
+
+impl<'a, T> Default for Status<'a, T> {
+    fn default() -> Self {
+        Status::Loading("".into())
+    }
+}
+
+
+impl<'a> Model<'a> {
     pub fn session(&self) -> &session::Session {
         &self.session
     }
 }
 
-impl<'a> From<Model> for session::Session {
+impl<'a> From<Model<'a>> for session::Session {
     fn from(model: Model) -> session::Session {
         model.session
     }
 }
 
-pub fn init(session: session::Session, username: &username::Username, _: &mut impl Orders<Msg, GMsg>
-) -> Model {
-    Model { session }
+pub struct PageNumber(usize);
+
+impl PageNumber {
+    pub fn to_usize(&self) -> usize {
+        self.0
+    }
+}
+
+impl Default for PageNumber {
+    fn default() -> Self {
+        PageNumber(1)
+    }
+}
+
+pub fn init<'a>(session: session::Session, username: &username::Username<'a>, orders: &mut impl Orders<Msg, GMsg>
+) -> Model<'a> {
+    let static_username: username::Username<'static> = username.as_str().to_owned().into();
+    orders
+        .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::NoOp))
+        // @TODO TimeZoneLoaded?
+        .perform_cmd(request::author_load::load_author(session.clone(), static_username.clone(), Msg::AuthorLoadCompleted))
+        .perform_cmd(request::feed_load::load_feed(
+            session.clone(),
+            static_username.clone(),
+            FeedTab::default(),
+            PageNumber::default(),
+            Msg::FeedLoadCompleted,
+        ));
+
+    Model {
+        session,
+        author: Status::Loading(username.clone()),
+        feed: Status::Loading(username.clone()),
+        ..Model::default()
+    }
 }
 
 // Global msg handler
@@ -40,6 +105,20 @@ pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Ms
 // Update
 
 pub enum Msg {
+    DismissErrorsClicked,
+    FollowClicked(api::Credentials, author::UnfollowedAuthor<'static>),
+    UnfollowClicked(api::Credentials, author::FollowedAuthor<'static>),
+    TabClicked(FeedTab),
+    FeedPageClicked(PageNumber),
+    FollowChangeCompleted(Result<author::Author<'static>, Vec<String>>),
+    AuthorLoadCompleted(Result<author::Author<'static>, (username::Username<'static>, Vec<String>)>),
+    FeedLoadCompleted(
+        Result<paginated_list::PaginatedList<article::Article>,
+        (username::Username<'static>, Vec<String>)>
+    ),
+    TimeZoneLoaded(String),
+    SlowLoadThresholdPassed,
+    NoOp,
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {

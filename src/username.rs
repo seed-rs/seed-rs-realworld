@@ -1,7 +1,7 @@
 use std::borrow::{Borrow, Cow};
 use serde::{Deserialize, Serialize};
 
-#[derive(Eq, PartialEq, Clone, Debug, Deserialize, Serialize)]
+#[derive(Eq, PartialEq, Clone, Debug, Deserialize, Serialize, Default)]
 pub struct Username<'a>(Cow<'a, str>);
 
 impl<'a> Username<'a> {

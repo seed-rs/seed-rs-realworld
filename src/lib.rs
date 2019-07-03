@@ -4,6 +4,9 @@ use seed::prelude::*;
 use std::convert::TryInto;
 use std::collections::VecDeque;
 
+mod paginated_list;
+mod profile;
+mod author;
 mod loading;
 mod form;
 mod asset;
@@ -26,7 +29,7 @@ enum Model<'a> {
     Settings(page::settings::Model),
     Login(page::login::Model),
     Register(page::register::Model),
-    Profile(page::profile::Model, username::Username<'a>),
+    Profile(page::profile::Model<'a>, username::Username<'a>),
     Article(page::article::Model),
     ArticleEditor(page::article_editor::Model, Option<article::slug::Slug>)
 }

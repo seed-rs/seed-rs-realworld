@@ -68,20 +68,22 @@ pub fn update_article<Ms: 'static>(
     slug: &article::slug::Slug,
     f: fn(Result<article::Article, Vec<form::Problem>>) -> Ms
 ) -> impl Future<Item=Ms, Error=Ms>  {
-    let auth_token =
-        session
-            .viewer()
-            .map(|viewer|viewer.credentials.auth_token.as_str())
-            .unwrap_or_default();
 
-    fetch::Request::new(format!("https://conduit.productionready.io/api/articles/{}", slug.as_str()))
+    let mut request = fetch::Request::new(
+        format!("https://conduit.productionready.io/api/articles/{}", slug.as_str())
+    )
         .method(fetch::Method::Put)
-        .header("authorization", &format!("Token {}", auth_token))
         .timeout(5000)
-        .send_json(&valid_form.dto())
-        .fetch_string(move |fetch_object| {
-            f(process_fetch_object(fetch_object))
-        })
+        .send_json(&valid_form.dto());
+
+    if let Some(viewer) = session.viewer() {
+        let auth_token = viewer.credentials.auth_token.as_str();
+        request = request.header("authorization", &format!("Token {}", auth_token));
+    }
+
+    request.fetch_string(move |fetch_object| {
+        f(process_fetch_object(fetch_object))
+    })
 }
 
 fn process_fetch_object(fetch_object: fetch::FetchObject<String>) -> Result<article::Article, Vec<form::Problem>> {

@@ -89,7 +89,7 @@ pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
     ViewPage::new("Register", view_content(model))
 }
 
-fn view_fieldset(field: &form::Field) -> El<Msg> {
+fn view_fieldset(field: &form::Field) -> Node<Msg> {
     match field {
         form::Field::Username(value) => {
             fieldset![
@@ -142,7 +142,7 @@ fn view_fieldset(field: &form::Field) -> El<Msg> {
     }
 }
 
-fn view_form(form: &form::Form) -> El<Msg> {
+fn view_form(form: &form::Form) -> Node<Msg> {
     form![
         raw_ev(Ev::Submit, |event| {
             event.prevent_default();
@@ -156,7 +156,7 @@ fn view_form(form: &form::Form) -> El<Msg> {
     ]
 }
 
-fn view_content<'a>(model: &Model) -> El<Msg> {
+fn view_content<'a>(model: &Model) -> Node<Msg> {
     div![
         class!["auth-page"],
         div![

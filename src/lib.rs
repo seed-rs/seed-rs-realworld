@@ -233,7 +233,7 @@ fn change_model_by_route<'a>(
 
 // View
 
-fn view<'a>(model: &Model) -> impl ElContainer<Msg<'static>> {
+fn view<'a>(model: &Model) -> impl View<Msg<'static>> {
     match model {
         Model::Redirect(session) => {
             page::view(
@@ -315,7 +315,7 @@ fn init(url: Url, orders: &mut impl Orders<Msg<'static>, GMsg>) -> Model<'static
     Model::Redirect(api::load_viewer().into())
 }
 
-#[wasm_bindgen]
+#[wasm_bindgen(start)]
 pub fn render() {
     seed::App::build(init, update, view)
         .routes(|url| {

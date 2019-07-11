@@ -8,7 +8,7 @@ pub fn view<'a, Ms>() -> ViewPage<'a, Ms> {
     ViewPage::new("Page Not Found",view_content())
 }
 
-fn view_content<Ms>() -> El<Ms> {
+fn view_content<Ms>() -> Node<Ms> {
     main![
         id!("content"),
         class!["container"],

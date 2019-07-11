@@ -130,7 +130,7 @@ pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
     ViewPage::new("@TODO", view_content())
 }
 
-fn view_content() -> El<Msg> {
+fn view_content() -> Node<Msg> {
     div![
         class!["profile-page"],
 

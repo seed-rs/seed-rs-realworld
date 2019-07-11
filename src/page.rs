@@ -14,11 +14,11 @@ pub mod settings;
 
 pub struct ViewPage<'a, Ms: 'static> {
     title_prefix: Cow<'a, str>,
-    content: El<Ms>
+    content: Node<Ms>
 }
 
 impl<'a, Ms> ViewPage<'a, Ms> {
-    pub fn new(title_prefix: impl Into<Cow<'a, str>>, content: El<Ms>) -> Self {
+    pub fn new(title_prefix: impl Into<Cow<'a, str>>, content: Node<Ms>) -> Self {
         Self {
             title_prefix: title_prefix.into(),
             content
@@ -27,12 +27,12 @@ impl<'a, Ms> ViewPage<'a, Ms> {
     pub fn title(&self) -> String {
         format!("{} - Conduit", self.title_prefix)
     }
-    pub fn into_content(self) -> El<Ms> {
+    pub fn into_content(self) -> Node<Ms> {
         self.content
     }
 }
 
-pub fn view<'a, Ms>(page: Page<'a>, view_page: ViewPage<'a, Ms>, viewer: Option<&viewer::Viewer>) -> Vec<El<Ms>> {
+pub fn view<'a, Ms>(page: Page<'a>, view_page: ViewPage<'a, Ms>, viewer: Option<&viewer::Viewer>) -> Vec<Node<Ms>> {
     seed::document().set_title(&view_page.title());
 
     vec![
@@ -67,7 +67,7 @@ impl<'a> Page<'a> {
         }
     }
 
-    fn view_navbar_link<Ms>(&self, route: &route::Route, link_content: impl UpdateEl<El<Ms>>) -> El<Ms> {
+    fn view_navbar_link<Ms>(&self, route: &route::Route, link_content: impl UpdateEl<El<Ms>>) -> Node<Ms> {
         li![
             class!["nav-item"],
             a![
@@ -81,7 +81,7 @@ impl<'a> Page<'a> {
         ]
     }
 
-    fn view_menu<Ms>(&self, viewer: Option<&viewer::Viewer>) -> Vec<El<Ms>> {
+    fn view_menu<Ms>(&self, viewer: Option<&viewer::Viewer>) -> Vec<Node<Ms>> {
         match viewer {
             None => {
                 vec![
@@ -116,7 +116,7 @@ impl<'a> Page<'a> {
                                 class!["user-pic"],
                                 attrs!{At::Src => viewer.avatar().src()}
                             ],
-                            plain!(viewer.username().as_str())
+                            plain!(viewer.username().to_string())
                         ]
                     ),
                     self.view_navbar_link(&route::Route::Logout, "Sign out"),
@@ -125,7 +125,7 @@ impl<'a> Page<'a> {
         }
     }
 
-    fn view_header<Ms>(&self, viewer: Option<&viewer::Viewer>) -> El<Ms> {
+    fn view_header<Ms>(&self, viewer: Option<&viewer::Viewer>) -> Node<Ms> {
         nav![
             class!["navbar", "navbar-light"],
             div![
@@ -144,7 +144,7 @@ impl<'a> Page<'a> {
         ]
     }
 
-    fn view_footer<Ms>(&self) -> El<Ms> {
+    fn view_footer<Ms>(&self) -> Node<Ms> {
         footer![
             div![
                 class!["container"],

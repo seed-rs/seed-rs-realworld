@@ -49,7 +49,7 @@ pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
     ViewPage::new("Conduit", view_content())
 }
 
-fn view_content() -> El<Msg> {
+fn view_content() -> Node<Msg> {
     div![
         class!["home-page"],
 

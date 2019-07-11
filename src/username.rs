@@ -8,6 +8,9 @@ impl<'a> Username<'a> {
     pub fn as_str(&'a self) -> &'a str {
         self.0.borrow()
     }
+    pub fn to_string(&'a self) -> String {
+        self.0.to_string()
+    }
 }
 
 impl<'a, T> From<T> for Username<'a>

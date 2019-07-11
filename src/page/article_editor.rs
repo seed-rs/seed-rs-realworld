@@ -16,7 +16,6 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::{rc::Rc, borrow::Cow, mem};
-use seed::dom_types::Optimize::Static;
 
 // Model
 
@@ -226,7 +225,7 @@ pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
     ViewPage::new(title, view_content(model))
 }
 
-fn view_fieldset(field: &form::Field) -> El<Msg> {
+fn view_fieldset(field: &form::Field) -> Node<Msg> {
     match field {
         form::Field::Title(value) => {
             fieldset![
@@ -298,7 +297,7 @@ fn view_fieldset(field: &form::Field) -> El<Msg> {
     }
 }
 
-fn view_form(form: &form::Form, save_button: El<Msg>) -> El<Msg> {
+fn view_form(form: &form::Form, save_button: Node<Msg>) -> Node<Msg> {
     form![
         raw_ev(Ev::Submit, |event| {
             event.prevent_default();
@@ -314,7 +313,7 @@ enum SaveButton {
     UpdateArticle,
 }
 
-fn view_save_button(type_: SaveButton, disabled: bool) -> El<Msg> {
+fn view_save_button(type_: SaveButton, disabled: bool) -> Node<Msg> {
     button![
         class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
         simple_ev(Ev::Click, Msg::FormSubmitted),
@@ -326,7 +325,7 @@ fn view_save_button(type_: SaveButton, disabled: bool) -> El<Msg> {
     ]
 }
 
-fn view_content(model: &Model) -> El<Msg> {
+fn view_content(model: &Model) -> Node<Msg> {
     div![
         class!["auth-page"],
         div![
@@ -353,7 +352,7 @@ fn view_content(model: &Model) -> El<Msg> {
     ]
 }
 
-fn view_authenticated(viewer: &viewer::Viewer, model: &Model) -> Vec<El<Msg>> {
+fn view_authenticated(viewer: &viewer::Viewer, model: &Model) -> Vec<Node<Msg>> {
     match &model.status {
         Status::Loading(_) | Status::Placeholder => {
             vec![]
@@ -388,7 +387,7 @@ fn view_authenticated(viewer: &viewer::Viewer, model: &Model) -> Vec<El<Msg>> {
     }
 }
 
-fn view_problems(problems: &[form::Problem]) -> El<Msg> {
+fn view_problems(problems: &[form::Problem]) -> Node<Msg> {
     ul![
         class!["error-messages"],
         problems.iter().map(|problem| li![

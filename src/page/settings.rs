@@ -130,7 +130,7 @@ pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
     ViewPage::new("Settings", view_content(model))
 }
 
-fn view_fieldset(field: &form::Field) -> El<Msg> {
+fn view_fieldset(field: &form::Field) -> Node<Msg> {
     match field {
         form::Field::Avatar(value) => {
             fieldset![
@@ -215,7 +215,7 @@ fn view_fieldset(field: &form::Field) -> El<Msg> {
     }
 }
 
-fn view_form<'a>(model: &Model, credentials: &api::Credentials) -> El<Msg> {
+fn view_form<'a>(model: &Model, credentials: &api::Credentials) -> Node<Msg> {
     match &model.status {
         Status::Loading => empty![],
         Status::LoadingSlowly => loading::icon(),
@@ -236,7 +236,7 @@ fn view_form<'a>(model: &Model, credentials: &api::Credentials) -> El<Msg> {
     }
 }
 
-fn view_content<'a>(model: &Model) -> El<Msg> {
+fn view_content<'a>(model: &Model) -> Node<Msg> {
     div![
         class!["auth-page"],
         div![

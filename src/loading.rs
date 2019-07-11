@@ -11,7 +11,7 @@ pub fn slow_threshold<Ms>(msg: Ms, error_msg: Ms) -> impl Future<Item = Ms, Erro
         .map_err(|_| error_msg)
 }
 
-pub fn icon<Ms>() -> El<Ms> {
+pub fn icon<Ms>() -> Node<Ms> {
     img![
         attrs!{
             At::Src => asset::loading().url(),
@@ -22,7 +22,7 @@ pub fn icon<Ms>() -> El<Ms> {
     ]
 }
 
-pub fn error<Ms>(subject: &str) -> El<Ms> {
+pub fn error<Ms>(subject: &str) -> Node<Ms> {
     div![
         format!("Error loading {}.", subject)
     ]

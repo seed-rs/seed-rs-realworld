@@ -7,3 +7,5 @@ pub mod settings_load;
 pub mod settings_update;
 pub mod author_load;
 pub mod feed_load;
+pub mod follow;
+pub mod unfollow;

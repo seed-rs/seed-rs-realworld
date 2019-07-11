@@ -1,7 +1,11 @@
 use seed::prelude::*;
 use super::ViewPage;
 use crate::{session, username, GMsg, route, article, author, api, loading, request, paginated_list};
-use core::borrow::BorrowMut;
+use std::borrow::{Cow, BorrowMut};
+use futures::prelude::*;
+
+static MY_PROFILE_TITLE: &'static str = "My Profile";
+static DEFAULT_PROFILE: &'static str = "Profile";
 
 // Model
 
@@ -16,6 +20,18 @@ pub struct Model<'a> {
     feed: Status<'a, article::feed::Model>
 }
 
+impl<'a> Status<'a, author::Author<'a>> {
+    pub fn username(&'a self) -> &username::Username<'a> {
+        match self {
+            Status::Loading(username) => username,
+            Status::LoadingSlowly(username) => username,
+            Status::Loaded(author) => author.username(),
+            Status::Failed(username) => username,
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
 pub enum FeedTab {
     MyArticles,
     FavoritedArticles
@@ -40,6 +56,11 @@ impl<'a, T> Default for Status<'a, T> {
     }
 }
 
+impl<'a, T> Status<'a, T> {
+    pub fn take(&mut self) -> Status<'a, T> {
+        std::mem::replace(self, Status::default())
+    }
+}
 
 impl<'a> Model<'a> {
     pub fn session(&self) -> &session::Session {
@@ -53,6 +74,7 @@ impl<'a> From<Model<'a>> for session::Session {
     }
 }
 
+#[derive(Clone)]
 pub struct PageNumber(usize);
 
 impl PageNumber {
@@ -74,12 +96,11 @@ pub fn init<'a>(session: session::Session, username: &username::Username<'a>, or
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::NoOp))
         // @TODO TimeZoneLoaded?
         .perform_cmd(request::author_load::load_author(session.clone(), static_username.clone(), Msg::AuthorLoadCompleted))
-        .perform_cmd(request::feed_load::load_feed(
+        .perform_cmd(fetch_feed(
             session.clone(),
             static_username.clone(),
             FeedTab::default(),
             PageNumber::default(),
-            Msg::FeedLoadCompleted,
         ));
 
     Model {
@@ -88,6 +109,21 @@ pub fn init<'a>(session: session::Session, username: &username::Username<'a>, or
         feed: Status::Loading(username.clone()),
         ..Model::default()
     }
+}
+
+fn fetch_feed(
+    session: session::Session,
+    username: username::Username<'static>,
+    feed_tab: FeedTab,
+    page_number: PageNumber,
+) -> impl Future<Item=Msg, Error=Msg> {
+    request::feed_load::load_feed(
+        session,
+        username,
+        feed_tab,
+        page_number,
+        Msg::FeedLoadCompleted,
+    )
 }
 
 // Global msg handler
@@ -104,6 +140,7 @@ pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Ms
 
 // Update
 
+#[derive(Clone)]
 pub enum Msg {
     DismissErrorsClicked,
     FollowClicked(api::Credentials, author::UnfollowedAuthor<'static>),
@@ -117,175 +154,265 @@ pub enum Msg {
         (username::Username<'static>, Vec<String>)>
     ),
     TimeZoneLoaded(String),
+    FeedMsg(article::feed::Msg),
     SlowLoadThresholdPassed,
     NoOp,
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
+    match msg {
+        Msg::DismissErrorsClicked => {
+            model.errors.clear();
+        },
+        Msg::FollowClicked(credentials, unfollowed_author) => {
+            let static_username: username::Username<'static> =
+                model.author.username().as_str().to_owned().into();
+            orders.perform_cmd(
+                request::follow::follow(
+                    model.session.clone(),
+                    static_username,
+                    Msg::FollowChangeCompleted
+                )
+            );
+        },
+        Msg::UnfollowClicked(credentials, unfollowed_author) => {
+            let static_username: username::Username<'static> =
+                model.author.username().as_str().to_owned().into();
+            orders.perform_cmd(
+                request::unfollow::unfollow(
+                    model.session.clone(),
+                    static_username,
+                    Msg::FollowChangeCompleted
+                )
+            );
+        },
+        Msg::TabClicked(feed_tab) => {
+            let static_username: username::Username<'static> =
+                model.author.username().as_str().to_owned().into();
+
+            model.feed_tab = feed_tab;
+            orders
+                .perform_cmd(fetch_feed(
+                    model.session.clone(),
+                    static_username,
+                    feed_tab,
+                    PageNumber::default(),
+                ));
+        },
+        Msg::FeedPageClicked(page_number) => {
+            let static_username: username::Username<'static> =
+                model.author.username().as_str().to_owned().into();
+
+            orders
+                .perform_cmd(fetch_feed(
+                    model.session.clone(),
+                    static_username,
+                    model.feed_tab,
+                    page_number,
+                ));
+        },
+        Msg::FollowChangeCompleted(Ok(author)) => {
+            model.author = Status::Loaded(author)
+        },
+        Msg::FollowChangeCompleted(Err(errors)) => {
+            // @TODO Log.error??
+        },
+        Msg::AuthorLoadCompleted(Ok(author)) => {
+            model.author = Status::Loaded(author)
+        },
+        Msg::AuthorLoadCompleted(Err((username, errors))) => {
+            model.author = Status::Failed(username);
+            // @TODO Log.error??
+        },
+        Msg::FeedLoadCompleted(Ok(paginated_list)) => {
+            model.feed = Status::Loaded(
+                article::feed::init(model.session.clone(),paginated_list)
+            );
+        },
+        Msg::FeedLoadCompleted(Err((username, errors))) => {
+            model.feed = Status::Failed(username);
+            // @TODO Log.error??
+        },
+        Msg::TimeZoneLoaded(time_zone) => {
+            // @TODO remove?
+            model.time_zone = time_zone;
+        },
+        Msg::FeedMsg(feed_msg) => {
+            match &mut model.feed {
+                Status::Loaded(feed_model) => {
+                    let credentials =
+                        model.session.viewer().map(|viever|viever.credentials.clone());
+                    article::feed::update(
+                        credentials, feed_msg, feed_model, &mut orders.proxy(Msg::FeedMsg)
+                    )
+                },
+                Status::Loading(_) => {
+                    // @TODO Log.error??
+                },
+                Status::LoadingSlowly(_) => {
+                    // @TODO Log.error??
+                },
+                Status::Failed(_) => {
+                    // @TODO Log.error??
+                },
+            }
+        }
+        Msg::SlowLoadThresholdPassed => {
+            match model.feed.take() {
+                Status::Loading(username) => {
+                    model.feed = Status::LoadingSlowly(username)
+                },
+                feed => model.feed = feed
+            }
+        },
+        Msg::NoOp => { orders.skip(); },
+    }
 }
 
 // View
 
-pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
-    ViewPage::new("@TODO", view_content())
+fn title_for_other(username: &username::Username) -> String {
+    format!("Profile - {}", username.as_str())
 }
 
-fn view_content() -> Node<Msg> {
-    div![
-        class!["profile-page"],
+fn title_for_me(credentials: Option<&api::Credentials>, username: &username::Username) -> &'static str {
+    if let Some(credentials) = credentials {
+        if username == &credentials.username {
+            return MY_PROFILE_TITLE
+        }
+    }
+    DEFAULT_PROFILE
+}
 
-        div![
-            class!["user-info"],
+fn title<'a>(model: &Model) -> Cow<'a, str> {
+    match &model.author {
+        Status::Loaded(author::Author::IsViewer(..)) => {
+            MY_PROFILE_TITLE.into()
+        },
+        Status::Loaded(author ) => {
+            title_for_other(author.username()).into()
+        },
+        Status::Loading(username) => {
+            title_for_me(model.session().viewer().map(|viewer|&viewer.credentials), username).into()
+        },
+        Status::LoadingSlowly(username) => {
+            title_for_me(model.session().viewer().map(|viewer|&viewer.credentials), username).into()
+        },
+        Status::Failed(username) => {
+            title_for_me(model.session().viewer().map(|viewer|&viewer.credentials), username).into()
+        },
+    }
+}
+
+pub fn view<'a>(model: &'a Model) -> ViewPage<'a, Msg> {
+    ViewPage::new(title(model), view_content(model))
+}
+
+fn view_tabs(feed_tab: FeedTab) -> Node<Msg> {
+    let my_articles = article::feed::Tab::new("My Articles", Msg::TabClicked(FeedTab::MyArticles));
+    let favorited_articles = article::feed::Tab::new("Favorited Articles", Msg::TabClicked(FeedTab::FavoritedArticles));
+
+    match feed_tab {
+        FeedTab::MyArticles => {
+            article::feed::view_tabs(vec![my_articles.activate(), favorited_articles])
+        },
+        FeedTab::FavoritedArticles => {
+            article::feed::view_tabs(vec![my_articles, favorited_articles.activate()])
+        }
+    }
+}
+
+fn view_feed(model: &Model) -> Node<Msg> {
+    match &model.feed {
+        Status::Loading(_) => empty![],
+        Status::LoadingSlowly(_) => loading::icon(),
+        Status::Failed(_) => loading::error("feed"),
+        Status::Loaded(feed_model) => {
             div![
                 class!["container"],
                 div![
                     class!["row"],
-
                     div![
                         class!["col-xs-12", "col-md-10", "offset-md-1"],
-                        img![
-                            class!["user-img"],
-                            attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
+                        div![
+                            class!["articles-toggle"],
+                            view_tabs(model.feed_tab),
+                            article::feed::view_articles(feed_model).els().map_message(Msg::FeedMsg),
+                            article::feed::view_pagination()
                         ],
-                        p![
-                            "Cofounder @GoThinkster, lived in Aol's HQ for a few months, kinda looks like Peeta from the Hunger Games"
-                        ],
-                        button![
-                            class!["btn", "btn-sm", "btn-outline-secondary", "action-btn"],
-                            i![
-                                class!["ion-plus-round"]
-                            ],
-                            raw!("&nbsp;"),
-                            "Follow Eric Simons"
-                        ]
                     ]
-
                 ]
             ]
-        ],
 
-        div![
-            class!["container"],
+        },
+    }
+}
+
+fn view_follow_button(author: &author::Author, model: &Model) -> Node<Msg> {
+    let credentials = model.session().viewer().map(|viewer| &viewer.credentials);
+    match credentials {
+        None => empty![],
+        Some(credentials) => {
+            match author {
+                author::Author::IsViewer(..) => {
+                    empty![]
+                },
+                author::Author::Following(followed_author) => {
+                    author::view_unfollow_button(
+                        Msg::UnfollowClicked(credentials.clone(), followed_author.to_static()),
+                        author.username()
+                    )
+                }
+                author::Author::NotFollowing(unfollowed_author) => {
+                    author::view_follow_button(
+                        Msg::FollowClicked(credentials.clone(), unfollowed_author.to_static()),
+                        author.username()
+                    )
+                }
+            }
+        }
+    }
+}
+
+fn view_content(model: &Model) -> Node<Msg> {
+    match &model.author {
+        Status::Loading(_) => empty![],
+        Status::LoadingSlowly(_) => loading::icon(),
+        Status::Failed(_) => loading::error("profile"),
+        Status::Loaded(author) => {
             div![
-                class!["row"],
+                class!["profile-page"],
+
+                // @TODO show errors!
+
                 div![
-                    class!["col-xs-12", "col-md-10", "offset-md-1"],
+                    class!["user-info"],
                     div![
-                        class!["articles-toggle"],
-                        ul![
-                            class!["nav", "nav-pills", "outline-active"],
-                            li![
-                                class!["nav-item"],
-                                a![
-                                    class!["nav-link", "active"],
-                                    attrs!{At::Href => ""},
-                                    "My Articles"
-                                ]
-                            ],
-                            li![
-                                class!["nav-item"],
-                                a![
-                                    class!["nav-link"],
-                                    attrs!{At::Href => ""},
-                                    "Favorited Articles"
-                                ]
-                            ]
-                        ]
-                    ],
-
-                    div![
-                        class!["article-preview"],
+                        class!["container"],
                         div![
-                            class!["article-meta"],
-                            a![
-                                attrs!{At::Href => "/profile"},
-                                img![
-                                    attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
-                                ]
-                            ],
-                            div![
-                                class!["info"],
-                                a![
-                                    class!["author"],
-                                    attrs!{At::Href => ""},
-                                    "Eric Simons"
-                                ],
-                                span![
-                                    class!["date"],
-                                    "January 20th"
-                                ]
-                            ],
-                            button![
-                                class!["btn","btn-outline-primary", "btn-sm", "pull-xs-right"],
-                                i![
-                                    class!["ion-heart"],
-                                    " 29"
-                                ]
-                            ]
-                        ],
-                        a![
-                            class!["preview-link"],
-                            attrs!{At::Href => ""},
-                            h1![
-                                "How to build webapps that scale"
-                            ],
-                            p![
-                                "This is the description for the post."
-                            ],
-                            span![
-                                "Read more..."
-                            ]
-                        ]
-                    ],
+                            class!["row"],
 
-                    div![
-                        class!["article-preview"],
-                        div![
-                            class!["article-meta"],
-                            a![
-                                attrs!{At::Href => "/profile"},
-                                img![
-                                    attrs!{At::Src => "http://i.imgur.com/N4VcUeJ.jpg"}
-                                ]
-                            ],
                             div![
-                                class!["info"],
-                                a![
-                                    class!["author"],
-                                    attrs!{At::Href => ""},
-                                    "Albert Pai"
+                                class!["col-xs-12", "col-md-10", "offset-md-1"],
+                                img![
+                                    class!["user-img"],
+                                    attrs!{At::Src => author.profile().avatar.src() }
                                 ],
-                                span![
-                                    class!["date"],
-                                    "January 20th"
-                                ]
-                            ],
-                            button![
-                                class!["btn","btn-outline-primary", "btn-sm", "pull-xs-right"],
-                                i![
-                                    class!["ion-heart"],
-                                    " 32"
-                                ]
+                                h4![
+                                    author.username().to_string()
+                                ],
+                                p![
+                                    author.profile().bio.as_ref().unwrap_or(&String::new())
+                                ],
+                                view_follow_button(author, model)
                             ]
-                        ],
-                        a![
-                            class!["preview-link"],
-                            attrs!{At::Href => ""},
-                            h1![
-                                "The song you won't ever stop singing. No matter how hard you try."
-                            ],
-                            p![
-                                "This is the description for the post."
-                            ],
-                            span![
-                                "Read more..."
-                            ]
+
                         ]
                     ]
+                ],
 
-                ]
+                view_feed(model)
             ]
-        ]
-
-    ]
+        },
+    }
 }

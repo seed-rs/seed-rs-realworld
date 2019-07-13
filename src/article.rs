@@ -1,17 +1,9 @@
-use crate::{form::article_editor as form, username};
+use crate::{form::article_editor as form, username, author};
 
 pub mod feed;
 pub mod slug;
 
-#[derive(Clone, Default)]
-pub struct Author<'a> {
-    pub username: username::Username<'a>,
-    pub bio: String,
-    pub image: String,
-    pub following: bool,
-}
-
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct Article {
     pub title: String,
     pub slug: slug::Slug,
@@ -20,7 +12,7 @@ pub struct Article {
     pub updated_at: String,
     pub tag_list: Vec<String>,
     pub description: String,
-    pub author: Author<'static>,
+    pub author: author::Author<'static>,
     pub favorited: bool,
     pub favorites_count: usize,
 }

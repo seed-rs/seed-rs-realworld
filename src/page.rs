@@ -110,7 +110,7 @@ impl<'a> Page<'a> {
                         ]
                     ),
                     self.view_navbar_link(
-                        &route::Route::Profile(std::borrow::Cow::Borrowed(viewer.username())),
+                        &route::Route::Profile(Cow::Borrowed(viewer.username())),
                         vec![
                             img![
                                 class!["user-pic"],

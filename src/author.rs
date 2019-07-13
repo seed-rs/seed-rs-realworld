@@ -1,5 +1,6 @@
-use crate::{username, profile, api};
+use crate::{username, profile, api, route};
 use seed::prelude::*;
+use std::borrow::Cow;
 
 #[derive(Clone)]
 pub enum Author<'a> {
@@ -42,6 +43,14 @@ impl<'a> UnfollowedAuthor<'a> {
     pub fn to_static(&self) -> UnfollowedAuthor<'static> {
         UnfollowedAuthor(self.0.to_string().into(), self.1.clone())
     }
+}
+
+pub fn view<Ms>(username: &username::Username) -> Node<Ms> {
+    a![
+        class!["author"],
+        attrs!{At::Href => route::Route::Profile(Cow::Borrowed(username)).to_string()},
+        username.to_string()
+    ]
 }
 
 pub fn view_follow_button<Ms: Clone>(msg: Ms, username: &username::Username) -> Node<Ms> {

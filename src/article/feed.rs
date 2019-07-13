@@ -1,5 +1,7 @@
-use crate::{session, paginated_list, article, api, GMsg};
+use crate::{session, paginated_list, article, api, GMsg, route, author, request};
 use seed::prelude::*;
+use std::borrow::Cow;
+use crate::api::Credentials;
 
 // Model
 
@@ -70,48 +72,76 @@ pub fn view_pagination<Ms: Clone>() -> Node<Ms> {
     plain!("I'm pagination")
 }
 
+fn view_favorite_button(credentials: Option<&Credentials>, article: &article::Article) -> Node<Msg> {
+    match credentials {
+        None => empty![],
+        Some(credentials) => {
+            if article.favorited {
+                button![
+                    class!["btn","btn-primary", "btn-sm", "pull-xs-right"],
+                    simple_ev(Ev::Click, Msg::FavoriteClicked(credentials.clone(), article.slug.clone())),
+                    i![
+                        class!["ion-heart"],
+                        format!(" {}", article.favorites_count),
+                    ]
+                ]
+            } else {
+                button![
+                    class!["btn","btn-outline-primary", "btn-sm", "pull-xs-right"],
+                    simple_ev(Ev::Click, Msg::UnfavoriteClicked(credentials.clone(), article.slug.clone())),
+                    i![
+                        class!["ion-heart"],
+                        format!(" {}", article.favorites_count),
+                    ]
+                ]
+            }
+        }
+    }
+}
+
+fn view_tag(tag: String) -> Node<Msg> {
+    li![
+        class!["tag-default", "tag-pill", "tag-outline"],
+        tag
+    ]
+}
+
 fn view_article_preview(credentials: Option<&api::Credentials>, article: &article::Article) -> Node<Msg> {
     div![
         class!["article-preview"],
         div![
             class!["article-meta"],
             a![
-                attrs!{At::Href => "/profile"},
+                attrs!{At::Href => route::Route::Profile(Cow::Borrowed(article.author.username())).to_string()},
                 img![
-                    attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
+                    attrs!{At::Src => article.author.profile().avatar.src()}
                 ]
             ],
             div![
                 class!["info"],
-                a![
-                    class!["author"],
-                    attrs!{At::Href => ""},
-                    "Eric Simons"
-                ],
+                author::view(article.author.username()),
                 span![
                     class!["date"],
                     "January 20th"
                 ]
             ],
-            button![
-                class!["btn","btn-outline-primary", "btn-sm", "pull-xs-right"],
-                i![
-                    class!["ion-heart"],
-                    " 29"
-                ]
-            ]
+            view_favorite_button(credentials, article)
         ],
         a![
             class!["preview-link"],
-            attrs!{At::Href => ""},
+            attrs!{At::Href => route::Route::Article(article.slug.clone()).to_string()},
             h1![
-                "How to build webapps that scale"
+                article.title
             ],
             p![
-                "This is the description for the post."
+                article.description
             ],
             span![
                 "Read more..."
+            ],
+            ul![
+                class!["tag-list"],
+                article.tag_list.clone().into_iter().map(view_tag)
             ]
         ]
     ]
@@ -134,10 +164,38 @@ pub enum Msg {
 }
 
 pub fn update(
-    credentials: Option<api::Credentials>,
     msg: Msg,
     model: &mut Model,
     orders: &mut impl Orders<Msg, GMsg>
 ){
-    unimplemented!();
+    match msg {
+        Msg::DismissErrorsClicked => {
+            model.errors.clear();
+        },
+        Msg::FavoriteClicked(credentials, slug) => {
+            orders.perform_cmd(request::unfavorite::unfavorite(
+                &model.session,
+                &slug,
+                Msg::FavoriteCompleted
+            ));
+        },
+        Msg::UnfavoriteClicked(credentials, slug) => {
+            orders.perform_cmd(request::favorite::favorite(
+                &model.session,
+                &slug,
+                Msg::FavoriteCompleted
+            ));
+        },
+        Msg::FavoriteCompleted(Ok(article)) => {
+            model
+                .articles
+                .values
+                .iter_mut()
+                .find(|old_article| old_article.slug == article.slug)
+                .map(|old_article| *old_article = article);
+        },
+        Msg::FavoriteCompleted(Err(errors)) => {
+            // @TODO resolve errors
+        },
+    }
 }

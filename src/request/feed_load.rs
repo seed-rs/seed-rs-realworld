@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{viewer, avatar, username, api, session, article, page, paginated_list};
+use crate::{viewer, avatar, username, api, session, article, page, paginated_list, author, profile};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
@@ -43,8 +43,34 @@ struct ServerDataFieldAuthor {
     following: bool,
 }
 
+impl ServerDataFieldAuthor {
+    fn into_author(self, session: session::Session) -> author::Author<'static> {
+        let username = self.username.into();
+        let profile = profile::Profile {
+            bio: Some(self.bio),
+            avatar: avatar::Avatar::new(Some(self.image)),
+        };
+
+        if let Some(viewer) = session.viewer() {
+            if &username == viewer.username() {
+                return author::Author::IsViewer(viewer.credentials.clone(), profile)
+            }
+        }
+
+        if self.following {
+            author::Author::Following(
+                author::FollowedAuthor(username, profile)
+            )
+        } else {
+            author::Author::NotFollowing(
+                author::UnfollowedAuthor(username, profile)
+            )
+        }
+    }
+}
+
 impl ServerData {
-    fn into_paginated_list(self) -> paginated_list::PaginatedList<article::Article> {
+    fn into_paginated_list(self, session: session::Session) -> paginated_list::PaginatedList<article::Article> {
         paginated_list::PaginatedList {
             values: self.articles.into_iter().map(|item| {
                 article::Article {
@@ -55,12 +81,7 @@ impl ServerData {
                     updated_at: item.updated_at,
                     tag_list: item.tag_list,
                     description: item.description,
-                    author: article::Author {
-                        username: item.author.username.into(),
-                        bio: item.author.bio,
-                        image: item.author.image,
-                        following: item.author.following,
-                    },
+                    author: item.author.into_author(session.clone()),
                     favorited: item.favorited,
                     favorites_count: item.favorites_count,
                 }
@@ -94,7 +115,7 @@ pub fn load_feed<Ms: 'static>(
     page_number: page::profile::PageNumber,
     f: fn(Result<paginated_list::PaginatedList<article::Article>, (username::Username<'static>, Vec<String>)>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
-
+    let session = session.clone();
     let username = username.clone();
 
     let mut request = fetch::Request::new(
@@ -107,11 +128,12 @@ pub fn load_feed<Ms: 'static>(
     }
 
     request.fetch_string(move |fetch_object| {
-        f(process_fetch_object(username, fetch_object))
+        f(process_fetch_object(session, username, fetch_object))
     })
 }
 
 fn process_fetch_object(
+    session: session::Session,
     username: username::Username<'static>,
     fetch_object: fetch::FetchObject<String>
 ) -> Result<paginated_list::PaginatedList<article::Article>, (username::Username<'static>, Vec<String>)> {
@@ -131,7 +153,7 @@ fn process_fetch_object(
                                     })
                             })
                             .map(|server_data| {
-                                server_data.into_paginated_list()
+                                server_data.into_paginated_list(session)
                             });
 
                     match paginated_list {

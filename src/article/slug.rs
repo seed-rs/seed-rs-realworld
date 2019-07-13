@@ -1,6 +1,6 @@
 use std::borrow::{Borrow, Cow};
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, PartialEq, Eq)]
 pub struct Slug(Cow<'static, str>);
 
 impl Slug {

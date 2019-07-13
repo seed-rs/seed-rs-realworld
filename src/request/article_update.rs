@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{avatar, username, api, form::article_editor as form, session, article};
+use crate::{avatar, username, api, form::article_editor as form, session, article, author, profile};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
@@ -40,8 +40,34 @@ struct ServerDataFieldAuthor {
     following: bool,
 }
 
+impl ServerDataFieldAuthor {
+    fn into_author(self, session: session::Session) -> author::Author<'static> {
+        let username = self.username.into();
+        let profile = profile::Profile {
+            bio: Some(self.bio),
+            avatar: avatar::Avatar::new(Some(self.image)),
+        };
+
+        if let Some(viewer) = session.viewer() {
+            if &username == viewer.username() {
+                return author::Author::IsViewer(viewer.credentials.clone(), profile)
+            }
+        }
+
+        if self.following {
+            author::Author::Following(
+                author::FollowedAuthor(username, profile)
+            )
+        } else {
+            author::Author::NotFollowing(
+                author::UnfollowedAuthor(username, profile)
+            )
+        }
+    }
+}
+
 impl ServerData {
-    fn into_article(self) -> article::Article {
+    fn into_article(self, session: session::Session) -> article::Article {
         article::Article {
             title: self.article.title,
             slug: self.article.slug.into(),
@@ -50,12 +76,7 @@ impl ServerData {
             updated_at: self.article.updated_at,
             tag_list: self.article.tag_list,
             description: self.article.description,
-            author: article::Author {
-                username: self.article.author.username.into(),
-                bio: self.article.author.bio,
-                image: self.article.author.image,
-                following: self.article.author.following,
-            },
+            author: self.article.author.into_author(session),
             favorited: self.article.favorited,
             favorites_count: self.article.favorites_count,
         }
@@ -68,6 +89,7 @@ pub fn update_article<Ms: 'static>(
     slug: &article::slug::Slug,
     f: fn(Result<article::Article, Vec<form::Problem>>) -> Ms
 ) -> impl Future<Item=Ms, Error=Ms>  {
+    let session = session.clone();
 
     let mut request = fetch::Request::new(
         format!("https://conduit.productionready.io/api/articles/{}", slug.as_str())
@@ -82,11 +104,14 @@ pub fn update_article<Ms: 'static>(
     }
 
     request.fetch_string(move |fetch_object| {
-        f(process_fetch_object(fetch_object))
+        f(process_fetch_object(session, fetch_object))
     })
 }
 
-fn process_fetch_object(fetch_object: fetch::FetchObject<String>) -> Result<article::Article, Vec<form::Problem>> {
+fn process_fetch_object(
+    session: session::Session,
+    fetch_object: fetch::FetchObject<String>
+) -> Result<article::Article, Vec<form::Problem>> {
     match fetch_object.result {
         Err(request_error) => {
             Err(vec![form::Problem::new_server_error("Request error")])
@@ -103,7 +128,7 @@ fn process_fetch_object(fetch_object: fetch::FetchObject<String>) -> Result<arti
                                     })
                             })
                             .map(|server_data| {
-                                server_data.into_article()
+                                server_data.into_article(session)
                             });
 
                     match article {

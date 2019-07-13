@@ -12,7 +12,6 @@ static DEFAULT_PROFILE: &'static str = "Profile";
 #[derive(Default)]
 pub struct Model<'a> {
     session: session::Session,
-    time_zone: String,
     errors: Vec<String>,
     feed_tab: FeedTab,
     feed_page: PageNumber,
@@ -94,7 +93,6 @@ pub fn init<'a>(session: session::Session, username: &username::Username<'a>, or
     let static_username: username::Username<'static> = username.as_str().to_owned().into();
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::NoOp))
-        // @TODO TimeZoneLoaded?
         .perform_cmd(request::author_load::load_author(session.clone(), static_username.clone(), Msg::AuthorLoadCompleted))
         .perform_cmd(fetch_feed(
             session.clone(),
@@ -153,7 +151,6 @@ pub enum Msg {
         Result<paginated_list::PaginatedList<article::Article>,
         (username::Username<'static>, Vec<String>)>
     ),
-    TimeZoneLoaded(String),
     FeedMsg(article::feed::Msg),
     SlowLoadThresholdPassed,
     NoOp,
@@ -233,17 +230,11 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             model.feed = Status::Failed(username);
             // @TODO Log.error??
         },
-        Msg::TimeZoneLoaded(time_zone) => {
-            // @TODO remove?
-            model.time_zone = time_zone;
-        },
         Msg::FeedMsg(feed_msg) => {
             match &mut model.feed {
                 Status::Loaded(feed_model) => {
-                    let credentials =
-                        model.session.viewer().map(|viever|viever.credentials.clone());
                     article::feed::update(
-                        credentials, feed_msg, feed_model, &mut orders.proxy(Msg::FeedMsg)
+                        feed_msg, feed_model, &mut orders.proxy(Msg::FeedMsg)
                     )
                 },
                 Status::Loading(_) => {

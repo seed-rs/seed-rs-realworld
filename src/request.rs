@@ -9,3 +9,5 @@ pub mod author_load;
 pub mod feed_load;
 pub mod follow;
 pub mod unfollow;
+pub mod favorite;
+pub mod unfavorite;

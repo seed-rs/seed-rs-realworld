@@ -29,15 +29,15 @@ pub fn init(
 // View
 
 pub struct Tab<Ms> {
-    title: &'static str,
+    title: Cow<'static, str>,
     msg: Ms,
     active: bool
 }
 
 impl<Ms> Tab<Ms> {
-    pub fn new(title: &'static str, msg: Ms) -> Self {
+    pub fn new(title: impl Into<Cow<'static, str>>, msg: Ms) -> Self {
         Self {
-            title,
+            title: title.into(),
             msg,
             active: false
         }

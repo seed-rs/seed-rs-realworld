@@ -1,9 +1,13 @@
 use serde::Deserialize;
-use crate::{viewer, username, api, session, author, profile, avatar};
+use crate::{viewer, avatar, username, api, session, article, page, paginated_list, author, profile, timestamp};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
 use std::rc::Rc;
+use std::convert::TryFrom;
+use std::convert::TryInto;
+
+const ARTICLES_PER_PAGE: usize = 5;
 
 #[derive(Deserialize)]
 struct ServerErrorData {
@@ -13,79 +17,37 @@ struct ServerErrorData {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ServerData {
-    profile: ServerDataFields
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct ServerDataFields {
-    username: String,
-    bio: Option<String>,
-    image: String,
-    following: bool,
+    tags: Vec<String>,
 }
 
 impl ServerData {
-    fn into_author(self, session: session::Session) -> author::Author<'static> {
-        let username = self.profile.username.into();
-        let profile = profile::Profile {
-            bio: self.profile.bio,
-            avatar: avatar::Avatar::new(Some(self.profile.image)),
-        };
-
-        if let Some(viewer) = session.viewer() {
-            if &username == viewer.username() {
-                return author::Author::IsViewer(viewer.credentials.clone(), profile)
-            }
-        }
-
-        if self.profile.following {
-            author::Author::Following(
-                author::FollowedAuthor(username, profile)
-            )
-        } else {
-            author::Author::NotFollowing(
-                author::UnfollowedAuthor(username, profile)
-            )
-        }
+    fn into_tags(self) -> Vec<article::tag::Tag> {
+        self.tags.into_iter().map(article::tag::Tag::new).collect()
     }
 }
 
-pub fn unfollow<Ms: 'static>(
-    session: session::Session,
-    username: username::Username<'static>,
-    f: fn(Result<author::Author<'static>, Vec<String>>) -> Ms,
+pub fn load_tags<Ms: 'static>(
+    f: fn(Result<Vec<article::tag::Tag>, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
-    let username = username.clone();
-    let session = session.clone();
-
-    let mut request = fetch::Request::new(
-        format!("https://conduit.productionready.io/api/profiles/{}/follow", username.as_str())
+    fetch::Request::new(
+        "https://conduit.productionready.io/api/tags".into()
     )
-        .method(fetch::Method::Delete)
-        .timeout(5000);
-
-    if let Some(viewer) = session.viewer() {
-        let auth_token = viewer.credentials.auth_token.as_str();
-        request = request.header("authorization", &format!("Token {}", auth_token));
-    }
-
-    request.fetch_string(move |fetch_object| {
-        f(process_fetch_object(session, fetch_object))
-    })
+        .timeout(5000)
+        .fetch_string(move |fetch_object| {
+            f(process_fetch_object(fetch_object))
+        })
 }
 
 fn process_fetch_object(
-    session: session::Session,
     fetch_object: fetch::FetchObject<String>
-) -> Result<author::Author<'static>, Vec<String>> {
+) -> Result<Vec<article::tag::Tag>, Vec<String>> {
     match fetch_object.result {
         Err(request_error) => {
             Err(vec!["Request error".into()])
         },
         Ok(response) => {
             if response.status.is_ok() {
-                    let author =
+                    let paginated_list =
                         response
                             .data
                             .and_then(|string| {
@@ -95,12 +57,12 @@ fn process_fetch_object(
                                     })
                             })
                             .map(|server_data| {
-                                server_data.into_author(session)
+                                server_data.into_tags()
                             });
 
-                    match author {
-                        Ok(author) => {
-                            Ok(author)
+                    match paginated_list {
+                        Ok(paginated_list) => {
+                            Ok(paginated_list)
                         },
                         Err(data_error) => {
                             Err(vec!["Data error".into()])

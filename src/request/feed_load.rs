@@ -40,7 +40,7 @@ struct ServerDataItemArticle {
 #[serde(rename_all = "camelCase")]
 struct ServerDataFieldAuthor {
     username: String,
-    bio: String,
+    bio: Option<String>,
     image: String,
     following: bool,
 }
@@ -49,7 +49,7 @@ impl ServerDataFieldAuthor {
     fn into_author(self, session: session::Session) -> author::Author<'static> {
         let username = self.username.into();
         let profile = profile::Profile {
-            bio: Some(self.bio),
+            bio: self.bio,
             avatar: avatar::Avatar::new(Some(self.image)),
         };
 

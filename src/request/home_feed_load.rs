@@ -1,9 +1,13 @@
 use serde::Deserialize;
-use crate::{viewer, username, api, session, author, profile, avatar};
+use crate::{viewer, avatar, username, api, session, article, page, paginated_list, author, profile, timestamp};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
 use std::rc::Rc;
+use std::convert::TryFrom;
+use std::convert::TryInto;
+
+const ARTICLES_PER_PAGE: usize = 10;
 
 #[derive(Deserialize)]
 struct ServerErrorData {
@@ -13,24 +17,40 @@ struct ServerErrorData {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ServerData {
-    profile: ServerDataFields
+    articles: Vec<ServerDataItemArticle>,
+    articles_count: usize
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct ServerDataFields {
+struct ServerDataItemArticle {
+    title: String,
+    slug: String,
+    body: String,
+    created_at: String,
+    updated_at: String,
+    tag_list: Vec<String>,
+    description: String,
+    author: ServerDataFieldAuthor,
+    favorited: bool,
+    favorites_count: usize,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ServerDataFieldAuthor {
     username: String,
     bio: Option<String>,
     image: String,
     following: bool,
 }
 
-impl ServerData {
+impl ServerDataFieldAuthor {
     fn into_author(self, session: session::Session) -> author::Author<'static> {
-        let username = self.profile.username.into();
+        let username = self.username.into();
         let profile = profile::Profile {
-            bio: self.profile.bio,
-            avatar: avatar::Avatar::new(Some(self.profile.image)),
+            bio: self.bio,
+            avatar: avatar::Avatar::new(Some(self.image)),
         };
 
         if let Some(viewer) = session.viewer() {
@@ -39,7 +59,7 @@ impl ServerData {
             }
         }
 
-        if self.profile.following {
+        if self.following {
             author::Author::Following(
                 author::FollowedAuthor(username, profile)
             )
@@ -51,19 +71,68 @@ impl ServerData {
     }
 }
 
-pub fn unfollow<Ms: 'static>(
+impl ServerData {
+    fn into_paginated_list(self, session: session::Session) -> paginated_list::PaginatedList<article::Article> {
+        paginated_list::PaginatedList {
+            values: self.articles.into_iter().map(|item| {
+                let created_at = match timestamp::Timestamp::try_from(item.created_at) {
+                    Ok(timestamp) => timestamp,
+                    Err(error) => return Err(error)
+                };
+                let updated_at = timestamp::Timestamp::try_from(item.updated_at)?;
+
+                Ok(article::Article {
+                    title: item.title,
+                    slug: item.slug.into(),
+                    body: item.body,
+                    created_at,
+                    updated_at,
+                    tag_list: item.tag_list,
+                    description: item.description,
+                    author: item.author.into_author(session.clone()),
+                    favorited: item.favorited,
+                    favorites_count: item.favorites_count,
+                })
+                // @TODO log errors?
+            }).filter_map(Result::ok).collect(),
+            total: self.articles_count
+        }
+    }
+}
+
+pub fn request_url(
+    feed_tab: &page::home::FeedTab,
+    page_number: &page::home::PageNumber,
+) -> String {
+    // @TODO refactor!
+    format!(
+        "https://conduit.productionready.io/api/articles{}?{}limit={}&offset={}",
+        match feed_tab {
+            page::home::FeedTab::YourFeed(_) => "/feed",
+            page::home::FeedTab::GlobalFeed => "",
+            page::home::FeedTab::TagFeed(_) => "",
+        },
+        match feed_tab {
+            page::home::FeedTab::YourFeed(_) => "".to_string(),
+            page::home::FeedTab::GlobalFeed => "".to_string(),
+            page::home::FeedTab::TagFeed(tag) => format!("tag={}&", tag),
+        },
+        ARTICLES_PER_PAGE,
+        (page_number.to_usize() - 1) * ARTICLES_PER_PAGE
+    )
+}
+
+pub fn load_home_feed<Ms: 'static>(
     session: session::Session,
-    username: username::Username<'static>,
-    f: fn(Result<author::Author<'static>, Vec<String>>) -> Ms,
+    feed_tab: page::home::FeedTab,
+    page_number: page::home::PageNumber,
+    f: fn(Result<paginated_list::PaginatedList<article::Article>, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
-    let username = username.clone();
     let session = session.clone();
 
     let mut request = fetch::Request::new(
-        format!("https://conduit.productionready.io/api/profiles/{}/follow", username.as_str())
-    )
-        .method(fetch::Method::Delete)
-        .timeout(5000);
+        request_url(&feed_tab, &page_number)
+    ).timeout(5000);
 
     if let Some(viewer) = session.viewer() {
         let auth_token = viewer.credentials.auth_token.as_str();
@@ -78,14 +147,14 @@ pub fn unfollow<Ms: 'static>(
 fn process_fetch_object(
     session: session::Session,
     fetch_object: fetch::FetchObject<String>
-) -> Result<author::Author<'static>, Vec<String>> {
+) -> Result<paginated_list::PaginatedList<article::Article>, Vec<String>> {
     match fetch_object.result {
         Err(request_error) => {
             Err(vec!["Request error".into()])
         },
         Ok(response) => {
             if response.status.is_ok() {
-                    let author =
+                    let paginated_list =
                         response
                             .data
                             .and_then(|string| {
@@ -95,12 +164,12 @@ fn process_fetch_object(
                                     })
                             })
                             .map(|server_data| {
-                                server_data.into_author(session)
+                                server_data.into_paginated_list(session)
                             });
 
-                    match author {
-                        Ok(author) => {
-                            Ok(author)
+                    match paginated_list {
+                        Ok(paginated_list) => {
+                            Ok(paginated_list)
                         },
                         Err(data_error) => {
                             Err(vec!["Data error".into()])

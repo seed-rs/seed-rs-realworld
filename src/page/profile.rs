@@ -73,7 +73,7 @@ impl<'a> From<Model<'a>> for session::Session {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct PageNumber(usize);
 
 impl PageNumber {
@@ -109,6 +109,7 @@ pub fn init<'a>(session: session::Session, username: &username::Username<'a>, or
     }
 }
 
+// @TODO merge with home feed?
 fn fetch_feed(
     session: session::Session,
     username: username::Username<'static>,

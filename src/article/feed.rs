@@ -1,4 +1,4 @@
-use crate::{session, paginated_list, article, api, GMsg, route, author, request};
+use crate::{session, paginated_list, article, api, GMsg, route, author, request, timestamp};
 use seed::prelude::*;
 use std::borrow::Cow;
 use crate::api::Credentials;
@@ -120,10 +120,7 @@ fn view_article_preview(credentials: Option<&api::Credentials>, article: &articl
             div![
                 class!["info"],
                 author::view(article.author.username()),
-                span![
-                    class!["date"],
-                    "January 20th"
-                ]
+                timestamp::view(&article.created_at)
             ],
             view_favorite_button(credentials, article)
         ],

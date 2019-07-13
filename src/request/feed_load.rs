@@ -1,9 +1,11 @@
 use serde::Deserialize;
-use crate::{viewer, avatar, username, api, session, article, page, paginated_list, author, profile};
+use crate::{viewer, avatar, username, api, session, article, page, paginated_list, author, profile, timestamp};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
 use std::rc::Rc;
+use std::convert::TryFrom;
+use std::convert::TryInto;
 
 const ARTICLES_PER_PAGE: usize = 5;
 
@@ -73,19 +75,26 @@ impl ServerData {
     fn into_paginated_list(self, session: session::Session) -> paginated_list::PaginatedList<article::Article> {
         paginated_list::PaginatedList {
             values: self.articles.into_iter().map(|item| {
-                article::Article {
+                let created_at = match timestamp::Timestamp::try_from(item.created_at) {
+                    Ok(timestamp) => timestamp,
+                    Err(error) => return Err(error)
+                };
+                let updated_at = timestamp::Timestamp::try_from(item.updated_at)?;
+
+                Ok(article::Article {
                     title: item.title,
                     slug: item.slug.into(),
                     body: item.body,
-                    created_at: item.created_at,
-                    updated_at: item.updated_at,
+                    created_at,
+                    updated_at,
                     tag_list: item.tag_list,
                     description: item.description,
                     author: item.author.into_author(session.clone()),
                     favorited: item.favorited,
                     favorites_count: item.favorites_count,
-                }
-            }).collect(),
+                })
+                // @TODO log errors?
+            }).filter_map(Result::ok).collect(),
             total: self.articles_count
         }
     }

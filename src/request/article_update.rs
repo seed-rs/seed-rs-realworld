@@ -4,6 +4,7 @@ use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
 use std::rc::Rc;
+use std::convert::TryInto;
 
 #[derive(Deserialize)]
 struct ServerErrorData {
@@ -67,19 +68,22 @@ impl ServerDataFieldAuthor {
 }
 
 impl ServerData {
-    fn into_article(self, session: session::Session) -> article::Article {
-        article::Article {
+    fn try_into_article(self, session: session::Session) -> Result<article::Article, String> {
+        let created_at = self.article.created_at.try_into()?;
+        let updated_at = self.article.updated_at.try_into()?;
+
+        Ok(article::Article {
             title: self.article.title,
             slug: self.article.slug.into(),
             body: self.article.body,
-            created_at: self.article.created_at,
-            updated_at: self.article.updated_at,
+            created_at,
+            updated_at,
             tag_list: self.article.tag_list,
             description: self.article.description,
             author: self.article.author.into_author(session),
             favorited: self.article.favorited,
             favorites_count: self.article.favorites_count,
-        }
+        })
     }
 }
 
@@ -128,12 +132,17 @@ fn process_fetch_object(
                                     })
                             })
                             .map(|server_data| {
-                                server_data.into_article(session)
+                                server_data.try_into_article(session)
                             });
 
                     match article {
                         Ok(article) => {
-                            Ok(article)
+                            match article {
+                                Ok(article) => Ok(article),
+                                Err(error) => {
+                                    Err(vec![form::Problem::new_server_error(error)])
+                                }
+                            }
                         },
                         Err(data_error) => {
                             Err(vec![form::Problem::new_server_error("Data error")])

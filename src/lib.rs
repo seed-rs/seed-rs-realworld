@@ -19,6 +19,7 @@ mod request;
 mod page;
 mod article;
 mod route;
+mod timestamp;
 
 // Model
 

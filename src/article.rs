@@ -1,4 +1,4 @@
-use crate::{form::article_editor as form, username, author};
+use crate::{form::article_editor as form, username, author, timestamp};
 
 pub mod feed;
 pub mod slug;
@@ -8,8 +8,8 @@ pub struct Article {
     pub title: String,
     pub slug: slug::Slug,
     pub body: String,
-    pub created_at: String,
-    pub updated_at: String,
+    pub created_at: timestamp::Timestamp,
+    pub updated_at: timestamp::Timestamp,
     pub tag_list: Vec<String>,
     pub description: String,
     pub author: author::Author<'static>,

@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, article, GMsg, route};
+use crate::{session, article, GMsg, route, api, comment_id, author};
 
 // Model
 
@@ -71,9 +71,60 @@ pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Ms
 // Update
 
 pub enum Msg {
+    DeleteArticleClicked(api::Credentials, article::slug::Slug),
+    DeleteCommentClicked(api::Credentials, article::slug::Slug, comment_id::CommentId),
+    DismissErrorsClicked,
+    FavoriteClicked(api::Credentials, article::slug::Slug, article::body::Body),
+    UnfavoriteClicked(api::Credentials, article::slug::Slug, article::body::Body),
+    FollowClicked(api::Credentials, author::UnfollowedAuthor<'static>),
+    UnfollowClicked(api::Credentials, author::FollowedAuthor<'static>),
+    PostCommentClicked(api::Credentials, article::slug::Slug),
+    CommentTextEntered(String),
+    LoadArticleCompleted(Result<article::Article, Vec<String>>),
+    LoadCommentsCompleted(Result<Vec<article::comment::Comment<'static>>, Vec<String>>),
+    DeleteArticleCompleted(Result<(), Vec<String>>),
+    DeleteCommentCompleted(Result<comment_id::CommentId, Vec<String>>),
+    FavoriteChangeCompleted(Result<article::Article, Vec<String>>),
+    FollowChangeCompleted(Result<author::Author<'static>, Vec<String>>),
+    PostCommentCompleted(Result<article::comment::Comment<'static>, Vec<String>>),
+    SlowLoadThresholdPassed,
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
+    match msg {
+        Msg::DeleteArticleClicked(credentials, slug) => {}
+        Msg::DeleteCommentClicked(credentials, slug, comment_id) => {}
+        Msg::DismissErrorsClicked => {}
+        Msg::FavoriteClicked(credentials, slug, article_body) => {}
+        Msg::UnfavoriteClicked(credentials, slug, article_body) => {}
+        Msg::FollowClicked(credentials, unfollowed_author) => {}
+        Msg::UnfollowClicked(credentials, followed_author) => {}
+        Msg::PostCommentClicked(credentials, slug) => {}
+        Msg::CommentTextEntered(comment_text) => {}
+
+        Msg::LoadArticleCompleted(Ok(article)) => {}
+        Msg::LoadArticleCompleted(Err(errors)) => {}
+
+        Msg::LoadCommentsCompleted(Ok(comments)) => {}
+        Msg::LoadCommentsCompleted(Err(errors)) => {}
+
+        Msg::DeleteArticleCompleted(Ok(())) => {}
+        Msg::DeleteArticleCompleted(Err(errors)) => {}
+
+        Msg::DeleteCommentCompleted(Ok(comment_id)) => {}
+        Msg::DeleteCommentCompleted(Err(errors)) => {}
+
+        Msg::FavoriteChangeCompleted(Ok(article)) => {}
+        Msg::FavoriteChangeCompleted(Err(errors)) => {}
+
+        Msg::FollowChangeCompleted(Ok(article)) => {}
+        Msg::FollowChangeCompleted(Err(errors)) => {}
+
+        Msg::PostCommentCompleted(Ok(comment)) => {}
+        Msg::PostCommentCompleted(Err(errors)) => {}
+
+        Msg::SlowLoadThresholdPassed => {}
+    }
 }
 
 // View

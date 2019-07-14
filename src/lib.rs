@@ -4,6 +4,8 @@ use seed::prelude::*;
 use std::convert::TryInto;
 use std::collections::VecDeque;
 
+mod helpers;
+
 mod paginated_list;
 mod profile;
 mod author;
@@ -22,7 +24,7 @@ mod route;
 mod timestamp;
 mod page_number;
 mod comment_id;
-mod log;
+mod logger;
 
 // Model
 

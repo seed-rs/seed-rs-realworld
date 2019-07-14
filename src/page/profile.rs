@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, username, GMsg, route, article, author, api, loading, request, paginated_list, page_number};
+use crate::{session, username, GMsg, route, article, author, api, loading, request, paginated_list, page_number, helpers};
 use std::borrow::{Cow, BorrowMut};
 use futures::prelude::*;
 
@@ -52,12 +52,6 @@ enum Status<'a, T> {
 impl<'a, T> Default for Status<'a, T> {
     fn default() -> Self {
         Status::Loading("".into())
-    }
-}
-
-impl<'a, T> Status<'a, T> {
-    pub fn take(&mut self) -> Status<'a, T> {
-        std::mem::replace(self, Status::default())
     }
 }
 
@@ -236,11 +230,8 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             }
         }
         Msg::SlowLoadThresholdPassed => {
-            match model.feed.take() {
-                Status::Loading(username) => {
-                    model.feed = Status::LoadingSlowly(username)
-                },
-                feed => model.feed = feed
+            if let Status::Loading(username) = &mut model.feed {
+                model.feed = Status::LoadingSlowly(helpers::take(username))
             }
         },
         Msg::NoOp => { orders.skip(); },

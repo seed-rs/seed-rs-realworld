@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, article, GMsg, route, api, comment_id, author};
+use crate::{session, article, GMsg, route, api, comment_id, author, logger};
 
 // Model
 
@@ -92,38 +92,91 @@ pub enum Msg {
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match msg {
-        Msg::DeleteArticleClicked(credentials, slug) => {}
-        Msg::DeleteCommentClicked(credentials, slug, comment_id) => {}
-        Msg::DismissErrorsClicked => {}
-        Msg::FavoriteClicked(credentials, slug, article_body) => {}
-        Msg::UnfavoriteClicked(credentials, slug, article_body) => {}
-        Msg::FollowClicked(credentials, unfollowed_author) => {}
-        Msg::UnfollowClicked(credentials, followed_author) => {}
-        Msg::PostCommentClicked(credentials, slug) => {}
-        Msg::CommentTextEntered(comment_text) => {}
+        Msg::DeleteArticleClicked(credentials, slug) => {
+            unimplemented!()
+        }
+        Msg::DeleteCommentClicked(credentials, slug, comment_id) => {
+            unimplemented!()
+        }
+        Msg::DismissErrorsClicked => {
+            model.errors.clear();
+        }
+        Msg::FavoriteClicked(credentials, slug, article_body) => {
+            unimplemented!()
+        }
+        Msg::UnfavoriteClicked(credentials, slug, article_body) => {
+            unimplemented!()
+        }
+        Msg::FollowClicked(credentials, unfollowed_author) => {
+            unimplemented!()
+        }
+        Msg::UnfollowClicked(credentials, followed_author) => {
+            unimplemented!()
+        }
+        Msg::PostCommentClicked(credentials, slug) => {
+            unimplemented!()
+        }
+        Msg::CommentTextEntered(comment_text) => {
+            match &mut model.comments {
+                Status::Loaded((CommentText::Editing(text), _)) => {
+                    *text = comment_text;
+                }
+                _ => logger::error("Comment text can be changed only in Editing mode!")
+            }
+        }
 
-        Msg::LoadArticleCompleted(Ok(article)) => {}
-        Msg::LoadArticleCompleted(Err(errors)) => {}
+        Msg::LoadArticleCompleted(Ok(article)) => {
+            unimplemented!()
+        }
+        Msg::LoadArticleCompleted(Err(errors)) => {
+            unimplemented!()
+        }
 
-        Msg::LoadCommentsCompleted(Ok(comments)) => {}
-        Msg::LoadCommentsCompleted(Err(errors)) => {}
+        Msg::LoadCommentsCompleted(Ok(comments)) => {
+            unimplemented!()
+        }
+        Msg::LoadCommentsCompleted(Err(errors)) => {
+            unimplemented!()
+        }
 
-        Msg::DeleteArticleCompleted(Ok(())) => {}
-        Msg::DeleteArticleCompleted(Err(errors)) => {}
+        Msg::DeleteArticleCompleted(Ok(())) => {
+            unimplemented!()
+        }
+        Msg::DeleteArticleCompleted(Err(errors)) => {
+            unimplemented!()
+        }
 
-        Msg::DeleteCommentCompleted(Ok(comment_id)) => {}
-        Msg::DeleteCommentCompleted(Err(errors)) => {}
+        Msg::DeleteCommentCompleted(Ok(comment_id)) => {
+            unimplemented!()
+        }
+        Msg::DeleteCommentCompleted(Err(errors)) => {
+            unimplemented!()
+        }
 
-        Msg::FavoriteChangeCompleted(Ok(article)) => {}
-        Msg::FavoriteChangeCompleted(Err(errors)) => {}
+        Msg::FavoriteChangeCompleted(Ok(article)) => {
+            unimplemented!()
+        }
+        Msg::FavoriteChangeCompleted(Err(errors)) => {
+            unimplemented!()
+        }
 
-        Msg::FollowChangeCompleted(Ok(article)) => {}
-        Msg::FollowChangeCompleted(Err(errors)) => {}
+        Msg::FollowChangeCompleted(Ok(article)) => {
+            unimplemented!()
+        }
+        Msg::FollowChangeCompleted(Err(errors)) => {
+            unimplemented!()
+        }
 
-        Msg::PostCommentCompleted(Ok(comment)) => {}
-        Msg::PostCommentCompleted(Err(errors)) => {}
+        Msg::PostCommentCompleted(Ok(comment)) => {
+            unimplemented!()
+        }
+        Msg::PostCommentCompleted(Err(errors)) => {
+            unimplemented!()
+        }
 
-        Msg::SlowLoadThresholdPassed => {}
+        Msg::SlowLoadThresholdPassed => {
+            unimplemented!()
+        }
     }
 }
 

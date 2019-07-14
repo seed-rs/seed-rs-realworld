@@ -3,6 +3,8 @@ use crate::{form::article_editor as form, username, author, timestamp};
 pub mod feed;
 pub mod slug;
 pub mod tag;
+pub mod comment;
+pub mod body;
 
 #[derive(Clone)]
 pub struct Article {

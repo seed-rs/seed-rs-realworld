@@ -4,25 +4,56 @@ use crate::{session, article, GMsg, route};
 
 // Model
 
-pub struct Model {
-    session: session::Session
+enum Status<T> {
+    Loading,
+    LoadingSlowly,
+    Loaded(T),
+    Failed,
 }
 
-impl<'a> Model {
+impl<T> Default for Status<T> {
+    fn default() -> Self {
+        Status::Loading
+    }
+}
+
+enum CommentText {
+    Editing(String),
+    Sending(String)
+}
+
+impl Default for CommentText {
+    fn default() -> Self {
+        CommentText::Editing("".into())
+    }
+}
+
+#[derive(Default)]
+pub struct Model<'a> {
+    session: session::Session,
+    errors: Vec<String>,
+    comments: Status<(CommentText, Vec<article::comment::Comment<'a>>)>,
+    article: Status<article::Article>
+}
+
+impl<'a> Model<'a> {
     pub fn session(&self) -> &session::Session {
         &self.session
     }
 }
 
-impl<'a> From<Model> for session::Session {
+impl<'a> From<Model<'a>> for session::Session {
     fn from(model: Model) -> session::Session {
         model.session
     }
 }
 
-pub fn init(session: session::Session, slug: article::slug::Slug, _: &mut impl Orders<Msg, GMsg>
-) -> Model {
-    Model { session }
+pub fn init<'a>(session: session::Session, slug: article::slug::Slug, _: &mut impl Orders<Msg, GMsg>
+) -> Model<'a> {
+    Model {
+        session,
+        ..Model::default()
+    }
 }
 
 // Global msg handler

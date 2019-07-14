@@ -21,6 +21,8 @@ mod article;
 mod route;
 mod timestamp;
 mod page_number;
+mod comment_id;
+mod log;
 
 // Model
 
@@ -32,7 +34,7 @@ enum Model<'a> {
     Login(page::login::Model),
     Register(page::register::Model),
     Profile(page::profile::Model<'a>, username::Username<'a>),
-    Article(page::article::Model),
+    Article(page::article::Model<'a>),
     ArticleEditor(page::article_editor::Model, Option<article::slug::Slug>)
 }
 

@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{viewer, avatar, username, api, session, article, page, paginated_list, author, profile, timestamp};
+use crate::{viewer, avatar, username, api, session, article, page, paginated_list, author, profile, timestamp, page_number};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
@@ -103,7 +103,7 @@ impl ServerData {
 pub fn request_url(
     username: &username::Username<'static>,
     feed_tab: &page::profile::FeedTab,
-    page_number: &page::profile::PageNumber,
+    page_number: page_number::PageNumber,
 ) -> String {
     format!(
         "https://conduit.productionready.io/api/articles?{}={}&limit={}&offset={}",
@@ -121,14 +121,14 @@ pub fn load_feed<Ms: 'static>(
     session: session::Session,
     username: username::Username<'static>,
     feed_tab: page::profile::FeedTab,
-    page_number: page::profile::PageNumber,
+    page_number: page_number::PageNumber,
     f: fn(Result<paginated_list::PaginatedList<article::Article>, (username::Username<'static>, Vec<String>)>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     let session = session.clone();
     let username = username.clone();
 
     let mut request = fetch::Request::new(
-        request_url(&username, &feed_tab, &page_number)
+        request_url(&username, &feed_tab, page_number)
     ).timeout(5000);
 
     if let Some(viewer) = session.viewer() {

@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, username, GMsg, route, article, author, api, loading, request, paginated_list};
+use crate::{session, username, GMsg, route, article, author, api, loading, request, paginated_list, page_number};
 use std::borrow::{Cow, BorrowMut};
 use futures::prelude::*;
 
@@ -14,7 +14,7 @@ pub struct Model<'a> {
     session: session::Session,
     errors: Vec<String>,
     feed_tab: FeedTab,
-    feed_page: PageNumber,
+    feed_page: page_number::PageNumber,
     author: Status<'a, author::Author<'a>>,
     feed: Status<'a, article::feed::Model>
 }
@@ -73,21 +73,6 @@ impl<'a> From<Model<'a>> for session::Session {
     }
 }
 
-#[derive(Clone, Copy)]
-pub struct PageNumber(usize);
-
-impl PageNumber {
-    pub fn to_usize(&self) -> usize {
-        self.0
-    }
-}
-
-impl Default for PageNumber {
-    fn default() -> Self {
-        PageNumber(1)
-    }
-}
-
 pub fn init<'a>(session: session::Session, username: &username::Username<'a>, orders: &mut impl Orders<Msg, GMsg>
 ) -> Model<'a> {
     let static_username: username::Username<'static> = username.as_str().to_owned().into();
@@ -98,7 +83,7 @@ pub fn init<'a>(session: session::Session, username: &username::Username<'a>, or
             session.clone(),
             static_username.clone(),
             FeedTab::default(),
-            PageNumber::default(),
+            page_number::PageNumber::default(),
         ));
 
     Model {
@@ -114,7 +99,7 @@ fn fetch_feed(
     session: session::Session,
     username: username::Username<'static>,
     feed_tab: FeedTab,
-    page_number: PageNumber,
+    page_number: page_number::PageNumber,
 ) -> impl Future<Item=Msg, Error=Msg> {
     request::feed_load::load_feed(
         session,
@@ -145,7 +130,7 @@ pub enum Msg {
     FollowClicked(api::Credentials, author::UnfollowedAuthor<'static>),
     UnfollowClicked(api::Credentials, author::FollowedAuthor<'static>),
     TabClicked(FeedTab),
-    FeedPageClicked(PageNumber),
+    FeedPageClicked(page_number::PageNumber),
     FollowChangeCompleted(Result<author::Author<'static>, Vec<String>>),
     AuthorLoadCompleted(Result<author::Author<'static>, (username::Username<'static>, Vec<String>)>),
     FeedLoadCompleted(
@@ -189,12 +174,13 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 model.author.username().as_str().to_owned().into();
 
             model.feed_tab = feed_tab;
+            model.feed_page = page_number::PageNumber::default();
             orders
                 .perform_cmd(fetch_feed(
                     model.session.clone(),
                     static_username,
                     feed_tab,
-                    PageNumber::default(),
+                    model.feed_page,
                 ));
         },
         Msg::FeedPageClicked(page_number) => {
@@ -330,7 +316,9 @@ fn view_feed(model: &Model) -> Node<Msg> {
                             class!["articles-toggle"],
                             view_tabs(model.feed_tab),
                             article::feed::view_articles(feed_model).els().map_message(Msg::FeedMsg),
-                            article::feed::view_pagination()
+                            article::feed::view_pagination(
+                                feed_model, model.feed_page, Msg::FeedPageClicked
+                            )
                         ],
                     ]
                 ]

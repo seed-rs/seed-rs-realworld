@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, GMsg, route, api, article, paginated_list, loading, request};
+use crate::{session, GMsg, route, api, article, paginated_list, loading, request, page_number};
 use futures::prelude::*;
 
 // Model
@@ -37,27 +37,11 @@ impl<T> Status<T> {
     }
 }
 
-// @TODO extract to standalone file (also from profile.rs)?
-#[derive(Clone, Copy)]
-pub struct PageNumber(usize);
-
-impl PageNumber {
-    pub fn to_usize(&self) -> usize {
-        self.0
-    }
-}
-
-impl Default for PageNumber {
-    fn default() -> Self {
-        PageNumber(1)
-    }
-}
-
 #[derive(Default)]
 pub struct Model {
     session: session::Session,
     feed_tab: FeedTab,
-    feed_page: PageNumber,
+    feed_page: page_number::PageNumber,
     tags: Status<Vec<article::tag::Tag>>,
     feed: Status<article::feed::Model>,
 }
@@ -86,7 +70,7 @@ pub fn init(session: session::Session, orders: &mut impl Orders<Msg, GMsg>) -> M
         .perform_cmd(fetch_feed(
             session.clone(),
             feed_tab.clone(),
-            PageNumber::default(),
+            page_number::PageNumber::default(),
         ));
 
     Model {
@@ -99,7 +83,7 @@ pub fn init(session: session::Session, orders: &mut impl Orders<Msg, GMsg>) -> M
 fn fetch_feed(
     session: session::Session,
     feed_tab: FeedTab,
-    page_number: PageNumber,
+    page_number: page_number::PageNumber,
 ) -> impl Future<Item=Msg, Error=Msg> {
     request::home_feed_load::load_home_feed(
         session,
@@ -126,7 +110,7 @@ pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, _: &mut impl Orders<Msg, GM
 pub enum Msg {
     TagClicked(article::tag::Tag),
     TabClicked(FeedTab),
-    FeedPageClicked(PageNumber),
+    FeedPageClicked(page_number::PageNumber),
     FeedLoadCompleted(Result<paginated_list::PaginatedList<article::Article>, Vec<String>>),
     TagsLoadCompleted(Result<Vec<article::tag::Tag>, Vec<String>>),
     FeedMsg(article::feed::Msg),
@@ -138,18 +122,20 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
     match msg {
         Msg::TagClicked(tag) => {
             model.feed_tab = FeedTab::TagFeed(tag);
+            model.feed_page = page_number::PageNumber::default();
             orders.perform_cmd(fetch_feed(
                 model.session.clone(),
                 model.feed_tab.clone(),
-                PageNumber::default(),
+                model.feed_page,
             ));
         },
         Msg::TabClicked(feed_tab) => {
             model.feed_tab = feed_tab;
+            model.feed_page = page_number::PageNumber::default();
             orders.perform_cmd(fetch_feed(
                 model.session.clone(),
                 model.feed_tab.clone(),
-                PageNumber::default(),
+                model.feed_page,
             ));
         },
         Msg::FeedPageClicked(page_number) => {
@@ -333,7 +319,9 @@ fn view_feed(model: &Model) -> Node<Msg> {
                             class!["feed-toggle"],
                             view_tabs(model),
                             article::feed::view_articles(feed_model).els().map_message(Msg::FeedMsg),
-                            article::feed::view_pagination()
+                            article::feed::view_pagination(
+                                feed_model, model.feed_page, Msg::FeedPageClicked
+                            )
                         ],
                     ],
                     div![
@@ -353,203 +341,3 @@ fn view_content(model: &Model) -> Node<Msg> {
         view_feed(model),
     ]
 }
-
-//fn view_content() -> Node<Msg> {
-//    div![
-//        class!["home-page"],
-//
-//        div![
-//            class!["banner"],
-//            div![
-//                class!["container"],
-//                h1![
-//                    class!["logo-font"],
-//                    "conduit"
-//                ],
-//                p![
-//                    "A place to share your knowledge."
-//                ]
-//            ]
-//        ],
-//
-//        div![
-//            class!["container", "page"],
-//            div![
-//                class!["row"],
-//
-//                div![
-//                    class!["col-md-9"],
-//                    div![
-//                        class!["feed-toggle"],
-//                        ul![
-//                            class!["nav", "nav-pills", "outline-active"],
-//                            li![
-//                                class!["nav-item"],
-//                                a![
-//                                    class!["nav-link", "disabled"],
-//                                    attrs!{At::Href => ""},
-//                                    "Your Feed"
-//                                ]
-//                            ],
-//                            li![
-//                                class!["nav-item"],
-//                                a![
-//                                    class!["nav-link", "active"],
-//                                    attrs!{At::Href => ""},
-//                                    "Global Feed"
-//                                ]
-//                            ],
-//                        ],
-//                    ],
-//
-//                    div![
-//                        class!["article-preview"],
-//                        div![
-//                            class!["article-meta"],
-//                            a![
-//                                attrs!{At::Href => "/profile"},
-//                                img![
-//                                    attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
-//                                ]
-//                            ],
-//                            div![
-//                                class!["info"],
-//                                a![
-//                                    class!["author"],
-//                                    attrs!{At::Href => ""},
-//                                    "Eric Simons"
-//                                ],
-//                                span![
-//                                    class!["date"],
-//                                    "January 20th"
-//                                ]
-//                            ],
-//                            button![
-//                                class!["btn","btn-outline-primary", "btn-sm", "pull-xs-right"],
-//                                i![
-//                                    class!["ion-heart"],
-//                                    " 29"
-//                                ]
-//                            ]
-//                        ],
-//                        a![
-//                            class!["preview-link"],
-//                            attrs!{At::Href => ""},
-//                            h1![
-//                                "How to build webapps that scale"
-//                            ],
-//                            p![
-//                                "This is the description for the post."
-//                            ],
-//                            span![
-//                                "Read more..."
-//                            ]
-//                        ]
-//                    ],
-//
-//                    div![
-//                        class!["article-preview"],
-//                        div![
-//                            class!["article-meta"],
-//                            a![
-//                                attrs!{At::Href => "/profile"},
-//                                img![
-//                                    attrs!{At::Src => "http://i.imgur.com/N4VcUeJ.jpg"}
-//                                ]
-//                            ],
-//                            div![
-//                                class!["info"],
-//                                a![
-//                                    class!["author"],
-//                                    attrs!{At::Href => ""},
-//                                    "Albert Pai"
-//                                ],
-//                                span![
-//                                    class!["date"],
-//                                    "January 20th"
-//                                ]
-//                            ],
-//                            button![
-//                                class!["btn","btn-outline-primary", "btn-sm", "pull-xs-right"],
-//                                i![
-//                                    class!["ion-heart"],
-//                                    " 32"
-//                                ]
-//                            ]
-//                        ],
-//                        a![
-//                            class!["preview-link"],
-//                            attrs!{At::Href => ""},
-//                            h1![
-//                                "The song you won't ever stop singing. No matter how hard you try."
-//                            ],
-//                            p![
-//                                "This is the description for the post."
-//                            ],
-//                            span![
-//                                "Read more..."
-//                            ]
-//                        ]
-//                    ]
-//
-//                ],
-//
-//                div![
-//                    class!["col-md-3"],
-//                    div![
-//                        class!["sidebar"],
-//                        p![
-//                            "Popular Tags"
-//                        ],
-//
-//                        div![
-//                            class!["tag-list"],
-//                            a![
-//                                class!["tag-pill", "tag-default"],
-//                                attrs!{At::Href => ""},
-//                                "programming"
-//                            ],
-//                            a![
-//                                class!["tag-pill", "tag-default"],
-//                                attrs!{At::Href => ""},
-//                                "javascript"
-//                            ],
-//                            a![
-//                                class!["tag-pill", "tag-default"],
-//                                attrs!{At::Href => ""},
-//                                "emberjs"
-//                            ],
-//                            a![
-//                                class!["tag-pill", "tag-default"],
-//                                attrs!{At::Href => ""},
-//                                "angularjs"
-//                            ],
-//                            a![
-//                                class!["tag-pill", "tag-default"],
-//                                attrs!{At::Href => ""},
-//                                "react"
-//                            ],
-//                            a![
-//                                class!["tag-pill", "tag-default"],
-//                                attrs!{At::Href => ""},
-//                                "mean"
-//                            ],
-//                            a![
-//                                class!["tag-pill", "tag-default"],
-//                                attrs!{At::Href => ""},
-//                                "node"
-//                            ],
-//                            a![
-//                                class!["tag-pill", "tag-default"],
-//                                attrs!{At::Href => ""},
-//                                "rails"
-//                            ]
-//                        ]
-//                    ]
-//                ]
-//
-//            ]
-//        ]
-//
-//    ]
-//}

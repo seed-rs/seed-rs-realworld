@@ -20,6 +20,7 @@ mod page;
 mod article;
 mod route;
 mod timestamp;
+mod page_number;
 
 // Model
 

@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{viewer, avatar, username, api, session, article, page, paginated_list, author, profile, timestamp};
+use crate::{viewer, avatar, username, api, session, article, page, paginated_list, author, profile, timestamp, page_number};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
@@ -102,7 +102,7 @@ impl ServerData {
 
 pub fn request_url(
     feed_tab: &page::home::FeedTab,
-    page_number: &page::home::PageNumber,
+    page_number: page_number::PageNumber,
 ) -> String {
     // @TODO refactor!
     format!(
@@ -125,13 +125,13 @@ pub fn request_url(
 pub fn load_home_feed<Ms: 'static>(
     session: session::Session,
     feed_tab: page::home::FeedTab,
-    page_number: page::home::PageNumber,
+    page_number: page_number::PageNumber,
     f: fn(Result<paginated_list::PaginatedList<article::Article>, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     let session = session.clone();
 
     let mut request = fetch::Request::new(
-        request_url(&feed_tab, &page_number)
+        request_url(&feed_tab, page_number)
     ).timeout(5000);
 
     if let Some(viewer) = session.viewer() {

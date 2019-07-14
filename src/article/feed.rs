@@ -1,4 +1,4 @@
-use crate::{session, paginated_list, article, api, GMsg, route, author, request, timestamp};
+use crate::{session, paginated_list, article, api, GMsg, route, author, request, timestamp, page_number};
 use seed::prelude::*;
 use std::borrow::Cow;
 use crate::api::Credentials;
@@ -67,9 +67,41 @@ fn view_tab<Ms: Clone>(tab: Tab<Ms>) -> Node<Ms> {
     ]
 }
 
-pub fn view_pagination<Ms: Clone>() -> Node<Ms> {
-    // @TODO implement with home page
-    plain!("I'm pagination")
+fn view_page_link<Ms: Clone>(
+    page_number: page_number::PageNumber,
+    active: bool,
+    msg: Ms
+) -> Node<Ms> {
+    li![
+        class!["page-item", "active" => active],
+        a![
+            class!["page-link"],
+            attrs!{At::Href => ""},
+            simple_ev(Ev::Click, msg),
+            page_number.to_string()
+        ]
+    ]
+}
+
+pub fn view_pagination<Ms: Clone>(
+    model: &Model,
+    current_page: page_number::PageNumber,
+    msg_constructor: fn(page_number::PageNumber) -> Ms
+) -> Node<Ms> {
+    if model.articles.total_pages() > 1 {
+        ul![
+            class!["pagination"],
+            (1..=model.articles.total_pages())
+                .map(page_number::PageNumber::new)
+                .map(|page_number| view_page_link(
+                    page_number,
+                    page_number == current_page,
+                    msg_constructor(page_number)
+                ))
+        ]
+    } else {
+        empty![]
+    }
 }
 
 fn view_favorite_button(credentials: Option<&Credentials>, article: &article::Article) -> Node<Msg> {
@@ -146,7 +178,16 @@ fn view_article_preview(credentials: Option<&api::Credentials>, article: &articl
 
 pub fn view_articles(model: &Model) -> Vec<Node<Msg>> {
     let credentials = model.session.viewer().map(|viewer|&viewer.credentials);
-    model.articles.values.iter().map(|article| view_article_preview(credentials, article)).collect()
+    if model.articles.total == 0 {
+        vec![
+            div![
+                class!["article-preview"],
+                "No articles are here... yet."
+            ]
+        ]
+    } else {
+        model.articles.values.iter().map(|article| view_article_preview(credentials, article)).collect()
+    }
     // @TODO view errors
 }
 

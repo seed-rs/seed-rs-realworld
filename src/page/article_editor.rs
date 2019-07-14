@@ -12,7 +12,7 @@ use crate::{
     form::article_editor as form,
     loading,
     request,
-    helpers,
+    helper::take,
     logger
 };
 use serde::{Deserialize, Serialize};
@@ -43,9 +43,6 @@ enum Status {
 }
 
 impl Status {
-    fn take(&mut self) -> Self {
-        mem::replace(self, Status::Placeholder)
-    }
     fn slug(&self) -> Option<&Slug> {
         match self {
             Status::Loading(slug) => Some(slug),
@@ -138,7 +135,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             }
         }
         Msg::FormSubmitted => {
-            match model.status.take() {
+            match &mut model.status {
                 Status::Editing(slug, _, form) => {
                     match form.trim_fields().validate() {
                         Ok(valid_form) => {
@@ -147,10 +144,10 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                                     &model.session, &valid_form, &slug, Msg::EditCompleted
                                 )
                             );
-                            model.status = Status::Saving(slug, form);
+                            model.status = Status::Saving(take(slug), take(form));
                         },
                         Err(problems) => {
-                            model.status = Status::Editing(slug, problems, form);
+                            model.status = Status::Editing(take(slug), problems, take(form));
                         }
                     }
                 },
@@ -162,39 +159,30 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                                     &model.session, &valid_form, Msg::CreateCompleted
                                 )
                             );
-                            model.status = Status::Creating(form);
+                            model.status = Status::Creating(take(form));
                         },
                         Err(problems) => {
-                            model.status = Status::EditingNew(problems, form);
+                            model.status = Status::EditingNew(problems, take(form));
                         }
                     }
                 },
-                status@ _ => {
-                    model.status = status;
-                    logger::error("Can't save the form, status has to be Editing or EditingNew!")
-                }
+                _ => logger::error("Can't save the form, status has to be Editing or EditingNew!")
             }
         },
         Msg::CreateCompleted(Ok(article)) => {
             route::go_to(route::Route::Article(article.slug), orders)
         },
         Msg::CreateCompleted(Err(problems)) => {
-            match model.status.take() {
-                Status::Creating(form) => {
-                    model.status = Status::EditingNew(problems, form)
-                },
-                status @ _ => model.status = status
+            if let Status::Creating(form) = &mut model.status {
+                model.status = Status::EditingNew(problems, take(form))
             }
         },
         Msg::EditCompleted(Ok(article)) => {
             route::go_to(route::Route::Article(article.slug), orders)
         },
         Msg::EditCompleted(Err(problems)) => {
-            match model.status.take() {
-                Status::Saving(slug, form) => {
-                    model.status = Status::Editing(slug, problems, form)
-                },
-                status @ _ => model.status = status
+            if let Status::Saving(slug, form) = &mut model.status {
+                model.status = Status::Editing(take(slug), problems, take(form))
             }
         },
         Msg::ArticleLoadCompleted(Ok(article)) => {
@@ -204,11 +192,8 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             model.status = Status::LoadingFailed(slug, problems)
         },
         Msg::SlowLoadThresholdPassed => {
-            match model.status.take() {
-                Status::Loading(slug) => {
-                    model.status = Status::LoadingSlowly(slug);
-                }
-                status @ _ => model.status = status
+            if let Status::Loading(slug) = &mut model.status {
+                model.status = Status::LoadingSlowly(take(slug));
             }
         },
         Msg::Unreachable => { logger::error("Unreachable!") },

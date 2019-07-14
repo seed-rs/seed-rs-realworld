@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, username, GMsg, route, article, author, api, loading, request, paginated_list, page_number, helpers, logger};
+use crate::{session, username, GMsg, route, article, author, api, loading, request, paginated_list, page_number, helper::take, logger};
 use std::borrow::{Cow, BorrowMut};
 use futures::prelude::*;
 
@@ -231,7 +231,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         }
         Msg::SlowLoadThresholdPassed => {
             if let Status::Loading(username) = &mut model.feed {
-                model.feed = Status::LoadingSlowly(helpers::take(username))
+                model.feed = Status::LoadingSlowly(take(username))
             }
         },
         Msg::Unreachable => { logger::error("Unreachable!") },

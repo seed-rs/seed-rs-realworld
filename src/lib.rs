@@ -3,8 +3,9 @@ extern crate seed;
 use seed::prelude::*;
 use std::convert::TryInto;
 use std::collections::VecDeque;
+use helper::take;
 
-mod helpers;
+mod helper;
 
 mod paginated_list;
 mod profile;
@@ -43,12 +44,6 @@ enum Model<'a> {
 impl<'a> Default for Model<'a> {
     fn default() -> Self {
         Model::Redirect(session::Session::default())
-    }
-}
-
-impl<'a> Model<'a> {
-    pub fn take(&mut self) -> Model<'a> {
-        std::mem::replace(self, Model::default())
     }
 }
 
@@ -172,7 +167,7 @@ fn change_model_by_route<'a>(
     model: &mut Model<'a>,
     orders:&mut impl Orders<Msg<'static>, GMsg>,
 ) {
-    let mut session = || session::Session::from(model.take());
+    let mut session = || session::Session::from(take(model));
     match route {
         None => { *model = Model::NotFound(session()) },
         Some(route) => match route {

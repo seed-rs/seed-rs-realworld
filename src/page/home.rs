@@ -33,12 +33,6 @@ impl<T> Default for Status<T> {
     }
 }
 
-impl<T> Status<T> {
-    pub fn take(&mut self) -> Status<T> {
-        std::mem::replace(self, Status::default())
-    }
-}
-
 #[derive(Default)]
 pub struct Model {
     session: session::Session,
@@ -184,17 +178,12 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             }
         },
         Msg::SlowLoadThresholdPassed => {
-            match model.feed.take() {
-                Status::Loading => {
-                    model.feed = Status::LoadingSlowly
-                },
-                feed => model.feed = feed
+            if let Status::Loading = model.feed {
+                model.feed = Status::LoadingSlowly
             }
-            match model.tags.take() {
-                Status::Loading => {
-                    model.tags = Status::LoadingSlowly
-                },
-                tags => model.tags = tags
+
+            if let Status::Loading = model.tags {
+                model.tags = Status::LoadingSlowly
             }
         },
         Msg::Unreachable => { logger::error("Unreachable!") },

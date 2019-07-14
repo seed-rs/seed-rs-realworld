@@ -95,6 +95,7 @@ impl ServerData {
                 })
                 // @TODO log errors?
             }).filter_map(Result::ok).collect(),
+            per_page: ARTICLES_PER_PAGE,
             total: self.articles_count
         }
     }

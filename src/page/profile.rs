@@ -186,13 +186,13 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::FeedPageClicked(page_number) => {
             let static_username: username::Username<'static> =
                 model.author.username().as_str().to_owned().into();
-
+            model.feed_page = page_number;
             orders
                 .perform_cmd(fetch_feed(
                     model.session.clone(),
                     static_username,
                     model.feed_tab,
-                    page_number,
+                    model.feed_page,
                 ));
         },
         Msg::FollowChangeCompleted(Ok(author)) => {

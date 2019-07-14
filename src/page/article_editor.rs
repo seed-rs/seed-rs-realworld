@@ -11,7 +11,9 @@ use crate::{
     GMsg,
     form::article_editor as form,
     loading,
-    request
+    request,
+    helpers,
+    logger
 };
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -89,7 +91,7 @@ pub fn init_edit(
     orders: &mut impl Orders<Msg, GMsg>,
 ) -> Model {
     orders
-        .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::NoOp))
+        .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
         .perform_cmd(request::article_load::load_article(&session, slug, Msg::ArticleLoadCompleted));
     Model {
         session,
@@ -119,7 +121,7 @@ pub enum Msg {
     EditCompleted(Result<article::Article, Vec<form::Problem>>),
     ArticleLoadCompleted(Result<article::Article, (article::slug::Slug, Vec<form::Problem>)>),
     SlowLoadThresholdPassed,
-    NoOp,
+    Unreachable,
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
@@ -132,7 +134,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 Status::EditingNew(_, form) => {
                     form.upsert_field(field);
                 },
-                _ => error!("Can't edit the form, status has to be Editing or EditingNew!")
+                _ => logger::error("Can't edit the form, status has to be Editing or EditingNew!")
             }
         }
         Msg::FormSubmitted => {
@@ -169,7 +171,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 },
                 status@ _ => {
                     model.status = status;
-                    error!("Can't save the form, status has to be Editing or EditingNew!")
+                    logger::error("Can't save the form, status has to be Editing or EditingNew!")
                 }
             }
         },
@@ -209,7 +211,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 status @ _ => model.status = status
             }
         },
-        Msg::NoOp => { panic!("NoOp!") },
+        Msg::Unreachable => { logger::error("Unreachable!") },
     }
 }
 

@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, GMsg, route, api, article, paginated_list, loading, request, page_number};
+use crate::{session, GMsg, route, api, article, paginated_list, loading, request, page_number, logger};
 use futures::prelude::*;
 use web_sys;
 
@@ -67,7 +67,7 @@ pub fn init(session: session::Session, orders: &mut impl Orders<Msg, GMsg>) -> M
         .unwrap_or_else(|| FeedTab::GlobalFeed);
 
     orders
-        .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::NoOp))
+        .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
         .perform_cmd(request::tags_load::load_tags(Msg::TagsLoadCompleted))
         .perform_cmd(fetch_feed(
             session.clone(),
@@ -117,7 +117,7 @@ pub enum Msg {
     TagsLoadCompleted(Result<Vec<article::tag::Tag>, Vec<String>>),
     FeedMsg(article::feed::Msg),
     SlowLoadThresholdPassed,
-    NoOp,
+    Unreachable,
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
@@ -197,7 +197,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 tags => model.tags = tags
             }
         },
-        Msg::NoOp => { orders.skip(); },
+        Msg::Unreachable => { logger::error("Unreachable!") },
     }
 }
 

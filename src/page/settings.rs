@@ -1,6 +1,6 @@
 use seed::{prelude::*, fetch};
 use super::ViewPage;
-use crate::{session, route, viewer, api, avatar, username, GMsg, form::settings as form, request, loading};
+use crate::{session, route, viewer, api, avatar, username, GMsg, form::settings as form, request, loading, logger};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::rc::Rc;
@@ -43,7 +43,7 @@ impl From<Model> for session::Session {
 
 pub fn init<'a>(session: session::Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     orders
-        .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::NoOp))
+        .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
         .perform_cmd(request::settings_load::load_settings(&session, Msg::FormLoadCompleted));
     Model {
         session,
@@ -71,7 +71,7 @@ pub enum Msg {
     FormLoadCompleted(Result<form::Form, Vec<form::Problem>>),
     SaveCompleted(Result<viewer::Viewer, Vec<form::Problem>>),
     SlowLoadThresholdPassed,
-    NoOp,
+    Unreachable,
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
@@ -120,7 +120,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 model.status = Status::LoadingSlowly
             }
         }
-        Msg::NoOp => { orders.skip(); },
+        Msg::Unreachable => { logger::error("Unreachable!") },
     }
 }
 

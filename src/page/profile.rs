@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, username, GMsg, route, article, author, api, loading, request, paginated_list, page_number, helpers};
+use crate::{session, username, GMsg, route, article, author, api, loading, request, paginated_list, page_number, helpers, logger};
 use std::borrow::{Cow, BorrowMut};
 use futures::prelude::*;
 
@@ -71,7 +71,7 @@ pub fn init<'a>(session: session::Session, username: &username::Username<'a>, or
 ) -> Model<'a> {
     let static_username: username::Username<'static> = username.as_str().to_owned().into();
     orders
-        .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::NoOp))
+        .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
         .perform_cmd(request::author_load::load_author(session.clone(), static_username.clone(), Msg::AuthorLoadCompleted))
         .perform_cmd(fetch_feed(
             session.clone(),
@@ -133,7 +133,7 @@ pub enum Msg {
     ),
     FeedMsg(article::feed::Msg),
     SlowLoadThresholdPassed,
-    NoOp,
+    Unreachable,
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
@@ -234,7 +234,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 model.feed = Status::LoadingSlowly(helpers::take(username))
             }
         },
-        Msg::NoOp => { orders.skip(); },
+        Msg::Unreachable => { logger::error("Unreachable!") },
     }
 }
 

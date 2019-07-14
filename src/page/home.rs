@@ -2,6 +2,7 @@ use seed::prelude::*;
 use super::ViewPage;
 use crate::{session, GMsg, route, api, article, paginated_list, loading, request, page_number};
 use futures::prelude::*;
+use web_sys;
 
 // Model
 
@@ -12,6 +13,7 @@ pub enum FeedTab {
     TagFeed(article::tag::Tag)
 }
 
+// @TODO remove unnecessary defaults?
 impl Default for FeedTab {
     fn default() -> Self {
         FeedTab::GlobalFeed
@@ -145,7 +147,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 model.feed_tab.clone(),
                 model.feed_page,
             ));
-            // @TODO scroll to top!
+            scroll_to_top()
         },
         Msg::FeedLoadCompleted(Ok(paginated_list)) => {
             model.feed = Status::Loaded(
@@ -197,6 +199,15 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         },
         Msg::NoOp => { orders.skip(); },
     }
+}
+
+fn scroll_to_top() {
+    seed::window().scroll_to_with_scroll_to_options(
+        web_sys::ScrollToOptions::new()
+            .top(0.)
+            .left(0.)
+            .behavior(web_sys::ScrollBehavior::Smooth)
+    )
 }
 
 // View

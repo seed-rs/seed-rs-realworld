@@ -23,3 +23,4 @@ strum = "0.15.0"
 strum_macros = "0.15.0"
 chrono = "0.4"
 num-integer = "0.1.41"
+web-sys = { version = "0.3.25", features = [ "ScrollBehavior", "ScrollToOptions" ] }

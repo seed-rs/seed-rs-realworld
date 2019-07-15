@@ -11,6 +11,9 @@ impl<'a> Username<'a> {
     pub fn to_string(&'a self) -> String {
         self.0.to_string()
     }
+    pub fn to_static(&self) -> Username<'static> {
+        self.as_str().to_owned().into()
+    }
 }
 
 impl<'a, T> From<T> for Username<'a>

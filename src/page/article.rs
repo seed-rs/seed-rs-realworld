@@ -1,6 +1,7 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, article, GMsg, route, api, comment_id, author, logger};
+use crate::{session, article, GMsg, route, api, comment_id, author, logger, request, helper::take};
+use std::collections::VecDeque;
 
 // Model
 
@@ -32,7 +33,7 @@ impl Default for CommentText {
 pub struct Model<'a> {
     session: session::Session,
     errors: Vec<String>,
-    comments: Status<(CommentText, Vec<article::comment::Comment<'a>>)>,
+    comments: Status<(CommentText, VecDeque<article::comment::Comment<'a>>)>,
     article: Status<article::Article>
 }
 
@@ -71,17 +72,17 @@ pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Ms
 // Update
 
 pub enum Msg {
-    DeleteArticleClicked(api::Credentials, article::slug::Slug),
-    DeleteCommentClicked(api::Credentials, article::slug::Slug, comment_id::CommentId),
+    DeleteArticleClicked(article::slug::Slug),
+    DeleteCommentClicked(article::slug::Slug, comment_id::CommentId),
     DismissErrorsClicked,
-    FavoriteClicked(api::Credentials, article::slug::Slug, article::body::Body),
-    UnfavoriteClicked(api::Credentials, article::slug::Slug, article::body::Body),
-    FollowClicked(api::Credentials, author::UnfollowedAuthor<'static>),
-    UnfollowClicked(api::Credentials, author::FollowedAuthor<'static>),
-    PostCommentClicked(api::Credentials, article::slug::Slug),
+    FavoriteClicked(article::slug::Slug),
+    UnfavoriteClicked(article::slug::Slug),
+    FollowClicked(author::Author<'static>),
+    UnfollowClicked(author::Author<'static>),
+    PostCommentClicked(article::slug::Slug),
     CommentTextEntered(String),
     LoadArticleCompleted(Result<article::Article, Vec<String>>),
-    LoadCommentsCompleted(Result<Vec<article::comment::Comment<'static>>, Vec<String>>),
+    LoadCommentsCompleted(Result<VecDeque<article::comment::Comment<'static>>, Vec<String>>),
     DeleteArticleCompleted(Result<(), Vec<String>>),
     DeleteCommentCompleted(Result<comment_id::CommentId, Vec<String>>),
     FavoriteChangeCompleted(Result<article::Article, Vec<String>>),
@@ -92,29 +93,83 @@ pub enum Msg {
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match msg {
-        Msg::DeleteArticleClicked(credentials, slug) => {
-            unimplemented!()
+        Msg::DeleteArticleClicked(slug) => {
+            orders
+                .perform_cmd(request::article_delete::delete_article(
+                    model.session(),
+                    &slug,
+                    Msg::DeleteArticleCompleted
+                ))
+                .skip();
         }
-        Msg::DeleteCommentClicked(credentials, slug, comment_id) => {
-            unimplemented!()
+        Msg::DeleteCommentClicked(slug, comment_id) => {
+            orders
+                .perform_cmd(request::comment_delete::delete_comment(
+                    model.session(),
+                    &slug,
+                    comment_id,
+                    Msg::DeleteCommentCompleted
+                ))
+                .skip();
         }
         Msg::DismissErrorsClicked => {
             model.errors.clear();
         }
-        Msg::FavoriteClicked(credentials, slug, article_body) => {
-            unimplemented!()
+        Msg::FavoriteClicked(slug) => {
+            // @TODO check if handlers with only orders has skip() called (especially feed.rs)
+            orders
+                .perform_cmd(request::favorite::favorite(
+                    &model.session,
+                    &slug,
+                    Msg::FavoriteChangeCompleted
+                ))
+                .skip();
         }
-        Msg::UnfavoriteClicked(credentials, slug, article_body) => {
-            unimplemented!()
+        Msg::UnfavoriteClicked(slug) => {
+            orders
+                .perform_cmd(request::unfavorite::unfavorite(
+                    &model.session,
+                    &slug,
+                    Msg::FavoriteChangeCompleted
+                ))
+                .skip();
         }
-        Msg::FollowClicked(credentials, unfollowed_author) => {
-            unimplemented!()
+        Msg::FollowClicked(author) => {
+            orders
+                .perform_cmd(request::follow::follow(
+                    model.session.clone(),
+                    author.username().to_static(),
+                    Msg::FollowChangeCompleted
+                ))
+                .skip();
         }
-        Msg::UnfollowClicked(credentials, followed_author) => {
-            unimplemented!()
+        Msg::UnfollowClicked(author) => {
+            orders
+                .perform_cmd(request::unfollow::unfollow(
+                    model.session.clone(),
+                    author.username().to_static(),
+                    Msg::FollowChangeCompleted
+                ))
+                .skip();
         }
-        Msg::PostCommentClicked(credentials, slug) => {
-            unimplemented!()
+        Msg::PostCommentClicked(slug) => {
+            let model_comments = &mut model.comments;
+            match model_comments {
+                Status::Loaded((CommentText::Editing(text), _)) if text.is_empty() => {
+                    orders.skip();
+                }
+                Status::Loaded((CommentText::Editing(text), comments)) => {
+                    orders
+                        .perform_cmd(request::comment_create::create_comment(
+                            &model.session.clone(),
+                            &slug,
+                            text.clone(),
+                            Msg::PostCommentCompleted
+                        ));
+                    *model_comments = Status::Loaded((CommentText::Sending(take(text)), take(comments)));
+                }
+                _ => logger::error("Comment can be created only in Editing mode!")
+            }
         }
         Msg::CommentTextEntered(comment_text) => {
             match &mut model.comments {
@@ -126,56 +181,71 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         }
 
         Msg::LoadArticleCompleted(Ok(article)) => {
-            unimplemented!()
+            model.article = Status::Loaded(article)
         }
         Msg::LoadArticleCompleted(Err(errors)) => {
-            unimplemented!()
+            model.article = Status::Failed;
+            logger::error("Load article failed");
         }
 
         Msg::LoadCommentsCompleted(Ok(comments)) => {
-            unimplemented!()
+            model.comments = Status::Loaded((CommentText::Editing("".into()), comments));
         }
         Msg::LoadCommentsCompleted(Err(errors)) => {
-            unimplemented!()
+            model.comments = Status::Failed;
+            logger::error("Load comments failed");
         }
 
         Msg::DeleteArticleCompleted(Ok(())) => {
-            unimplemented!()
+            route::go_to(route::Route::Home, orders);
         }
         Msg::DeleteArticleCompleted(Err(errors)) => {
-            unimplemented!()
+            // @TODO errors (see Elm example)?
         }
 
         Msg::DeleteCommentCompleted(Ok(comment_id)) => {
-            unimplemented!()
+            if let Status::Loaded((_, comments)) = &mut model.comments {
+                comments.retain(|comment|comment.id != comment_id);
+            }
         }
         Msg::DeleteCommentCompleted(Err(errors)) => {
-            unimplemented!()
+            // @TODO errors (see Elm example)?
         }
 
         Msg::FavoriteChangeCompleted(Ok(article)) => {
-            unimplemented!()
+            model.article = Status::Loaded(article);
         }
         Msg::FavoriteChangeCompleted(Err(errors)) => {
-            unimplemented!()
+            // @TODO errors (see Elm example)?
         }
 
-        Msg::FollowChangeCompleted(Ok(article)) => {
-            unimplemented!()
+        Msg::FollowChangeCompleted(Ok(author)) => {
+            if let Status::Loaded(article) = &mut model.article {
+                article.author = author;
+            }
         }
         Msg::FollowChangeCompleted(Err(errors)) => {
-            unimplemented!()
+            // @TODO errors (see Elm example)?
         }
 
         Msg::PostCommentCompleted(Ok(comment)) => {
-            unimplemented!()
+            if let Status::Loaded((text, comments)) = &mut model.comments {
+                *text = CommentText::Editing("".into());
+                comments.push_front(comment);
+            }
         }
         Msg::PostCommentCompleted(Err(errors)) => {
-            unimplemented!()
+            // @TODO return to editing mode?
+            // @TODO errors (see Elm example)?
         }
 
         Msg::SlowLoadThresholdPassed => {
-            unimplemented!()
+            if let Status::Loading = model.article {
+                model.article = Status::LoadingSlowly
+            }
+            if let Status::Loading = model.comments {
+                model.article = Status::LoadingSlowly
+            }
         }
     }
 }

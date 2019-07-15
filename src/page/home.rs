@@ -181,7 +181,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             if let Status::Loading = model.feed {
                 model.feed = Status::LoadingSlowly
             }
-
             if let Status::Loading = model.tags {
                 model.tags = Status::LoadingSlowly
             }

@@ -69,13 +69,13 @@ impl<'a> From<Model<'a>> for session::Session {
 
 pub fn init<'a>(session: session::Session, username: &username::Username<'a>, orders: &mut impl Orders<Msg, GMsg>
 ) -> Model<'a> {
-    let static_username: username::Username<'static> = username.as_str().to_owned().into();
+    let static_username = username.to_static();
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
         .perform_cmd(request::author_load::load_author(session.clone(), static_username.clone(), Msg::AuthorLoadCompleted))
         .perform_cmd(fetch_feed(
             session.clone(),
-            static_username.clone(),
+            static_username,
             FeedTab::default(),
             page_number::PageNumber::default(),
         ));
@@ -121,8 +121,8 @@ pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Ms
 #[derive(Clone)]
 pub enum Msg {
     DismissErrorsClicked,
-    FollowClicked(api::Credentials, author::UnfollowedAuthor<'static>),
-    UnfollowClicked(api::Credentials, author::FollowedAuthor<'static>),
+    FollowClicked,
+    UnfollowClicked,
     TabClicked(FeedTab),
     FeedPageClicked(page_number::PageNumber),
     FollowChangeCompleted(Result<author::Author<'static>, Vec<String>>),
@@ -141,50 +141,41 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::DismissErrorsClicked => {
             model.errors.clear();
         },
-        Msg::FollowClicked(credentials, unfollowed_author) => {
-            let static_username: username::Username<'static> =
-                model.author.username().as_str().to_owned().into();
+        Msg::FollowClicked => {
             orders.perform_cmd(
                 request::follow::follow(
                     model.session.clone(),
-                    static_username,
+                    model.author.username().to_static(),
                     Msg::FollowChangeCompleted
                 )
             );
         },
-        Msg::UnfollowClicked(credentials, unfollowed_author) => {
-            let static_username: username::Username<'static> =
-                model.author.username().as_str().to_owned().into();
+        Msg::UnfollowClicked => {
             orders.perform_cmd(
                 request::unfollow::unfollow(
                     model.session.clone(),
-                    static_username,
+                    model.author.username().to_static(),
                     Msg::FollowChangeCompleted
                 )
             );
         },
         Msg::TabClicked(feed_tab) => {
-            let static_username: username::Username<'static> =
-                model.author.username().as_str().to_owned().into();
-
             model.feed_tab = feed_tab;
             model.feed_page = page_number::PageNumber::default();
             orders
                 .perform_cmd(fetch_feed(
                     model.session.clone(),
-                    static_username,
+                    model.author.username().to_static(),
                     feed_tab,
                     model.feed_page,
                 ));
         },
         Msg::FeedPageClicked(page_number) => {
-            let static_username: username::Username<'static> =
-                model.author.username().as_str().to_owned().into();
             model.feed_page = page_number;
             orders
                 .perform_cmd(fetch_feed(
                     model.session.clone(),
-                    static_username,
+                    model.author.username().to_static(),
                     model.feed_tab,
                     model.feed_page,
                 ));
@@ -320,6 +311,7 @@ fn view_feed(model: &Model) -> Node<Msg> {
 }
 
 fn view_follow_button(author: &author::Author, model: &Model) -> Node<Msg> {
+    // @TODO helper for getting credentials and move it after match
     let credentials = model.session().viewer().map(|viewer| &viewer.credentials);
     match credentials {
         None => empty![],
@@ -328,15 +320,15 @@ fn view_follow_button(author: &author::Author, model: &Model) -> Node<Msg> {
                 author::Author::IsViewer(..) => {
                     empty![]
                 },
-                author::Author::Following(followed_author) => {
+                author::Author::Following(_) => {
                     author::view_unfollow_button(
-                        Msg::UnfollowClicked(credentials.clone(), followed_author.to_static()),
+                        Msg::UnfollowClicked,
                         author.username()
                     )
                 }
-                author::Author::NotFollowing(unfollowed_author) => {
+                author::Author::NotFollowing(_) => {
                     author::view_follow_button(
-                        Msg::FollowClicked(credentials.clone(), unfollowed_author.to_static()),
+                        Msg::FollowClicked,
                         author.username()
                     )
                 }

@@ -17,3 +17,4 @@ pub mod unfavorite;
 pub mod tags_load;
 pub mod comment_create;
 pub mod comment_delete;
+pub mod comments_load;

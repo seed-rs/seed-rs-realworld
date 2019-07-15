@@ -53,8 +53,8 @@ pub fn init<'a>(session: session::Session, slug: article::slug::Slug, orders: &m
 ) -> Model<'a> {
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
-        .perform_cmd(request::article_article_load::load_article(&session, &slug,Msg::LoadArticleCompleted));
-//        .perform_cmd(request::comments_load::load_comments(Msg::LoadCommentsCompleted));
+        .perform_cmd(request::article_article_load::load_article(&session, &slug,Msg::LoadArticleCompleted))
+        .perform_cmd(request::comments_load::load_comments(session.clone(), &slug,Msg::LoadCommentsCompleted));
 
     Model {
         session,

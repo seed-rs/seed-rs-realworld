@@ -1,19 +1,18 @@
-use crate::{form::article_editor as form, username, author, timestamp};
-
+use crate::{form::article_editor as form, username, author, timestamp, markdown, article};
+use article::tag::IntoStrings;
 pub mod feed;
 pub mod slug;
 pub mod tag;
 pub mod comment;
-pub mod body;
 
 #[derive(Clone)]
 pub struct Article {
     pub title: String,
     pub slug: slug::Slug,
-    pub body: String,
+    pub body: markdown::Markdown,
     pub created_at: timestamp::Timestamp,
     pub updated_at: timestamp::Timestamp,
-    pub tag_list: Vec<String>,
+    pub tag_list: Vec<article::tag::Tag>,
     pub description: String,
     pub author: author::Author<'static>,
     pub favorited: bool,
@@ -25,8 +24,8 @@ impl Article {
         let fields: Vec<form::Field> = vec![
             form::Field::Title(self.title),
             form::Field::Description(self.description),
-            form::Field::Body(self.body),
-            form::Field::Tags(self.tag_list.join(" ")),
+            form::Field::Body(self.body.to_string()),
+            form::Field::Tags(self.tag_list.into_strings().join(" ")),
         ];
         form::Form::new(fields)
     }

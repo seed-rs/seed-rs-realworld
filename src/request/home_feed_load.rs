@@ -6,6 +6,7 @@ use seed::fetch;
 use std::rc::Rc;
 use std::convert::TryFrom;
 use std::convert::TryInto;
+use article::tag::IntoTags;
 
 const ARTICLES_PER_PAGE: usize = 10;
 
@@ -84,10 +85,10 @@ impl ServerData {
                 Ok(article::Article {
                     title: item.title,
                     slug: item.slug.into(),
-                    body: item.body,
+                    body: item.body.into(),
                     created_at,
                     updated_at,
-                    tag_list: item.tag_list,
+                    tag_list: item.tag_list.into_tags(),
                     description: item.description,
                     author: item.author.into_author(session.clone()),
                     favorited: item.favorited,

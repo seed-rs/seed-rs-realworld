@@ -1,4 +1,5 @@
 pub mod article_load;
+pub mod article_article_load;
 pub mod article_update;
 pub mod article_create;
 pub mod article_delete;

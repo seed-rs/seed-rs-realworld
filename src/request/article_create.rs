@@ -5,6 +5,7 @@ use futures::prelude::*;
 use seed::fetch;
 use std::rc::Rc;
 use std::convert::TryInto;
+use article::tag::IntoTags;
 
 #[derive(Deserialize)]
 struct ServerErrorData {
@@ -75,10 +76,10 @@ impl ServerData {
         Ok(article::Article {
             title: self.article.title,
             slug: self.article.slug.into(),
-            body: self.article.body,
+            body: self.article.body.into(),
             created_at,
             updated_at,
-            tag_list: self.article.tag_list,
+            tag_list: self.article.tag_list.into_tags(),
             description: self.article.description,
             author: self.article.author.into_author(session),
             favorited: self.article.favorited,

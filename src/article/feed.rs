@@ -131,10 +131,10 @@ fn view_favorite_button(credentials: Option<&Credentials>, article: &article::Ar
     }
 }
 
-fn view_tag(tag: String) -> Node<Msg> {
+fn view_tag(tag: article::tag::Tag) -> Node<Msg> {
     li![
         class!["tag-default", "tag-pill", "tag-outline"],
-        tag
+        tag.to_string()
     ]
 }
 

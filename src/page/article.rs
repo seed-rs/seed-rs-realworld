@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, article, GMsg, route, api, comment_id, author, logger, request, helper::take};
+use crate::{session, article, GMsg, route, api, comment_id, author, logger, request, helper::take, markdown, loading};
 use std::collections::VecDeque;
 
 // Model
@@ -49,8 +49,13 @@ impl<'a> From<Model<'a>> for session::Session {
     }
 }
 
-pub fn init<'a>(session: session::Session, slug: article::slug::Slug, _: &mut impl Orders<Msg, GMsg>
+pub fn init<'a>(session: session::Session, slug: article::slug::Slug, orders: &mut impl Orders<Msg, GMsg>
 ) -> Model<'a> {
+    orders
+        .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
+        .perform_cmd(request::article_article_load::load_article(&session, &slug,Msg::LoadArticleCompleted));
+//        .perform_cmd(request::comments_load::load_comments(Msg::LoadCommentsCompleted));
+
     Model {
         session,
         ..Model::default()
@@ -89,6 +94,7 @@ pub enum Msg {
     FollowChangeCompleted(Result<author::Author<'static>, Vec<String>>),
     PostCommentCompleted(Result<article::comment::Comment<'static>, Vec<String>>),
     SlowLoadThresholdPassed,
+    Unreachable
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
@@ -244,259 +250,243 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 model.article = Status::LoadingSlowly
             }
             if let Status::Loading = model.comments {
-                model.article = Status::LoadingSlowly
+                model.comments = Status::LoadingSlowly
             }
         }
+        Msg::Unreachable => { logger::error("Unreachable!") },
     }
 }
 
 // View
 
 pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
-    ViewPage::new("Conduit",view_content())
+    ViewPage::new("Conduit",view_content(model))
 }
 
-fn view_content() -> Node<Msg> {
+fn view_banner() -> Node<Msg> {
     div![
-        class!["article-page"],
-
+        class!["banner"],
         div![
-            class!["banner"],
-            div![
-                class!["container"],
+            class!["container"],
 
-                h1![
-                    "How to build webapps that scale"
+            h1![
+                "How to build webapps that scale"
+            ],
+
+            div![
+                class!["article-meta"],
+                a![
+                    attrs!{At::Href => ""},
+                    img![
+                        attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
+                    ]
                 ],
-
                 div![
-                    class!["article-meta"],
+                    class!["info"],
                     a![
+                        class!["author"],
                         attrs!{At::Href => ""},
-                        img![
-                            attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
-                        ]
+                        "Eric Simons"
                     ],
-                    div![
-                        class!["info"],
-                        a![
-                            class!["author"],
-                            attrs!{At::Href => ""},
-                            "Eric Simons"
-                        ],
-                        span![
-                            class!["date"],
-                            "January 20th"
-                        ]
-                    ],
-                    button![
-                        class!["btn", "btn-sm", "btn-outline-secondary"],
-                        i![
-                            class!["ion-plus-round"]
-                        ],
-                        raw!("&nbsp;"),
-                        "Follow Eric Simons ",
-                        span![
-                            class!["counter"],
-                            "(10)"
-                        ]
-                    ],
-                    raw!("&nbsp;&nbsp;"),
-                    button![
-                        class!["btn", "btn-sm", "btn-outline-primary"],
-                        i![
-                            class!["ion-heart"]
-                        ],
-                        raw!("&nbsp;"),
-                        "Favorite Post ",
-                        span![
-                            class!["counter"],
-                            "(29)"
-                        ]
-                    ],
-                ]
-
-            ]
-        ],
-
-        div![
-            class!["container", "page"],
-
-            div![
-                class!["row", "article-content"],
-                div![
-                    class!["col-md-12"],
-                    p![
-                        "Web development technologies have evolved at an incredible clip over the past few years."
-                    ],
-                    h2![
-                        id!("introducing-ionic"),
-                        "Introducing RealWorld."
-                    ],
-                    p![
-                        "It's a great solution for learning how other frameworks work."
+                    span![
+                        class!["date"],
+                        "January 20th"
                     ]
-                ]
-            ],
-
-            hr![],
-
-            div![
-                class!["article-actions"],
-                div![
-                    class!["article-meta"],
-                    a![
-                        attrs!{At::Href => "/profile"},
-                        img![
-                            attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
-                        ]
+                ],
+                button![
+                    class!["btn", "btn-sm", "btn-outline-secondary"],
+                    i![
+                        class!["ion-plus-round"]
                     ],
-                    div![
-                        class!["info"],
-                        a![
-                            class!["author"],
-                            attrs!{At::Href => ""},
-                            "Eric Simons"
-                        ],
-                        span![
-                            class!["date"],
-                            "January 20th"
-                        ]
-                    ],
-
-                    button![
-                        class!["btn", "btn-sm", "btn-outline-secondary"],
-                        i![
-                            class!["ion-plus-round"]
-                        ],
-                        raw!("&nbsp;"),
-                        "Follow Eric Simons ",
-                        span![
-                            class!["counter"],
-                            "(10)"
-                        ]
-                    ],
-                    raw!("&nbsp;&nbsp;"),
-                    button![
-                        class!["btn", "btn-sm", "btn-outline-primary"],
-                        i![
-                            class!["ion-heart"]
-                        ],
-                        raw!("&nbsp;"),
-                        "Favorite Post ",
-                        span![
-                            class!["counter"],
-                            "(29)"
-                        ]
-                    ],
-                ]
-            ],
-
-            div![
-                class!["row"],
-
-                div![
-                    class!["col-xs-12", "col-md-8", "offset-md-2"],
-
-                    form![
-                        class!["card", "comment-form"],
-                        div![
-                            class!["card-block"],
-                            textarea![
-                                class!["form-control"],
-                                attrs!{At::Rows => 3; At::Placeholder => "Write a comment..."}
-                            ]
-                        ],
-                        div![
-                            class!["card-footer"],
-                            img![
-                                class!["comment-author-img"],
-                                attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
-                            ],
-                            button![
-                                class!["btn", "btn-sm", "btn-primary"],
-                                "Post Comment"
-                            ]
-                        ]
-                    ],
-
-                    div![
-                        class!["card"],
-                        div![
-                            class!["card-block"],
-                            p![
-                                class!["card-text"],
-                                "With supporting text below as a natural lead-in to additional content."
-                            ]
-                        ],
-                        div![
-                            class!["card-footer"],
-                            a![
-                                class!["comment-author"],
-                                attrs!{At::Href => ""},
-                                img![
-                                    class!["comment-author-img"],
-                                    attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
-                                ]
-                            ],
-                            raw!("&nbsp;"),
-                            a![
-                                class!["comment-author"],
-                                attrs!{At::Href => ""},
-                                "Jacob Schmidt"
-                            ],
-                            span![
-                                class!["date-posted"],
-                                "Dec 29th"
-                            ]
-                        ]
-                    ],
-
-                    div![
-                        class!["card"],
-                        div![
-                            class!["card-block"],
-                            p![
-                                class!["card-text"],
-                                "With supporting text below as a natural lead-in to additional content."
-                            ]
-                        ],
-                        div![
-                            class!["card-footer"],
-                            a![
-                                class!["comment-author"],
-                                attrs!{At::Href => ""},
-                                img![
-                                    class!["comment-author-img"],
-                                    attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
-                                ]
-                            ],
-                            raw!("&nbsp;"),
-                            a![
-                                class!["comment-author"],
-                                attrs!{At::Href => ""},
-                                "Jacob Schmidt"
-                            ],
-                            span![
-                                class!["date-posted"],
-                                "Dec 29th"
-                            ],
-                            span![
-                                class!["mod-options"],
-                                i![
-                                    class!["ion-edit"]
-                                ],
-                                i![
-                                    class!["ion-trash-a"]
-                                ]
-                            ]
-                        ]
+                    raw!("&nbsp;"),
+                    "Follow Eric Simons ",
+                    span![
+                        class!["counter"],
+                        "(10)"
                     ]
-
-                ]
-
+                ],
+                raw!("&nbsp;&nbsp;"),
+                button![
+                    class!["btn", "btn-sm", "btn-outline-primary"],
+                    i![
+                        class!["ion-heart"]
+                    ],
+                    raw!("&nbsp;"),
+                    "Favorite Post ",
+                    span![
+                        class!["counter"],
+                        "(29)"
+                    ]
+                ],
             ]
 
         ]
     ]
+}
+
+fn view_article_content(markdown: &markdown::Markdown) -> Node<Msg> {
+    div![
+        class!["row", "article-content"],
+        div![
+            class!["col-md-12"],
+            md!(markdown.as_str())
+        ]
+    ]
+}
+
+fn view_article_actions() -> Node<Msg> {
+    div![
+        class!["article-actions"],
+        div![
+            class!["article-meta"],
+            a![
+                attrs!{At::Href => "/profile"},
+                img![
+                    attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
+                ]
+            ],
+            div![
+                class!["info"],
+                a![
+                    class!["author"],
+                    attrs!{At::Href => ""},
+                    "Eric Simons"
+                ],
+                span![
+                    class!["date"],
+                    "January 20th"
+                ]
+            ],
+
+            button![
+                class!["btn", "btn-sm", "btn-outline-secondary"],
+                i![
+                    class!["ion-plus-round"]
+                ],
+                raw!("&nbsp;"),
+                "Follow Eric Simons ",
+                span![
+                    class!["counter"],
+                    "(10)"
+                ]
+            ],
+            raw!("&nbsp;&nbsp;"),
+            button![
+                class!["btn", "btn-sm", "btn-outline-primary"],
+                i![
+                    class!["ion-heart"]
+                ],
+                raw!("&nbsp;"),
+                "Favorite Post ",
+                span![
+                    class!["counter"],
+                    "(29)"
+                ]
+            ],
+        ]
+    ]
+}
+
+fn view_comment_form() -> Node<Msg> {
+    form![
+        class!["card", "comment-form"],
+        div![
+            class!["card-block"],
+            textarea![
+                class!["form-control"],
+                attrs!{At::Rows => 3; At::Placeholder => "Write a comment..."}
+            ]
+        ],
+        div![
+            class!["card-footer"],
+            img![
+                class!["comment-author-img"],
+                attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
+            ],
+            button![
+                class!["btn", "btn-sm", "btn-primary"],
+                "Post Comment"
+            ]
+        ]
+    ]
+}
+
+fn view_comment() -> Node<Msg> {
+    div![
+        class!["card"],
+        div![
+            class!["card-block"],
+            p![
+                class!["card-text"],
+                "With supporting text below as a natural lead-in to additional content."
+            ]
+        ],
+        div![
+            class!["card-footer"],
+            a![
+                class!["comment-author"],
+                attrs!{At::Href => ""},
+                img![
+                    class!["comment-author-img"],
+                    attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
+                ]
+            ],
+            raw!("&nbsp;"),
+            a![
+                class!["comment-author"],
+                attrs!{At::Href => ""},
+                "Jacob Schmidt"
+            ],
+            span![
+                class!["date-posted"],
+                "Dec 29th"
+            ],
+            span![
+                class!["mod-options"],
+                i![
+                    class!["ion-edit"]
+                ],
+                i![
+                    class!["ion-trash-a"]
+                ]
+            ]
+        ]
+    ]
+}
+
+fn view_comments() -> Vec<Node<Msg>> {
+    vec![view_comment()]
+}
+
+fn view_content(model: &Model) -> Node<Msg> {
+    match &model.article {
+        Status::Loading => empty![],
+        Status::LoadingSlowly => loading::icon(),
+        Status::Failed => loading::error("article"),
+        Status::Loaded(article) => {
+            div![
+                class!["article-page"],
+                view_banner(),
+
+                div![
+                    class!["container", "page"],
+                    view_article_content(&article.body),
+                    hr![],
+                    view_article_actions(),
+
+                    div![
+                        class!["row"],
+                        div![
+                            class!["col-xs-12", "col-md-8", "offset-md-2"],
+                            view_comment_form(),
+                            view_comments(),
+
+                        ]
+                    ]
+
+                ]
+
+            ]
+        },
+    }
 }

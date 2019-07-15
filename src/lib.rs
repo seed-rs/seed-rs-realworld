@@ -26,6 +26,7 @@ mod timestamp;
 mod page_number;
 mod comment_id;
 mod logger;
+mod markdown;
 
 // Model
 

@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{avatar, username, api, form::article_editor as form, session, article, author, profile};
+use crate::{viewer, avatar, username, api, form::article_editor as form, session, article, author, profile, timestamp};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
@@ -88,20 +88,17 @@ impl ServerData {
     }
 }
 
-pub fn update_article<Ms: 'static>(
+pub fn load_article<Ms: 'static>(
     session: &session::Session,
-    valid_form: &form::ValidForm,
     slug: &article::slug::Slug,
-    f: fn(Result<article::Article, Vec<form::Problem>>) -> Ms
+    f: fn(Result<article::Article, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
+    let slug = slug.clone();
     let session = session.clone();
 
     let mut request = fetch::Request::new(
         format!("https://conduit.productionready.io/api/articles/{}", slug.as_str())
-    )
-        .method(fetch::Method::Put)
-        .timeout(5000)
-        .send_json(&valid_form.dto());
+    ).timeout(5000);
 
     if let Some(viewer) = session.viewer() {
         let auth_token = viewer.credentials.auth_token.as_str();
@@ -109,17 +106,17 @@ pub fn update_article<Ms: 'static>(
     }
 
     request.fetch_string(move |fetch_object| {
-        f(process_fetch_object(session, fetch_object))
+        f(process_fetch_object(session,fetch_object))
     })
 }
 
 fn process_fetch_object(
     session: session::Session,
     fetch_object: fetch::FetchObject<String>
-) -> Result<article::Article, Vec<form::Problem>> {
+) -> Result<article::Article, Vec<String>> {
     match fetch_object.result {
         Err(request_error) => {
-            Err(vec![form::Problem::new_server_error("Request error")])
+            Err(vec!["Request error".into()])
         },
         Ok(response) => {
             if response.status.is_ok() {
@@ -141,12 +138,12 @@ fn process_fetch_object(
                             match article {
                                 Ok(article) => Ok(article),
                                 Err(error) => {
-                                    Err(vec![form::Problem::new_server_error(error)])
+                                    Err(vec![error])
                                 }
                             }
                         },
                         Err(data_error) => {
-                            Err(vec![form::Problem::new_server_error("Data error")])
+                            Err(vec!["Data error".into()])
                         }
                     }
             } else {
@@ -165,15 +162,10 @@ fn process_fetch_object(
                     });
                 match error_messages {
                     Ok(error_messages) => {
-                        let problems = error_messages
-                            .into_iter()
-                            .map(|message| {
-                                form::Problem::new_server_error(message)
-                            }).collect();
-                        Err(problems)
+                        Err(error_messages)
                     },
                     Err(data_error) => {
-                        Err(vec![form::Problem::new_server_error("Data error")])
+                        Err(vec!["Data error".into()])
                     }
                 }
             }

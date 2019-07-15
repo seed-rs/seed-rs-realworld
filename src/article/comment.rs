@@ -1,5 +1,6 @@
 use crate::{comment_id, timestamp, author};
 
+#[derive(Clone)]
 pub struct Comment<'a> {
     pub id: comment_id::CommentId,
     pub body: String,

@@ -20,7 +20,7 @@ struct ServerData {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ServerDataFields {
-    id: String,
+    id: usize,
     created_at: String,
     updated_at: String,
     body: String,
@@ -68,7 +68,7 @@ impl ServerData {
         let updated_at = self.comment.updated_at.try_into()?;
 
         Ok(article::comment::Comment {
-            id: self.comment.id.into(),
+            id: self.comment.id.to_string().into(),
             body: self.comment.body,
             created_at,
             updated_at,

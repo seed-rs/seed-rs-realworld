@@ -1,7 +1,6 @@
 use crate::{session, paginated_list, article, api, GMsg, route, author, request, timestamp, page_number};
 use seed::prelude::*;
 use std::borrow::Cow;
-use crate::api::Credentials;
 
 // Model
 
@@ -104,7 +103,7 @@ pub fn view_pagination<Ms: Clone>(
     }
 }
 
-fn view_favorite_button(credentials: Option<&Credentials>, article: &article::Article) -> Node<Msg> {
+fn view_favorite_button(credentials: Option<&api::Credentials>, article: &article::Article) -> Node<Msg> {
     match credentials {
         None => empty![],
         Some(credentials) => {

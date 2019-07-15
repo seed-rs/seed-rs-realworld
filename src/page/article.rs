@@ -1,7 +1,8 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, article, GMsg, route, api, comment_id, author, logger, request, helper::take, markdown, loading};
+use crate::{session, article, GMsg, route, api, comment_id, author, logger, request, helper::take, markdown, loading, timestamp};
 use std::collections::VecDeque;
+use std::borrow::Cow;
 
 // Model
 
@@ -76,15 +77,16 @@ pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Ms
 
 // Update
 
+#[derive(Clone)]
 pub enum Msg {
     DeleteArticleClicked(article::slug::Slug),
     DeleteCommentClicked(article::slug::Slug, comment_id::CommentId),
     DismissErrorsClicked,
     FavoriteClicked(article::slug::Slug),
     UnfavoriteClicked(article::slug::Slug),
-    FollowClicked(author::Author<'static>),
-    UnfollowClicked(author::Author<'static>),
-    PostCommentClicked(article::slug::Slug),
+    FollowClicked(author::UnfollowedAuthor<'static>),
+    UnfollowClicked(author::FollowedAuthor<'static>),
+    PostCommentClicked,
     CommentTextEntered(String),
     LoadArticleCompleted(Result<article::Article, Vec<String>>),
     LoadCommentsCompleted(Result<VecDeque<article::comment::Comment<'static>>, Vec<String>>),
@@ -124,7 +126,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::FavoriteClicked(slug) => {
             // @TODO check if handlers with only orders has skip() called (especially feed.rs)
             orders
-                .perform_cmd(request::favorite::favorite(
+                .perform_cmd(request::unfavorite::unfavorite(
                     &model.session,
                     &slug,
                     Msg::FavoriteChangeCompleted
@@ -133,48 +135,50 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         }
         Msg::UnfavoriteClicked(slug) => {
             orders
-                .perform_cmd(request::unfavorite::unfavorite(
+                .perform_cmd(request::favorite::favorite(
                     &model.session,
                     &slug,
                     Msg::FavoriteChangeCompleted
                 ))
                 .skip();
         }
-        Msg::FollowClicked(author) => {
+        Msg::FollowClicked(unfollowed_author) => {
             orders
                 .perform_cmd(request::follow::follow(
                     model.session.clone(),
-                    author.username().to_static(),
+                    unfollowed_author.0,
                     Msg::FollowChangeCompleted
                 ))
                 .skip();
         }
-        Msg::UnfollowClicked(author) => {
+        Msg::UnfollowClicked(followed_author) => {
             orders
                 .perform_cmd(request::unfollow::unfollow(
                     model.session.clone(),
-                    author.username().to_static(),
+                    followed_author.0,
                     Msg::FollowChangeCompleted
                 ))
                 .skip();
         }
-        Msg::PostCommentClicked(slug) => {
-            let model_comments = &mut model.comments;
-            match model_comments {
-                Status::Loaded((CommentText::Editing(text), _)) if text.is_empty() => {
-                    orders.skip();
+        Msg::PostCommentClicked => {
+            if let Status::Loaded(article) = &model.article {
+                let model_comments = &mut model.comments;
+                match model_comments {
+                    Status::Loaded((CommentText::Editing(text), _)) if text.is_empty() => {
+                        orders.skip();
+                    }
+                    Status::Loaded((CommentText::Editing(text), comments)) => {
+                        orders
+                            .perform_cmd(request::comment_create::create_comment(
+                                &model.session.clone(),
+                                &article.slug,
+                                text.clone(),
+                                Msg::PostCommentCompleted
+                            ));
+                        *model_comments = Status::Loaded((CommentText::Sending(take(text)), take(comments)));
+                    }
+                    _ => logger::error("Comment can be created only in Editing mode!")
                 }
-                Status::Loaded((CommentText::Editing(text), comments)) => {
-                    orders
-                        .perform_cmd(request::comment_create::create_comment(
-                            &model.session.clone(),
-                            &slug,
-                            text.clone(),
-                            Msg::PostCommentCompleted
-                        ));
-                    *model_comments = Status::Loaded((CommentText::Sending(take(text)), take(comments)));
-                }
-                _ => logger::error("Comment can be created only in Editing mode!")
             }
         }
         Msg::CommentTextEntered(comment_text) => {
@@ -235,13 +239,17 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         }
 
         Msg::PostCommentCompleted(Ok(comment)) => {
-            if let Status::Loaded((text, comments)) = &mut model.comments {
-                *text = CommentText::Editing("".into());
+            if let Status::Loaded((comment_text, comments)) = &mut model.comments {
+                *comment_text = CommentText::Editing("".into());
                 comments.push_front(comment);
             }
         }
         Msg::PostCommentCompleted(Err(errors)) => {
-            // @TODO return to editing mode?
+            if let Status::Loaded((comment_text, _)) = &mut model.comments {
+                if let CommentText::Sending(text) = comment_text {
+                    *comment_text = CommentText::Editing(take(text))
+                }
+            }
             // @TODO errors (see Elm example)?
         }
 
@@ -263,199 +271,253 @@ pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
     ViewPage::new("Conduit",view_content(model))
 }
 
-fn view_banner() -> Node<Msg> {
+fn view_favorite_button(article: &article::Article) -> Node<Msg> {
+    if article.favorited {
+        button![
+            class!["btn","btn-primary", "btn-sm"],
+            simple_ev(Ev::Click, Msg::FavoriteClicked(article.slug.clone())),
+            i![
+                class!["ion-heart"],
+                format!(" Favorite Article ({})", article.favorites_count),
+            ]
+        ]
+    } else {
+        button![
+            class!["btn","btn-outline-primary", "btn-sm"],
+            simple_ev(Ev::Click, Msg::UnfavoriteClicked(article.slug.clone())),
+            i![
+                class!["ion-heart"],
+                format!(" Favorite Article ({})", article.favorites_count),
+            ]
+        ]
+    }
+}
+
+fn view_delete_button(slug: article::slug::Slug) -> Node<Msg> {
+    button![
+        class!["btn", "btn-outline-danger", "btn-sm"],
+        simple_ev(Ev::Click, Msg::DeleteArticleClicked(slug)),
+        i![
+            class!["ion-trash-a"]
+        ],
+        " Delete Article",
+    ]
+}
+
+fn view_edit_button(slug: article::slug::Slug) -> Node<Msg> {
+    a![
+        class!["btn", "btn-outline-secondary", "btn-sm"],
+        attrs!{At::Href => route::Route::EditArticle(slug).to_string()},
+        i![
+            class!["ion-edit"],
+        ],
+        " Edit Article",
+    ]
+}
+
+fn view_buttons(article: &article::Article, model: &Model) -> Vec<Node<Msg>> {
+    let credentials = model.session().viewer().map(|viewer|&viewer.credentials);
+    match credentials {
+        None => vec![],
+        Some(_) => {
+            match &article.author {
+                author::Author::IsViewer(..) => {
+                    vec![
+                        view_edit_button(article.slug.clone()),
+                        plain![" "],
+                        view_delete_button(article.slug.clone())
+                    ]
+                }
+                author::Author::Following(followed_author) => {
+                    vec![
+                        author::view_unfollow_button(
+                            Msg::UnfollowClicked(followed_author.clone()),
+                            &followed_author.0
+                        ),
+                        plain![" "],
+                        view_favorite_button(article),
+                    ]
+                }
+                author::Author::NotFollowing(unfollowed_author) => {
+                    vec![
+                        author::view_follow_button(
+                            Msg::FollowClicked(unfollowed_author.clone()),
+                            &unfollowed_author.0
+                        ),
+                        plain![" "],
+                        view_favorite_button(article),
+                    ]
+                }
+            }
+        }
+    }
+}
+
+fn view_article_meta(article: &article::Article, model: &Model) -> Node<Msg> {
+    div![
+        class!["article-meta"],
+        a![
+            attrs!{At::Href => route::Route::Profile(Cow::Borrowed(article.author.username())).to_string()},
+            img![
+                attrs!{At::Src => article.author.profile().avatar.src()}
+            ]
+        ],
+        div![
+            class!["info"],
+            author::view(article.author.username()),
+            span![
+                class!["date"],
+                timestamp::view(&article.created_at)
+            ]
+        ],
+        view_buttons(article, model),
+    ]
+}
+
+fn view_banner(article: &article::Article, model: &Model) -> Node<Msg> {
     div![
         class!["banner"],
         div![
             class!["container"],
-
             h1![
-                "How to build webapps that scale"
+                article.title
             ],
+            view_article_meta(article, model)
+            // @TODO view errors
+        ]
+    ]
+}
 
-            div![
-                class!["article-meta"],
+fn view_comment_form(comment_text: &CommentText, model: &Model) -> Node<Msg> {
+    match model.session().viewer() {
+        None => {
+            p![
                 a![
-                    attrs!{At::Href => ""},
-                    img![
-                        attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
+                    "Sign in",
+                    attrs!{At::Href => route::Route::Login.to_string()}
+                ],
+                " or ",
+                a![
+                    "Sign up",
+                    attrs!{At::Href => route::Route::Register.to_string()}
+                ],
+                " to comment."
+            ]
+        }
+        Some(viewer) => {
+            let (comment_text, post_comment_disabled) = match comment_text {
+                CommentText::Editing(text) => {
+                    (text, false)
+                }
+                CommentText::Sending(text) => {
+                    (text, true)
+                }
+            };
+
+            form![
+                class!["card", "comment-form"],
+                raw_ev(Ev::Submit, |event| {
+                    event.prevent_default();
+                    Msg::PostCommentClicked
+                }),
+                div![
+                    class!["card-block"],
+                    textarea![
+                        class!["form-control"],
+                        input_ev(Ev::Input, Msg::CommentTextEntered),
+                        attrs!{
+                            At::Rows => 3,
+                            At::Placeholder => "Write a comment...",
+                            At::Value => comment_text,
+                        }
                     ]
                 ],
                 div![
-                    class!["info"],
-                    a![
-                        class!["author"],
-                        attrs!{At::Href => ""},
-                        "Eric Simons"
+                    class!["card-footer"],
+                    img![
+                        class!["comment-author-img"],
+                        attrs!{At::Src => viewer.avatar().src()}
                     ],
-                    span![
-                        class!["date"],
-                        "January 20th"
+                    button![
+                        class!["btn", "btn-sm", "btn-primary"],
+                        attrs!{At::Disabled => post_comment_disabled},
+                        "Post Comment"
                     ]
-                ],
-                button![
-                    class!["btn", "btn-sm", "btn-outline-secondary"],
-                    i![
-                        class!["ion-plus-round"]
-                    ],
-                    raw!("&nbsp;"),
-                    "Follow Eric Simons ",
-                    span![
-                        class!["counter"],
-                        "(10)"
-                    ]
-                ],
-                raw!("&nbsp;&nbsp;"),
-                button![
-                    class!["btn", "btn-sm", "btn-outline-primary"],
-                    i![
-                        class!["ion-heart"]
-                    ],
-                    raw!("&nbsp;"),
-                    "Favorite Post ",
-                    span![
-                        class!["counter"],
-                        "(29)"
-                    ]
-                ],
+                ]
             ]
-
-        ]
-    ]
+        }
+    }
 }
 
-fn view_article_content(markdown: &markdown::Markdown) -> Node<Msg> {
-    div![
-        class!["row", "article-content"],
-        div![
-            class!["col-md-12"],
-            md!(markdown.as_str())
-        ]
-    ]
-}
-
-fn view_article_actions() -> Node<Msg> {
-    div![
-        class!["article-actions"],
-        div![
-            class!["article-meta"],
-            a![
-                attrs!{At::Href => "/profile"},
-                img![
-                    attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
-                ]
-            ],
-            div![
-                class!["info"],
-                a![
-                    class!["author"],
-                    attrs!{At::Href => ""},
-                    "Eric Simons"
-                ],
-                span![
-                    class!["date"],
-                    "January 20th"
-                ]
-            ],
-
-            button![
-                class!["btn", "btn-sm", "btn-outline-secondary"],
+fn view_delete_comment_button(slug: &article::slug::Slug, comment: &article::comment::Comment) -> Node<Msg> {
+    match comment.author {
+        author::Author::IsViewer(..) => {
+            span![
+                class!["mod-options"],
                 i![
-                    class!["ion-plus-round"]
-                ],
-                raw!("&nbsp;"),
-                "Follow Eric Simons ",
-                span![
-                    class!["counter"],
-                    "(10)"
+                    class!["ion-trash-a"],
+                    simple_ev(Ev::Click, Msg::DeleteCommentClicked(slug.clone(), comment.id.clone()))
                 ]
-            ],
-            raw!("&nbsp;&nbsp;"),
-            button![
-                class!["btn", "btn-sm", "btn-outline-primary"],
-                i![
-                    class!["ion-heart"]
-                ],
-                raw!("&nbsp;"),
-                "Favorite Post ",
-                span![
-                    class!["counter"],
-                    "(29)"
-                ]
-            ],
-        ]
-    ]
+            ]
+        }
+        _ => empty![]
+    }
 }
 
-fn view_comment_form() -> Node<Msg> {
-    form![
-        class!["card", "comment-form"],
-        div![
-            class!["card-block"],
-            textarea![
-                class!["form-control"],
-                attrs!{At::Rows => 3; At::Placeholder => "Write a comment..."}
-            ]
-        ],
-        div![
-            class!["card-footer"],
-            img![
-                class!["comment-author-img"],
-                attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
-            ],
-            button![
-                class!["btn", "btn-sm", "btn-primary"],
-                "Post Comment"
-            ]
-        ]
-    ]
-}
-
-fn view_comment() -> Node<Msg> {
+fn view_comment(slug: &article::slug::Slug, comment: &article::comment::Comment) -> Node<Msg> {
     div![
         class!["card"],
         div![
             class!["card-block"],
             p![
                 class!["card-text"],
-                "With supporting text below as a natural lead-in to additional content."
+                comment.body
             ]
         ],
         div![
             class!["card-footer"],
             a![
                 class!["comment-author"],
-                attrs!{At::Href => ""},
+                attrs!{At::Href => route::Route::Profile(Cow::Borrowed(comment.author.username())).to_string()},
                 img![
                     class!["comment-author-img"],
-                    attrs!{At::Src => "http://i.imgur.com/Qr71crq.jpg"}
+                    attrs!{At::Src => comment.author.profile().avatar.src()}
                 ]
             ],
             raw!("&nbsp;"),
             a![
                 class!["comment-author"],
-                attrs!{At::Href => ""},
-                "Jacob Schmidt"
+                attrs!{At::Href => route::Route::Profile(Cow::Borrowed(comment.author.username())).to_string()},
+                comment.author.username().to_string()
             ],
             span![
                 class!["date-posted"],
-                "Dec 29th"
+                timestamp::view(&comment.created_at)
             ],
-            span![
-                class!["mod-options"],
-                i![
-                    class!["ion-edit"]
-                ],
-                i![
-                    class!["ion-trash-a"]
-                ]
-            ]
+            view_delete_comment_button(slug, comment)
         ]
     ]
 }
 
-fn view_comments() -> Vec<Node<Msg>> {
-    vec![view_comment()]
+fn view_comments(slug: &article::slug::Slug, comments: &VecDeque<article::comment::Comment>) -> Vec<Node<Msg>> {
+    comments
+        .iter()
+        .map(|comment| view_comment(slug, comment))
+        .collect()
+}
+
+fn view_form_and_comments(slug: &article::slug::Slug, model: &Model) -> Vec<Node<Msg>> {
+    match &model.comments {
+        Status::Loading => vec![],
+        Status::LoadingSlowly => vec![loading::icon()],
+        Status::Failed => vec![loading::error("comments")],
+        Status::Loaded((comment_text, comments)) => {
+            vec![view_comment_form(comment_text, model)]
+                .into_iter()
+                .chain(view_comments(slug, comments))
+                .collect()
+        },
+    }
 }
 
 fn view_content(model: &Model) -> Node<Msg> {
@@ -466,23 +528,33 @@ fn view_content(model: &Model) -> Node<Msg> {
         Status::Loaded(article) => {
             div![
                 class!["article-page"],
-                view_banner(),
+                view_banner(article, model),
 
                 div![
                     class!["container", "page"],
-                    view_article_content(&article.body),
+
+                    div![
+                        class!["row", "article-content"],
+                        div![
+                            class!["col-md-12"],
+                            md!(article.body.as_str())
+                        ]
+                    ],
+
                     hr![],
-                    view_article_actions(),
+
+                    div![
+                        class!["article-actions"],
+                        view_article_meta(article, model)
+                    ],
 
                     div![
                         class!["row"],
                         div![
                             class!["col-xs-12", "col-md-8", "offset-md-2"],
-                            view_comment_form(),
-                            view_comments(),
-
+                            view_form_and_comments(&article.slug, model)
                         ]
-                    ]
+                    ],
 
                 ]
 

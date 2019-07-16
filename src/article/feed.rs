@@ -1,4 +1,4 @@
-use crate::{session, paginated_list, article, api, GMsg, route, author, request, timestamp, page_number};
+use crate::{session, paginated_list, article, api, GMsg, route, author, request, timestamp, page_number, page, logger};
 use seed::prelude::*;
 use std::borrow::Cow;
 
@@ -177,17 +177,21 @@ fn view_article_preview(credentials: Option<&api::Credentials>, article: &articl
 
 pub fn view_articles(model: &Model) -> Vec<Node<Msg>> {
     let credentials = model.session.viewer().map(|viewer|&viewer.credentials);
-    if model.articles.total == 0 {
-        vec![
-            div![
-                class!["article-preview"],
-                "No articles are here... yet."
-            ]
-        ]
-    } else {
-        model.articles.values.iter().map(|article| view_article_preview(credentials, article)).collect()
-    }
-    // @TODO view errors
+
+    vec![page::view_errors(Msg::DismissErrorsClicked, model.errors.clone())]
+        .into_iter()
+        .chain(
+        if model.articles.total == 0 {
+                vec![
+                    div![
+                        class!["article-preview"],
+                        "No articles are here... yet."
+                    ]
+                ]
+            } else {
+                model.articles.values.iter().map(|article| view_article_preview(credentials, article)).collect()
+            }
+        ).collect()
 }
 
 // Update
@@ -232,7 +236,8 @@ pub fn update(
                 .map(|old_article| *old_article = article);
         },
         Msg::FavoriteCompleted(Err(errors)) => {
-            // @TODO resolve errors
+            logger::errors(errors.clone());
+            model.errors = errors;
         },
     }
 }

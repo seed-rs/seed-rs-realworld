@@ -166,3 +166,34 @@ impl<'a> Page<'a> {
         ]
     }
 }
+
+pub fn view_errors<Ms: Clone>(dismiss_errors: Ms, errors: Vec<String>) -> Node<Ms> {
+    if errors.is_empty() {
+        empty![]
+    } else {
+        div![
+            class!["error-messages"],
+            style!{
+                "position" => "fixed",
+                "top" => 0,
+                "background" => "rgb(250, 250, 250)",
+                "padding" => "20px",
+                "border" => "1px solid",
+            },
+            errors.into_iter().map(|error| p![ error ]),
+            button![
+                simple_ev(Ev::Click, dismiss_errors),
+                "Ok"
+            ]
+        ]
+    }
+}
+
+pub fn scroll_to_top() {
+    seed::window().scroll_to_with_scroll_to_options(
+        web_sys::ScrollToOptions::new()
+            .top(0.)
+            .left(0.)
+            .behavior(web_sys::ScrollBehavior::Smooth)
+    )
+}

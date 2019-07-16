@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, GMsg, route, api, article, paginated_list, loading, request, page_number, logger};
+use crate::{session, GMsg, route, api, article, paginated_list, loading, request, page_number, logger, page};
 use futures::prelude::*;
 use web_sys;
 
@@ -141,7 +141,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 model.feed_tab.clone(),
                 model.feed_page,
             ));
-            scroll_to_top()
+            page::scroll_to_top()
         },
         Msg::FeedLoadCompleted(Ok(paginated_list)) => {
             model.feed = Status::Loaded(
@@ -150,14 +150,14 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         },
         Msg::FeedLoadCompleted(Err(errors)) => {
             model.feed = Status::Failed;
-            // @TODO log errors?
+            logger::errors(errors.clone());
         },
         Msg::TagsLoadCompleted(Ok(tags)) => {
             model.tags = Status::Loaded(tags);
         },
         Msg::TagsLoadCompleted(Err(errors)) => {
             model.tags = Status::Failed;
-            // @TODO log errors?
+            logger::errors(errors.clone());
         },
         Msg::FeedMsg(feed_msg) => {
             match &mut model.feed {
@@ -166,15 +166,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                         feed_msg, feed_model, &mut orders.proxy(Msg::FeedMsg)
                     )
                 },
-                Status::Loading => {
-                    // @TODO Log.error??
-                },
-                Status::LoadingSlowly => {
-                    // @TODO Log.error??
-                },
-                Status::Failed => {
-                    // @TODO Log.error??
-                },
+                _ => logger::error("FeedMsg can be handled only if Status is Loaded"),
             }
         },
         Msg::SlowLoadThresholdPassed => {
@@ -187,15 +179,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         },
         Msg::Unreachable => { logger::error("Unreachable!") },
     }
-}
-
-fn scroll_to_top() {
-    seed::window().scroll_to_with_scroll_to_options(
-        web_sys::ScrollToOptions::new()
-            .top(0.)
-            .left(0.)
-            .behavior(web_sys::ScrollBehavior::Smooth)
-    )
 }
 
 // View

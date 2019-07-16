@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, username, GMsg, route, article, author, api, loading, request, paginated_list, page_number, helper::take, logger};
+use crate::{session, username, GMsg, route, article, author, api, loading, request, paginated_list, page_number, helper::take, logger, page};
 use std::borrow::{Cow, BorrowMut};
 use futures::prelude::*;
 
@@ -179,19 +179,22 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                     model.feed_tab,
                     model.feed_page,
                 ));
+            page::scroll_to_top();
         },
         Msg::FollowChangeCompleted(Ok(author)) => {
             model.author = Status::Loaded(author)
         },
         Msg::FollowChangeCompleted(Err(errors)) => {
-            // @TODO Log.error??
+            logger::errors(errors.clone());
+            model.errors = errors;
         },
         Msg::AuthorLoadCompleted(Ok(author)) => {
             model.author = Status::Loaded(author)
         },
         Msg::AuthorLoadCompleted(Err((username, errors))) => {
             model.author = Status::Failed(username);
-            // @TODO Log.error??
+            logger::errors(errors.clone());
+            model.errors = errors;
         },
         Msg::FeedLoadCompleted(Ok(paginated_list)) => {
             model.feed = Status::Loaded(
@@ -200,7 +203,8 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         },
         Msg::FeedLoadCompleted(Err((username, errors))) => {
             model.feed = Status::Failed(username);
-            // @TODO Log.error??
+            logger::errors(errors.clone());
+            model.errors = errors;
         },
         Msg::FeedMsg(feed_msg) => {
             match &mut model.feed {
@@ -209,15 +213,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                         feed_msg, feed_model, &mut orders.proxy(Msg::FeedMsg)
                     )
                 },
-                Status::Loading(_) => {
-                    // @TODO Log.error??
-                },
-                Status::LoadingSlowly(_) => {
-                    // @TODO Log.error??
-                },
-                Status::Failed(_) => {
-                    // @TODO Log.error??
-                },
+                _ => logger::error("FeedMsg can be handled only if Status is Loaded"),
             }
         }
         Msg::SlowLoadThresholdPassed => {
@@ -345,9 +341,7 @@ fn view_content(model: &Model) -> Node<Msg> {
         Status::Loaded(author) => {
             div![
                 class!["profile-page"],
-
-                // @TODO show errors!
-
+                page::view_errors(Msg::DismissErrorsClicked, model.errors.clone()),
                 div![
                     class!["user-info"],
                     div![

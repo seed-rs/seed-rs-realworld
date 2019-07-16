@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, article, GMsg, route, api, comment_id, author, logger, request, helper::take, markdown, loading, timestamp};
+use crate::{session, article, GMsg, route, api, comment_id, author, logger, request, helper::take, markdown, loading, timestamp, page};
 use std::collections::VecDeque;
 use std::borrow::Cow;
 
@@ -210,7 +210,8 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             route::go_to(route::Route::Home, orders);
         }
         Msg::DeleteArticleCompleted(Err(errors)) => {
-            // @TODO errors (see Elm example)?
+            logger::errors(errors.clone());
+            model.errors = errors
         }
 
         Msg::DeleteCommentCompleted(Ok(comment_id)) => {
@@ -219,14 +220,16 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             }
         }
         Msg::DeleteCommentCompleted(Err(errors)) => {
-            // @TODO errors (see Elm example)?
+            logger::errors(errors.clone());
+            model.errors = errors
         }
 
         Msg::FavoriteChangeCompleted(Ok(article)) => {
             model.article = Status::Loaded(article);
         }
         Msg::FavoriteChangeCompleted(Err(errors)) => {
-            // @TODO errors (see Elm example)?
+            logger::errors(errors.clone());
+            model.errors = errors
         }
 
         Msg::FollowChangeCompleted(Ok(author)) => {
@@ -235,7 +238,8 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             }
         }
         Msg::FollowChangeCompleted(Err(errors)) => {
-            // @TODO errors (see Elm example)?
+            logger::errors(errors.clone());
+            model.errors = errors
         }
 
         Msg::PostCommentCompleted(Ok(comment)) => {
@@ -250,7 +254,8 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                     *comment_text = CommentText::Editing(take(text))
                 }
             }
-            // @TODO errors (see Elm example)?
+            logger::errors(errors.clone());
+            model.errors = errors
         }
 
         Msg::SlowLoadThresholdPassed => {
@@ -382,8 +387,8 @@ fn view_banner(article: &article::Article, model: &Model) -> Node<Msg> {
             h1![
                 article.title
             ],
-            view_article_meta(article, model)
-            // @TODO view errors
+            view_article_meta(article, model),
+            page::view_errors(Msg::DismissErrorsClicked, model.errors.clone()),
         ]
     ]
 }

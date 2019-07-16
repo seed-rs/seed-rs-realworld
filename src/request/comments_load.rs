@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{viewer, avatar, username, api, session, article, page, paginated_list, author, profile, timestamp, page_number};
+use crate::{viewer, avatar, username, api, session, article, page, paginated_list, author, profile, timestamp, page_number, logger};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
@@ -72,7 +72,10 @@ impl ServerData {
         self.comments.into_iter().map(|item| {
             let created_at = match timestamp::Timestamp::try_from(item.created_at) {
                 Ok(timestamp) => timestamp,
-                Err(error) => return Err(error)
+                Err(error) => {
+                    logger::error(error.clone());
+                    return Err(error)
+                }
             };
             let updated_at = timestamp::Timestamp::try_from(item.updated_at)?;
 
@@ -83,7 +86,6 @@ impl ServerData {
                 updated_at,
                 author: item.author.into_author(session.clone()),
             })
-            // @TODO log errors?
         }).filter_map(Result::ok).collect()
     }
 }

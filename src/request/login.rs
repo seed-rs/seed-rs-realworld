@@ -33,9 +33,8 @@ pub fn login<Ms: 'static>(
     valid_form: &form::ValidForm,
     f: fn(Result<viewer::Viewer, Vec<form::Problem>>) -> Ms
 ) -> impl Future<Item=Ms, Error=Ms>  {
-    fetch::Request::new("https://conduit.productionready.io/api/users/login")
+    request::new_api_request("users/login", None)
         .method(fetch::Method::Post)
-        .timeout(5000)
         .send_json(&valid_form.dto())
         .fetch_json_data(move |data_result| {
             f(data_result

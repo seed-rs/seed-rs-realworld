@@ -89,22 +89,17 @@ pub fn load_article<Ms: 'static>(
     let slug = slug.clone();
     let session = session.clone();
 
-    let mut request = fetch::Request::new(
-        format!("https://conduit.productionready.io/api/articles/{}", slug.as_str())
-    ).timeout(5000);
-
-    if let Some(viewer) = session.viewer() {
-        let auth_token = viewer.credentials.auth_token.as_str();
-        request = request.header("authorization", &format!("Token {}", auth_token));
-    }
-
-    request.fetch_json_data(move |data_result: fetch::ResponseDataResult<ServerData>| {
-        f(data_result
-            .map_err(request::fail_reason_into_errors)
-            .and_then(move |server_data| {
-                server_data.try_into_article(session)
-                    .map_err(|error| vec![error])
-            })
-        )
-    })
+    request::new_api_request(
+        &format!("articles/{}", slug.as_str()),
+        session.viewer().map(|viewer| &viewer.credentials)
+    )
+        .fetch_json_data(move |data_result: fetch::ResponseDataResult<ServerData>| {
+            f(data_result
+                .map_err(request::fail_reason_into_errors)
+                .and_then(move |server_data| {
+                    server_data.try_into_article(session)
+                        .map_err(|error| vec![error])
+                })
+            )
+        })
 }

@@ -88,27 +88,21 @@ pub fn create_article<Ms: 'static>(
 ) -> impl Future<Item=Ms, Error=Ms>  {
     let session = session.clone();
 
-    let mut request = fetch::Request::new(
-        "https://conduit.productionready.io/api/articles"
+    request::new_api_request(
+        "articles",
+        session.viewer().map(|viewer| &viewer.credentials)
     )
         .method(fetch::Method::Post)
-        .timeout(5000)
-        .send_json(&valid_form.dto());
-
-    if let Some(viewer) = session.viewer() {
-        let auth_token = viewer.credentials.auth_token.as_str();
-        request = request.header("authorization", &format!("Token {}", auth_token));
-    }
-
-    request.fetch_json_data(move |data_result: fetch::ResponseDataResult<ServerData>| {
-        f(data_result
-            .map_err(fail_reason_to_problems)
-            .and_then(move |server_data| {
-                server_data.try_into_article(session)
-                    .map_err(|error| vec![form::Problem::new_server_error(error)])
-            })
-        )
-    })
+        .send_json(&valid_form.dto())
+        .fetch_json_data(move |data_result: fetch::ResponseDataResult<ServerData>| {
+            f(data_result
+                .map_err(fail_reason_to_problems)
+                .and_then(move |server_data| {
+                    server_data.try_into_article(session)
+                        .map_err(|error| vec![form::Problem::new_server_error(error)])
+                })
+            )
+        })
 }
 
 pub fn fail_reason_to_problems(fail_reason: fetch::FailReason<ServerData>) -> Vec<form::Problem> {

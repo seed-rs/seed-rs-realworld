@@ -18,10 +18,7 @@ impl ServerData {
 pub fn load_tags<Ms: 'static>(
     f: fn(Result<Vec<article::tag::Tag>, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
-    fetch::Request::new(
-        "https://conduit.productionready.io/api/tags"
-    )
-        .timeout(5000)
+    request::new_api_request("tags",None)
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<ServerData>| {
             f(data_result
                 .map(ServerData::into_tags)

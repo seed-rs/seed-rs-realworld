@@ -102,7 +102,7 @@ pub fn request_url(
     page_number: page_number::PageNumber,
 ) -> String {
     format!(
-        "https://conduit.productionready.io/api/articles?{}={}&limit={}&offset={}",
+        "articles?{}={}&limit={}&offset={}",
         match feed_tab {
             page::profile::FeedTab::MyArticles => "author",
             page::profile::FeedTab::FavoritedArticles => "favorited",
@@ -123,20 +123,15 @@ pub fn load_feed<Ms: 'static>(
     let session = session.clone();
     let username = username.clone();
 
-    let mut request = fetch::Request::new(
-        request_url(&username, &feed_tab, page_number)
-    ).timeout(5000);
-
-    if let Some(viewer) = session.viewer() {
-        let auth_token = viewer.credentials.auth_token.as_str();
-        request = request.header("authorization", &format!("Token {}", auth_token));
-    }
-
-    request.fetch_json_data(move |data_result: fetch::ResponseDataResult<ServerData>| {
-        f(data_result
-            .map(move |server_data| server_data.into_paginated_list(session))
-            .map_err(request::fail_reason_into_errors)
-            .map_err(|problems| (username, problems))
-        )
-    })
+    request::new_api_request(
+        &request_url(&username, &feed_tab, page_number),
+        session.viewer().map(|viewer| &viewer.credentials)
+    )
+        .fetch_json_data(move |data_result: fetch::ResponseDataResult<ServerData>| {
+            f(data_result
+                .map(move |server_data| server_data.into_paginated_list(session))
+                .map_err(request::fail_reason_into_errors)
+                .map_err(|problems| (username, problems))
+            )
+        })
 }

@@ -34,25 +34,18 @@ pub fn update_settings<Ms: 'static>(
     valid_form: &form::ValidForm,
     f: fn(Result<viewer::Viewer, Vec<form::Problem>>) -> Ms
 ) -> impl Future<Item=Ms, Error=Ms>  {
-
-    let mut request = fetch::Request::new(
-        "https://conduit.productionready.io/api/user"
+    request::new_api_request(
+        "user",
+        session.viewer().map(|viewer| &viewer.credentials)
     )
         .method(fetch::Method::Put)
-        .timeout(5000)
-        .send_json(&valid_form.dto());
-
-    if let Some(viewer) = session.viewer() {
-        let auth_token = viewer.credentials.auth_token.as_str();
-        request = request.header("authorization", &format!("Token {}", auth_token));
-    }
-
-    request.fetch_json_data(move |data_result| {
-        f(data_result
-            .map(ServerData::into_viewer)
-            .map_err(fail_reason_to_problems)
-        )
-    })
+        .send_json(&valid_form.dto())
+        .fetch_json_data(move |data_result| {
+            f(data_result
+                .map(ServerData::into_viewer)
+                .map_err(fail_reason_to_problems)
+            )
+        })
 }
 
 fn fail_reason_to_problems(fail_reason: fetch::FailReason<ServerData>) -> Vec<form::Problem> {

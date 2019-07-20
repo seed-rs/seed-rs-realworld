@@ -3,7 +3,7 @@ use serde_json;
 use indexmap::IndexMap;
 use serde::Deserialize;
 use std::fmt::Debug;
-use crate::logger;
+use crate::{logger, api};
 
 pub mod article_load;
 pub mod article_article_load;
@@ -26,9 +26,23 @@ pub mod comment_create;
 pub mod comment_delete;
 pub mod comments_load;
 
+static BASE_API_URL: &'static str = "https://conduit.productionready.io/api";
+const TIMEOUT: u32 = 5000;
+
 #[derive(Deserialize)]
 pub struct ServerErrorData {
     errors: IndexMap<String, Vec<String>>
+}
+
+pub fn new_api_request(path: &str, credentials: Option<&api::Credentials>) -> fetch::Request {
+    let mut request = fetch::Request::new(format!("{}/{}", BASE_API_URL, path))
+        .timeout(TIMEOUT);
+
+    if let Some(credentials) = credentials {
+        let auth_token = credentials.auth_token.as_str();
+        request = request.header("authorization", &format!("Token {}", auth_token));
+    }
+    request
 }
 
 pub fn decode_server_errors(json: String) -> Result<Vec<String>, serde_json::Error> {

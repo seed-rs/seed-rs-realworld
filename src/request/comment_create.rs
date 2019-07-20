@@ -95,25 +95,19 @@ pub fn create_comment<Ms: 'static>(
         }
     };
 
-    let mut request = fetch::Request::new(
-        format!("https://conduit.productionready.io/api/articles/{}/comments", slug.as_str())
+    request::new_api_request(
+        &format!("articles/{}/comments", slug.as_str()),
+        session.viewer().map(|viewer| &viewer.credentials)
     )
         .method(fetch::Method::Post)
-        .timeout(5000)
-        .send_json(&dto);
-
-    if let Some(viewer) = session.viewer() {
-        let auth_token = viewer.credentials.auth_token.as_str();
-        request = request.header("authorization", &format!("Token {}", auth_token));
-    }
-
-    request.fetch_json_data(move |data_result: fetch::ResponseDataResult<ServerData>| {
-        f(data_result
-            .map_err(request::fail_reason_into_errors)
-            .and_then(move |server_data| {
-                server_data.try_into_comment(session)
-                    .map_err(|error| vec![error])
-            })
-        )
-    })
+        .send_json(&dto)
+        .fetch_json_data(move |data_result: fetch::ResponseDataResult<ServerData>| {
+            f(data_result
+                .map_err(request::fail_reason_into_errors)
+                .and_then(move |server_data| {
+                    server_data.try_into_comment(session)
+                        .map_err(|error| vec![error])
+                })
+            )
+        })
 }

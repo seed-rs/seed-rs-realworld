@@ -35,22 +35,16 @@ pub fn load_settings<Ms: 'static>(
     session: &session::Session,
     f: fn(Result<form::Form, Vec<form::Problem>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
-
-    let mut request = fetch::Request::new(
-        "https://conduit.productionready.io/api/user"
-    ).timeout(5000);
-
-    if let Some(viewer) = session.viewer() {
-        let auth_token = viewer.credentials.auth_token.as_str();
-        request = request.header("authorization", &format!("Token {}", auth_token));
-    }
-
-    request.fetch_json_data(move |data_result| {
-        f(data_result
-            .map(ServerData::into_form)
-            .map_err(fail_reason_to_problems)
-        )
-    })
+    request::new_api_request(
+        "user",
+        session.viewer().map(|viewer| &viewer.credentials)
+    )
+        .fetch_json_data(move |data_result| {
+            f(data_result
+                .map(ServerData::into_form)
+                .map_err(fail_reason_to_problems)
+            )
+        })
 }
 
 fn fail_reason_to_problems(fail_reason: fetch::FailReason<ServerData>) -> Vec<form::Problem> {

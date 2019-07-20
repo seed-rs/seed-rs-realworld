@@ -102,7 +102,7 @@ pub fn request_url(
 ) -> String {
     // @TODO refactor!
     format!(
-        "https://conduit.productionready.io/api/articles{}?{}limit={}&offset={}",
+        "articles{}?{}limit={}&offset={}",
         match feed_tab {
             page::home::FeedTab::YourFeed(_) => "/feed",
             page::home::FeedTab::GlobalFeed => "",
@@ -126,19 +126,14 @@ pub fn load_home_feed<Ms: 'static>(
 ) -> impl Future<Item=Ms, Error=Ms>  {
     let session = session.clone();
 
-    let mut request = fetch::Request::new(
-        request_url(&feed_tab, page_number)
-    ).timeout(5000);
-
-    if let Some(viewer) = session.viewer() {
-        let auth_token = viewer.credentials.auth_token.as_str();
-        request = request.header("authorization", &format!("Token {}", auth_token));
-    }
-
-    request.fetch_json_data(move |data_result: fetch::ResponseDataResult<ServerData>| {
-        f(data_result
-            .map(move |server_data| server_data.into_paginated_list(session))
-            .map_err(request::fail_reason_into_errors)
-        )
-    })
+    request::new_api_request(
+        &request_url(&feed_tab, page_number),
+        session.viewer().map(|viewer| &viewer.credentials)
+    )
+        .fetch_json_data(move |data_result: fetch::ResponseDataResult<ServerData>| {
+            f(data_result
+                .map(move |server_data| server_data.into_paginated_list(session))
+                .map_err(request::fail_reason_into_errors)
+            )
+        })
 }

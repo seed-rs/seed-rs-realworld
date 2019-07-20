@@ -35,9 +35,9 @@ pub fn init(session: session::Session, _: &mut impl Orders<Msg, GMsg>) -> Model 
     }
 }
 
-// Global msg handler
+// Sink
 
-pub fn g_msg_handler(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
+pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match g_msg {
         GMsg::SessionChanged(session) => {
             model.session = session;

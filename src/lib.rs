@@ -64,14 +64,14 @@ impl<'a> From<Model<'a>> for session::Session {
     }
 }
 
-// Global msg handler
+// Sink
 
 pub enum GMsg {
     RoutePushed(route::Route<'static>),
     SessionChanged(session::Session)
 }
 
-fn g_msg_handler<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Orders<Msg<'static>, GMsg>) {
+fn sink<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Orders<Msg<'static>, GMsg>) {
     if let GMsg::RoutePushed(ref route) = g_msg {
         orders.send_msg(Msg::RouteChanged(Some(route.clone())));
     }
@@ -84,25 +84,25 @@ fn g_msg_handler<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Order
             }
         },
         Model::Settings(model) => {
-            page::settings::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::SettingsMsg));
+            page::settings::sink(g_msg, model, &mut orders.proxy(Msg::SettingsMsg));
         },
         Model::Home(model) => {
-            page::home::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::HomeMsg));
+            page::home::sink(g_msg, model, &mut orders.proxy(Msg::HomeMsg));
         },
         Model::Login(model) => {
-            page::login::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::LoginMsg));
+            page::login::sink(g_msg, model, &mut orders.proxy(Msg::LoginMsg));
         },
         Model::Register(model) => {
-            page::register::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::RegisterMsg));
+            page::register::sink(g_msg, model, &mut orders.proxy(Msg::RegisterMsg));
         },
         Model::Profile(model, _) => {
-            page::profile::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::ProfileMsg));
+            page::profile::sink(g_msg, model, &mut orders.proxy(Msg::ProfileMsg));
         },
         Model::Article(model) => {
-            page::article::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::ArticleMsg));
+            page::article::sink(g_msg, model, &mut orders.proxy(Msg::ArticleMsg));
         },
         Model::ArticleEditor(model, _) => {
-            page::article_editor::g_msg_handler(g_msg, model, &mut orders.proxy(Msg::ArticleEditorMsg));
+            page::article_editor::sink(g_msg, model, &mut orders.proxy(Msg::ArticleEditorMsg));
         },
     }
 }
@@ -323,7 +323,7 @@ pub fn render() {
         .routes(|url| {
             Msg::RouteChanged(url.try_into().ok())
         })
-        .g_msg_handler(g_msg_handler)
+        .sink(sink)
         .finish()
         .run();
 }

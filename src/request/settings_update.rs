@@ -1,22 +1,15 @@
 use serde::Deserialize;
-use crate::{viewer, avatar, api, form::settings as form, session};
-use indexmap::IndexMap;
+use crate::{viewer, avatar, api, form::settings as form, session, request};
 use futures::prelude::*;
 use seed::fetch;
-use std::rc::Rc;
 
-#[derive(Deserialize)]
-struct ServerErrorData {
-    errors: IndexMap<String, Vec<String>>
-}
-
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct ServerData {
     user: ServerDataFields
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct ServerDataFields {
     username: String,
@@ -43,7 +36,7 @@ pub fn update_settings<Ms: 'static>(
 ) -> impl Future<Item=Ms, Error=Ms>  {
 
     let mut request = fetch::Request::new(
-        "https://conduit.productionready.io/api/user".into()
+        "https://conduit.productionready.io/api/user"
     )
         .method(fetch::Method::Put)
         .timeout(5000)
@@ -54,67 +47,18 @@ pub fn update_settings<Ms: 'static>(
         request = request.header("authorization", &format!("Token {}", auth_token));
     }
 
-    request.fetch_string(move |fetch_object| {
-        f(process_fetch_object(fetch_object))
+    request.fetch_json_data(move |data_result| {
+        f(data_result
+            .map(ServerData::into_viewer)
+            .map_err(fail_reason_to_problems)
+        )
     })
 }
 
-fn process_fetch_object(fetch_object: fetch::FetchObject<String>) -> Result<viewer::Viewer, Vec<form::Problem>> {
-    match fetch_object.result {
-        Err(_) => {
-            Err(vec![form::Problem::new_server_error("Request error")])
-        },
-        Ok(response) => {
-            if response.status.is_ok() {
-                    let viewer =
-                        response
-                            .data
-                            .and_then(|string| {
-                                serde_json::from_str::<ServerData>(string.as_str())
-                                    .map_err(|error| {
-                                        fetch::DataError::SerdeError(Rc::new(error))
-                                    })
-                            })
-                            .map(|server_data| {
-                                server_data.into_viewer()
-                            });
+fn fail_reason_to_problems(fail_reason: fetch::FailReason<ServerData>) -> Vec<form::Problem> {
+    string_errors_to_problems(request::fail_reason_into_errors(fail_reason))
+}
 
-                    match viewer {
-                        Ok(viewer) => {
-                            Ok(viewer)
-                        },
-                        Err(_) => {
-                            Err(vec![form::Problem::new_server_error("Data error")])
-                        }
-                    }
-            } else {
-                let error_messages: Result<Vec<String>, fetch::DataError> =
-                    response
-                        .data
-                        .and_then(|string| {
-                            serde_json::from_str::<ServerErrorData>(string.as_str())
-                                .map_err(|error| {
-                                    fetch::DataError::SerdeError(Rc::new(error))
-                                })
-                        }).and_then(|server_error_data| {
-                        Ok(server_error_data.errors.into_iter().map(|(field, errors)| {
-                            format!("{} {}", field, errors.join(", "))
-                        }).collect())
-                    });
-                match error_messages {
-                    Ok(error_messages) => {
-                        let problems = error_messages
-                            .into_iter()
-                            .map(|message| {
-                                form::Problem::new_server_error(message)
-                            }).collect();
-                        Err(problems)
-                    },
-                    Err(_) => {
-                        Err(vec![form::Problem::new_server_error("Data error")])
-                    }
-                }
-            }
-        }
-    }
+fn string_errors_to_problems(errors: Vec<String>) -> Vec<form::Problem> {
+    errors.into_iter().map(form::Problem::new_server_error).collect()
 }

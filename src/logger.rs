@@ -1,10 +1,10 @@
-use std::borrow::Cow;
+use std::fmt::Debug;
 
-pub fn error(error: impl Into<Cow<'static, str>>) {
-    error!("App error:", error.into())
+pub fn error(error: impl Debug) {
+    error!("App error:", error)
 }
 
-pub fn errors(errors: impl IntoIterator<Item=impl Into<Cow<'static, str>>>) {
+pub fn errors(errors: impl IntoIterator<Item=impl Debug>) {
     for item in errors {
         error(item)
     }

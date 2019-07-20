@@ -297,7 +297,7 @@ fn view_save_button(type_: SaveButton, disabled: bool) -> Node<Msg> {
     button![
         class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
         simple_ev(Ev::Click, Msg::FormSubmitted),
-        attrs!{At::Type => "button", At::Disabled => disabled},
+        attrs!{At::Type => "button", At::Disabled => disabled.as_at_value()},
         match type_ {
             SaveButton::CreateArticle => "Publish Article",
             SaveButton::UpdateArticle => "Update Article",

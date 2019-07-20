@@ -179,6 +179,7 @@ pub fn view_errors<Ms: Clone>(dismiss_errors: Ms, errors: Vec<String>) -> Node<M
                 "background" => "rgb(250, 250, 250)",
                 "padding" => "20px",
                 "border" => "1px solid",
+                "z-index" => 9999,
             },
             errors.into_iter().map(|error| p![ error ]),
             button![

@@ -445,7 +445,7 @@ fn view_comment_form(comment_text: &CommentText, model: &Model) -> Node<Msg> {
                     ],
                     button![
                         class!["btn", "btn-sm", "btn-primary"],
-                        attrs!{At::Disabled => post_comment_disabled},
+                        attrs!{At::Disabled => post_comment_disabled.as_at_value()},
                         "Post Comment"
                     ]
                 ]

@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{avatar, username, api, form::article_editor as form, session, article, author, profile};
+use crate::{avatar, form::article_editor as form, session, article, author, profile};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
@@ -117,7 +117,7 @@ fn process_fetch_object(
     fetch_object: fetch::FetchObject<String>
 ) -> Result<article::Article, Vec<form::Problem>> {
     match fetch_object.result {
-        Err(request_error) => {
+        Err(_) => {
             Err(vec![form::Problem::new_server_error("Request error")])
         },
         Ok(response) => {
@@ -144,7 +144,7 @@ fn process_fetch_object(
                                 }
                             }
                         },
-                        Err(data_error) => {
+                        Err(_) => {
                             Err(vec![form::Problem::new_server_error("Data error")])
                         }
                     }
@@ -171,7 +171,7 @@ fn process_fetch_object(
                             }).collect();
                         Err(problems)
                     },
-                    Err(data_error) => {
+                    Err(_) => {
                         Err(vec![form::Problem::new_server_error("Data error")])
                     }
                 }

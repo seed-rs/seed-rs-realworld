@@ -1,6 +1,5 @@
 use serde::Serialize;
-use indexmap::{IndexSet, IndexMap};
-use std::hash::{Hash, Hasher};
+use indexmap::IndexMap;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use crate::form::{self, FormField};
@@ -26,7 +25,7 @@ impl ValidForm {
                 .map(|(key, field)|{
                     match field {
                         Field::Tags(tags) => {
-                            ("tagList", ValidFormDTOValue::Vector(field.value().split(" ").collect()))
+                            ("tagList", ValidFormDTOValue::Vector(tags.split(" ").collect()))
                         }
                         _ => {
                             (*key, ValidFormDTOValue::Text(field.value()))
@@ -97,7 +96,7 @@ impl FormField for Field {
                     None
                 }
             },
-            Field::Description(value) => None,
+            Field::Description(_) => None,
             Field::Body(value) => {
                 if value.is_empty() {
                     Some(form::Problem::new_invalid_field(self.key(), "body can't be blank"))
@@ -105,7 +104,7 @@ impl FormField for Field {
                     None
                 }
             },
-            Field::Tags(value) => None,
+            Field::Tags(_) => None,
         }
     }
 }

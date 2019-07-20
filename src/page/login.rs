@@ -1,9 +1,6 @@
-use seed::{prelude::*, fetch};
+use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, route, viewer, api, avatar, username, GMsg, form::login as form, request};
-use serde::{Deserialize, Serialize};
-use serde_json;
-use std::rc::Rc;
+use crate::{session, route, viewer, GMsg, form::login as form, request};
 
 // Model
 

@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{viewer, avatar, username, api, form::register as form};
+use crate::{viewer, avatar, api, form::register as form};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
@@ -19,12 +19,7 @@ struct ServerData {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ServerDataFields {
-    id: i32,
-    email: String,
-    created_at: String,
-    updated_at: String,
     username: String,
-    bio: Option<String>,
     image: Option<String>,
     token: String,
 }
@@ -53,7 +48,7 @@ pub fn register<Ms: 'static>(valid_form: &form::ValidForm, f: fn(Result<viewer::
 
 fn process_fetch_object(fetch_object: fetch::FetchObject<String>) -> Result<viewer::Viewer, Vec<form::Problem>> {
     match fetch_object.result {
-        Err(request_error) => {
+        Err(_) => {
             Err(vec![form::Problem::new_server_error("Request error")])
         },
         Ok(response) => {
@@ -75,7 +70,7 @@ fn process_fetch_object(fetch_object: fetch::FetchObject<String>) -> Result<view
                         Ok(viewer) => {
                             Ok(viewer)
                         },
-                        Err(data_error) => {
+                        Err(_) => {
                             Err(vec![form::Problem::new_server_error("Data error")])
                         }
                     }
@@ -102,7 +97,7 @@ fn process_fetch_object(fetch_object: fetch::FetchObject<String>) -> Result<view
                             }).collect();
                         Err(problems)
                     },
-                    Err(data_error) => {
+                    Err(_) => {
                         Err(vec![form::Problem::new_server_error("Data error")])
                     }
                 }

@@ -1,7 +1,7 @@
 use seed::prelude::*;
 use super::ViewPage;
 use crate::{session, username, GMsg, route, article, author, api, loading, request, paginated_list, page_number, helper::take, logger, page};
-use std::borrow::{Cow, BorrowMut};
+use std::borrow::Cow;
 use futures::prelude::*;
 
 static MY_PROFILE_TITLE: &'static str = "My Profile";
@@ -311,7 +311,7 @@ fn view_follow_button(author: &author::Author, model: &Model) -> Node<Msg> {
     let credentials = model.session().viewer().map(|viewer| &viewer.credentials);
     match credentials {
         None => empty![],
-        Some(credentials) => {
+        Some(_) => {
             match author {
                 author::Author::IsViewer(..) => {
                     empty![]

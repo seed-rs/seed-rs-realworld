@@ -2,7 +2,6 @@
 extern crate seed;
 use seed::prelude::*;
 use std::convert::TryInto;
-use std::collections::VecDeque;
 use helper::take;
 
 mod helper;

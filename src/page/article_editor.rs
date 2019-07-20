@@ -1,13 +1,9 @@
-use seed::{prelude::*, fetch};
+use seed::prelude::*;
 use super::ViewPage;
 use crate::{
     article,
     session,
     route,
-    viewer,
-    api,
-    avatar,
-    username,
     GMsg,
     form::article_editor as form,
     loading,
@@ -15,9 +11,7 @@ use crate::{
     helper::take,
     logger
 };
-use serde::{Deserialize, Serialize};
-use serde_json;
-use std::{rc::Rc, borrow::Cow, mem};
+use std::borrow::Cow;
 
 // Model
 
@@ -30,7 +24,6 @@ pub struct Model {
 type Slug = article::slug::Slug;
 
 enum Status {
-    Placeholder,
     // -- edit article --
     Loading(Slug),
     LoadingSlowly(Slug),
@@ -50,7 +43,7 @@ impl Status {
             Status::LoadingFailed(slug, ..) => Some(slug),
             Status::Saving(slug, ..) => Some(slug),
             Status::Editing(slug, ..) => Some(slug),
-            Status::EditingNew(..) | Status::Creating(..) | Status::Placeholder => None,
+            Status::EditingNew(..) | Status::Creating(..) => None,
         }
     }
 }
@@ -151,7 +144,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                         }
                     }
                 },
-                Status::EditingNew(problems, form) => {
+                Status::EditingNew(_, form) => {
                     match form.trim_fields().validate() {
                         Ok(valid_form) => {
                             orders.perform_cmd(
@@ -323,8 +316,8 @@ fn view_content(model: &Model) -> Node<Msg> {
                 div![
                     class!["col-md-6", "offset-md-3", "col-x32-12"],
 
-                    if let Some(viewer) = model.session().viewer() {
-                        view_authenticated(viewer, model)
+                    if let Some(_) = model.session().viewer() {
+                        view_authenticated(model)
                     } else {
                         vec![
                             div![
@@ -339,15 +332,15 @@ fn view_content(model: &Model) -> Node<Msg> {
     ]
 }
 
-fn view_authenticated(viewer: &viewer::Viewer, model: &Model) -> Vec<Node<Msg>> {
+fn view_authenticated(model: &Model) -> Vec<Node<Msg>> {
     match &model.status {
-        Status::Loading(_) | Status::Placeholder => {
+        Status::Loading(_) => {
             vec![]
         },
         Status::LoadingSlowly(_) => {
             vec![loading::icon()]
         },
-        Status::LoadingFailed(slug, problems) => {
+        Status::LoadingFailed(_, problems) => {
             vec![
                 view_problems(problems),
                 loading::error("article")

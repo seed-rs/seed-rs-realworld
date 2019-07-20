@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, article, GMsg, route, api, comment_id, author, logger, request, helper::take, markdown, loading, timestamp, page};
+use crate::{session, article, GMsg, route, comment_id, author, logger, request, helper::take, loading, timestamp, page};
 use std::collections::VecDeque;
 use std::borrow::Cow;
 
@@ -195,7 +195,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         }
         Msg::LoadArticleCompleted(Err(errors)) => {
             model.article = Status::Failed;
-            logger::error("Load article failed");
+            logger::errors(errors);
         }
 
         Msg::LoadCommentsCompleted(Ok(comments)) => {
@@ -203,7 +203,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         }
         Msg::LoadCommentsCompleted(Err(errors)) => {
             model.comments = Status::Failed;
-            logger::error("Load comments failed");
+            logger::errors(errors);
         }
 
         Msg::DeleteArticleCompleted(Ok(())) => {

@@ -1,8 +1,7 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, GMsg, route, api, article, paginated_list, loading, request, page_number, logger, page};
+use crate::{session, GMsg, api, article, paginated_list, loading, request, page_number, logger, page};
 use futures::prelude::*;
-use web_sys;
 
 // Model
 

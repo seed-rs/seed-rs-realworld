@@ -1,9 +1,6 @@
-use seed::{prelude::*, fetch};
+use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, route, viewer, api, avatar, username, GMsg, form::settings as form, request, loading, logger};
-use serde::{Deserialize, Serialize};
-use serde_json;
-use std::rc::Rc;
+use crate::{session, route, viewer, GMsg, form::settings as form, request, loading, logger};
 
 // Model
 
@@ -215,7 +212,7 @@ fn view_fieldset(field: &form::Field) -> Node<Msg> {
     }
 }
 
-fn view_form<'a>(model: &Model, credentials: &api::Credentials) -> Node<Msg> {
+fn view_form<'a>(model: &Model) -> Node<Msg> {
     match &model.status {
         Status::Loading => empty![],
         Status::LoadingSlowly => loading::icon(),
@@ -251,7 +248,7 @@ fn view_content<'a>(model: &Model) -> Node<Msg> {
                         "Your Settings"
                     ],
 
-                    if let Some(viewer) = model.session().viewer() {
+                    if let Some(_) = model.session().viewer() {
                         vec![
                             ul![
                                 class!["error-messages"],
@@ -259,7 +256,7 @@ fn view_content<'a>(model: &Model) -> Node<Msg> {
                                     problem.message()
                                 ])
                             ],
-                            view_form(model, &viewer.credentials),
+                            view_form(model),
                         ]
                     } else {
                         vec![

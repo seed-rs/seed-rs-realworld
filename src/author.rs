@@ -30,20 +30,8 @@ impl<'a> Author<'a> {
 #[derive(Clone)]
 pub struct FollowedAuthor<'a>(pub username::Username<'a>, pub profile::Profile);
 
-impl<'a> FollowedAuthor<'a> {
-    pub fn to_static(&self) -> FollowedAuthor<'static> {
-        FollowedAuthor(self.0.to_string().into(), self.1.clone())
-    }
-}
-
 #[derive(Clone)]
 pub struct UnfollowedAuthor<'a>(pub username::Username<'a>, pub profile::Profile);
-
-impl<'a> UnfollowedAuthor<'a> {
-    pub fn to_static(&self) -> UnfollowedAuthor<'static> {
-        UnfollowedAuthor(self.0.to_string().into(), self.1.clone())
-    }
-}
 
 pub fn view<Ms>(username: &username::Username) -> Node<Ms> {
     a![

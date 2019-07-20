@@ -1,7 +1,4 @@
-use serde::Serialize;
 use indexmap::IndexMap;
-use std::hash::{Hash, Hasher};
-use strum_macros::EnumIter;
 use std::borrow::Cow;
 
 pub mod login;
@@ -62,7 +59,7 @@ impl<T: FormField> Form<T> {
                 .iter()
                 .map(|(key, field)| {
                     let mut field = field.clone();
-                    let mut value = field.value_mut();
+                    let value = field.value_mut();
                     *value = value.trim().into();
                     (*key, field)
                 } )

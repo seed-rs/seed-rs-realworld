@@ -1,11 +1,10 @@
 use serde::Deserialize;
-use crate::{viewer, avatar, username, api, session, article, page, paginated_list, author, profile, timestamp, page_number, logger};
+use crate::{avatar, session, article, page, paginated_list, author, profile, timestamp, page_number, logger};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
 use std::rc::Rc;
 use std::convert::TryFrom;
-use std::convert::TryInto;
 use article::tag::IntoTags;
 
 const ARTICLES_PER_PAGE: usize = 10;
@@ -153,7 +152,7 @@ fn process_fetch_object(
     fetch_object: fetch::FetchObject<String>
 ) -> Result<paginated_list::PaginatedList<article::Article>, Vec<String>> {
     match fetch_object.result {
-        Err(request_error) => {
+        Err(_) => {
             Err(vec!["Request error".into()])
         },
         Ok(response) => {
@@ -175,7 +174,7 @@ fn process_fetch_object(
                         Ok(paginated_list) => {
                             Ok(paginated_list)
                         },
-                        Err(data_error) => {
+                        Err(_) => {
                             Err(vec!["Data error".into()])
                         }
                     }
@@ -197,7 +196,7 @@ fn process_fetch_object(
                     Ok(error_messages) => {
                         Err(error_messages)
                     },
-                    Err(data_error) => {
+                    Err(_) => {
                         Err(vec!["Data error".into()])
                     }
                 }

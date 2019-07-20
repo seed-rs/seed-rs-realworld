@@ -1,6 +1,5 @@
 use serde::Serialize;
-use indexmap::{IndexSet, IndexMap};
-use std::hash::{Hash, Hasher};
+use indexmap::IndexMap;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use crate::form::{self, FormField};

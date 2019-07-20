@@ -31,7 +31,7 @@ pub fn store_viewer(viewer: &viewer::Viewer) {
 }
 
 pub fn logout() {
-    local_storage().remove_item(STORAGE_KEY);
+    local_storage().remove_item(STORAGE_KEY).expect("remove item from local storage failed");
 }
 
 fn local_storage() -> storage::Storage {

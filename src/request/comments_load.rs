@@ -1,15 +1,11 @@
 use serde::Deserialize;
-use crate::{viewer, avatar, username, api, session, article, page, paginated_list, author, profile, timestamp, page_number, logger};
+use crate::{avatar, session, article, author, profile, timestamp, logger};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
 use std::rc::Rc;
 use std::convert::TryFrom;
-use std::convert::TryInto;
-use article::tag::IntoTags;
 use std::collections::VecDeque;
-
-const ARTICLES_PER_PAGE: usize = 5;
 
 #[derive(Deserialize)]
 struct ServerErrorData {
@@ -116,7 +112,7 @@ fn process_fetch_object(
     fetch_object: fetch::FetchObject<String>
 ) -> Result<VecDeque<article::comment::Comment<'static>>, Vec<String>> {
     match fetch_object.result {
-        Err(request_error) => {
+        Err(_) => {
             Err(vec!["Request error".into()])
         },
         Ok(response) => {
@@ -138,7 +134,7 @@ fn process_fetch_object(
                         Ok(comments) => {
                             Ok(comments)
                         },
-                        Err(data_error) => {
+                        Err(_) => {
                             Err(vec!["Data error".into()])
                         }
                     }
@@ -160,7 +156,7 @@ fn process_fetch_object(
                     Ok(error_messages) => {
                         Err(error_messages)
                     },
-                    Err(data_error) => {
+                    Err(_) => {
                         Err(vec!["Data error".into()])
                     }
                 }

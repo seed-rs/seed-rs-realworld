@@ -9,7 +9,6 @@ pub struct Model {
     session: session::Session,
     errors: Vec<String>,
     articles: paginated_list::PaginatedList<article::Article>,
-    is_loading: bool,
 }
 
 // Init
@@ -106,11 +105,11 @@ pub fn view_pagination<Ms: Clone>(
 fn view_favorite_button(credentials: Option<&api::Credentials>, article: &article::Article) -> Node<Msg> {
     match credentials {
         None => empty![],
-        Some(credentials) => {
+        Some(_) => {
             if article.favorited {
                 button![
                     class!["btn","btn-primary", "btn-sm", "pull-xs-right"],
-                    simple_ev(Ev::Click, Msg::FavoriteClicked(credentials.clone(), article.slug.clone())),
+                    simple_ev(Ev::Click, Msg::FavoriteClicked(article.slug.clone())),
                     i![
                         class!["ion-heart"],
                         format!(" {}", article.favorites_count),
@@ -119,7 +118,7 @@ fn view_favorite_button(credentials: Option<&api::Credentials>, article: &articl
             } else {
                 button![
                     class!["btn","btn-outline-primary", "btn-sm", "pull-xs-right"],
-                    simple_ev(Ev::Click, Msg::UnfavoriteClicked(credentials.clone(), article.slug.clone())),
+                    simple_ev(Ev::Click, Msg::UnfavoriteClicked(article.slug.clone())),
                     i![
                         class!["ion-heart"],
                         format!(" {}", article.favorites_count),
@@ -199,8 +198,8 @@ pub fn view_articles(model: &Model) -> Vec<Node<Msg>> {
 #[derive(Clone)]
 pub enum Msg {
     DismissErrorsClicked,
-    FavoriteClicked(api::Credentials, article::slug::Slug),
-    UnfavoriteClicked(api::Credentials, article::slug::Slug),
+    FavoriteClicked(article::slug::Slug),
+    UnfavoriteClicked(article::slug::Slug),
     FavoriteCompleted(Result<article::Article, Vec<String>>),
 }
 
@@ -213,14 +212,14 @@ pub fn update(
         Msg::DismissErrorsClicked => {
             model.errors.clear();
         },
-        Msg::FavoriteClicked(credentials, slug) => {
+        Msg::FavoriteClicked(slug) => {
             orders.perform_cmd(request::unfavorite::unfavorite(
                 &model.session,
                 &slug,
                 Msg::FavoriteCompleted
             ));
         },
-        Msg::UnfavoriteClicked(credentials, slug) => {
+        Msg::UnfavoriteClicked(slug) => {
             orders.perform_cmd(request::favorite::favorite(
                 &model.session,
                 &slug,

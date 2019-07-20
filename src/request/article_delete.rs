@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{viewer, username, api, session, author, profile, avatar, article, comment_id};
+use crate::{session, article};
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
@@ -35,7 +35,7 @@ fn process_fetch_object(
     fetch_object: fetch::FetchObject<String>
 ) -> Result<(), Vec<String>> {
     match fetch_object.result {
-        Err(request_error) => {
+        Err(_) => {
             Err(vec!["Request error".into()])
         },
         Ok(response) => {
@@ -59,7 +59,7 @@ fn process_fetch_object(
                     Ok(error_messages) => {
                         Err(error_messages)
                     },
-                    Err(data_error) => {
+                    Err(_) => {
                         Err(vec!["Data error".into()])
                     }
                 }

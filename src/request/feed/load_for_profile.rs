@@ -48,7 +48,7 @@ pub fn request_url(
     )
 }
 
-pub fn load<Ms: 'static>(
+pub fn load_for_profile<Ms: 'static>(
     credentials: Option<Credentials>,
     username: username::Username<'static>,
     feed_tab: &page::profile::FeedTab,

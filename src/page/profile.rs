@@ -91,14 +91,13 @@ pub fn init<'a>(session: session::Session, username: username::Username<'static>
     }
 }
 
-// @TODO merge with home feed?
 fn fetch_feed(
     credentials: Option<Credentials>,
     username: username::Username<'static>,
     feed_tab: &FeedTab,
     page_number: page_number::PageNumber,
 ) -> impl Future<Item=Msg, Error=Msg> {
-    request::feed::load(
+    request::feed::load_for_profile(
         credentials,
         username,
         feed_tab,

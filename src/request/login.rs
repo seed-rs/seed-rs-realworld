@@ -1,12 +1,13 @@
 use serde::Deserialize;
-use crate::{viewer, form::login as form, request, dto};
+use crate::entity::{viewer, form::login as form};
+use crate::{request, dto};
 use futures::prelude::*;
 use seed::fetch;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct RootDto {
-    user: dto::viewer::Viewer
+    user: dto::Viewer
 }
 
 pub fn login<Ms: 'static>(

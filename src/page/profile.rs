@@ -1,6 +1,7 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, username, GMsg, route, article, author, api, loading, request, paginated_list, page_number, helper::take, logger, page};
+use crate::entity::{username, article, author, Credentials, paginated_list, page_number};
+use crate::{session, GMsg, route, loading, request, helper::take, logger, page};
 use std::borrow::Cow;
 use futures::prelude::*;
 
@@ -72,7 +73,7 @@ pub fn init<'a>(session: session::Session, username: username::Username<'static>
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
         .perform_cmd(request::author::load(
-            session.credentials(),
+            session.credentials().cloned(),
             username.clone(),
             Msg::AuthorLoadCompleted))
         .perform_cmd(fetch_feed(
@@ -92,7 +93,7 @@ pub fn init<'a>(session: session::Session, username: username::Username<'static>
 
 // @TODO merge with home feed?
 fn fetch_feed(
-    credentials: Option<api::Credentials>,
+    credentials: Option<Credentials>,
     username: username::Username<'static>,
     feed_tab: &FeedTab,
     page_number: page_number::PageNumber,
@@ -234,7 +235,7 @@ fn title_for_other(username: &username::Username) -> String {
     format!("Profile - {}", username.as_str())
 }
 
-fn title_for_me(credentials: Option<&api::Credentials>, username: &username::Username) -> &'static str {
+fn title_for_me(credentials: Option<&Credentials>, username: &username::Username) -> &'static str {
     if let Some(credentials) = credentials {
         if username == &credentials.username {
             return MY_PROFILE_TITLE

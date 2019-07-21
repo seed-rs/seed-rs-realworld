@@ -1,6 +1,7 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, article, GMsg, route, comment_id, author, logger, request, helper::take, loading, timestamp, page};
+use crate::entity::{article, author, timestamp};
+use crate::{session, GMsg, route, logger, request, helper::take, loading, page};
 use std::collections::VecDeque;
 use std::borrow::Cow;
 
@@ -86,7 +87,7 @@ pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>)
 #[derive(Clone)]
 pub enum Msg {
     DeleteArticleClicked(article::slug::Slug),
-    DeleteCommentClicked(article::slug::Slug, comment_id::CommentId),
+    DeleteCommentClicked(article::slug::Slug, article::comment::CommentId),
     DismissErrorsClicked,
     FavoriteClicked(article::slug::Slug),
     UnfavoriteClicked(article::slug::Slug),
@@ -97,7 +98,7 @@ pub enum Msg {
     LoadArticleCompleted(Result<article::Article, Vec<String>>),
     LoadCommentsCompleted(Result<VecDeque<article::comment::Comment<'static>>, Vec<String>>),
     DeleteArticleCompleted(Result<(), Vec<String>>),
-    DeleteCommentCompleted(Result<comment_id::CommentId, Vec<String>>),
+    DeleteCommentCompleted(Result<article::comment::CommentId, Vec<String>>),
     FavoriteChangeCompleted(Result<article::Article, Vec<String>>),
     FollowChangeCompleted(Result<author::Author<'static>, Vec<String>>),
     PostCommentCompleted(Result<article::comment::Comment<'static>, Vec<String>>),

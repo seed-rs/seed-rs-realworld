@@ -1,4 +1,5 @@
-use crate::{session, paginated_list, article, api, GMsg, route, author, request, timestamp, page_number, page, logger};
+use crate::entity::{paginated_list, article, Credentials, author, timestamp, page_number};
+use crate::{session, GMsg, route, request, page, logger};
 use seed::prelude::*;
 use std::borrow::Cow;
 
@@ -102,7 +103,7 @@ pub fn view_pagination<Ms: Clone>(
     }
 }
 
-fn view_favorite_button(credentials: Option<&api::Credentials>, article: &article::Article) -> Node<Msg> {
+fn view_favorite_button(credentials: Option<&Credentials>, article: &article::Article) -> Node<Msg> {
     match credentials {
         None => empty![],
         Some(_) => {
@@ -136,7 +137,7 @@ fn view_tag(tag: article::tag::Tag) -> Node<Msg> {
     ]
 }
 
-fn view_article_preview(credentials: Option<&api::Credentials>, article: &article::Article) -> Node<Msg> {
+fn view_article_preview(credentials: Option<&Credentials>, article: &article::Article) -> Node<Msg> {
     div![
         class!["article-preview"],
         div![

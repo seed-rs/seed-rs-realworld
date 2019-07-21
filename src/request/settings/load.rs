@@ -1,5 +1,6 @@
 use serde::Deserialize;
-use crate::{form::settings as form, api, request};
+use crate::entity::{form::settings as form, Credentials};
+use crate::request;
 use futures::prelude::*;
 use seed::fetch;
 
@@ -33,7 +34,7 @@ impl RootDto {
 }
 
 pub fn load<Ms: 'static>(
-    credentials: Option<&api::Credentials>,
+    credentials: Option<&Credentials>,
     f: fn(Result<form::Form, Vec<form::Problem>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(

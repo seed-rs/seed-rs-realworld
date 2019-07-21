@@ -1,16 +1,17 @@
 use serde::Deserialize;
-use crate::{form::article_editor as form, api, article, request, dto};
+use crate::entity::{form::article_editor as form, Credentials, article};
+use crate::{request, dto};
 use futures::prelude::*;
 use seed::fetch;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct RootDto {
-    article: dto::article::ArticleDTO
+    article: dto::ArticleDto
 }
 
 pub fn update<Ms: 'static>(
-    credentials: Option<api::Credentials>,
+    credentials: Option<Credentials>,
     valid_form: &form::ValidForm,
     slug: &article::slug::Slug,
     f: fn(Result<article::Article, Vec<form::Problem>>) -> Ms

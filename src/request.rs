@@ -3,7 +3,8 @@ use serde_json;
 use indexmap::IndexMap;
 use serde::Deserialize;
 use std::fmt::Debug;
-use crate::{logger, api, form};
+use crate::entity::{Credentials, form};
+use crate::logger;
 
 pub mod article;
 pub mod author;
@@ -24,7 +25,7 @@ pub struct ServerErrorData {
     errors: IndexMap<String, Vec<String>>
 }
 
-pub fn new_api_request(path: &str, credentials: Option<&api::Credentials>) -> fetch::Request {
+pub fn new_api_request(path: &str, credentials: Option<&Credentials>) -> fetch::Request {
     let mut request = fetch::Request::new(format!("{}/{}", BASE_API_URL, path))
         .timeout(TIMEOUT);
 

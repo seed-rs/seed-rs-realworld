@@ -1,4 +1,4 @@
-use crate::{avatar};
+use crate::entity::avatar;
 
 #[derive(Clone)]
 pub struct Profile {

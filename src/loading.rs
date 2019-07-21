@@ -1,7 +1,7 @@
 use seed::prelude::*;
 use seed::gloo_timers::future::TimeoutFuture;
 use futures::Future;
-use crate::asset;
+use crate::entity::asset;
 
 const SLOW_LOADING_THRESHOLD_MS: u32 = 500;
 

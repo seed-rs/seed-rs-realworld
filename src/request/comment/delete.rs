@@ -1,4 +1,5 @@
-use crate::{api, article, comment_id, request};
+use crate::entity::{Credentials, article};
+use crate::request;
 use futures::prelude::*;
 use seed::fetch;
 use indexmap::IndexMap;
@@ -6,10 +7,10 @@ use indexmap::IndexMap;
 type RootDto = IndexMap<(), ()>;
 
 pub fn delete<Ms: 'static>(
-    credentials: Option<&api::Credentials>,
+    credentials: Option<&Credentials>,
     slug: &article::slug::Slug,
-    comment_id: comment_id::CommentId,
-    f: fn(Result<comment_id::CommentId, Vec<String>>) -> Ms,
+    comment_id: article::comment::CommentId,
+    f: fn(Result<article::comment::CommentId, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &format!("articles/{}/comments/{}", slug.as_str(), comment_id.as_str()),

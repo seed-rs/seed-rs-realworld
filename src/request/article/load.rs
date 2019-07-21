@@ -1,16 +1,17 @@
 use serde::Deserialize;
-use crate::{api, article, request, dto};
+use crate::entity::{Credentials, article};
+use crate::{request, dto};
 use futures::prelude::*;
 use seed::fetch;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct RootDto {
-    article: dto::article::ArticleDTO
+    article: dto::ArticleDto
 }
 
 pub fn load<Ms: 'static>(
-    credentials: Option<api::Credentials>,
+    credentials: Option<Credentials>,
     slug: &article::slug::Slug,
     f: fn(Result<article::Article, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {

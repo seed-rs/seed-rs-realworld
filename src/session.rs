@@ -1,4 +1,4 @@
-use crate::{viewer, api};
+use crate::entity::{viewer, Credentials};
 
 #[derive(Clone, Debug)]
 pub enum Session {
@@ -19,7 +19,7 @@ impl<'a> Session {
             Session::Guest => None,
         }
     }
-    pub fn credentials(&self) -> Option<&api::Credentials> {
+    pub fn credentials(&self) -> Option<&Credentials> {
         self.viewer().map(|viewer| &viewer.credentials)
     }
 }

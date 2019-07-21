@@ -2,7 +2,8 @@ use serde::Serialize;
 use indexmap::IndexMap;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
-use crate::form::{self, FormField};
+use unicode_segmentation::UnicodeSegmentation;
+use crate::entity::form::{self, FormField};
 
 pub type Form = form::Form<Field>;
 pub type ValidForm = form::ValidForm<Field>;
@@ -37,6 +38,7 @@ pub struct ValidFormDTO<'a> {
 
 #[derive(Clone, EnumIter)]
 pub enum Field {
+    Username(String),
     Email(String),
     Password(String)
 }
@@ -44,6 +46,7 @@ pub enum Field {
 impl FormField for Field {
     fn value(&self) -> &str {
         match self {
+            Field::Username(value) => value,
             Field::Email(value) => value,
             Field::Password(value) => value,
         }
@@ -51,6 +54,7 @@ impl FormField for Field {
 
     fn value_mut(&mut self) -> &mut String {
         match self {
+            Field::Username(value) => value,
             Field::Email(value) => value,
             Field::Password(value) => value,
         }
@@ -58,6 +62,7 @@ impl FormField for Field {
 
     fn key(&self) -> &'static str {
         match self {
+            Field::Username(_) => "username",
             Field::Email(_) => "email",
             Field::Password(_) => "password",
         }
@@ -65,6 +70,13 @@ impl FormField for Field {
 
     fn validate(&self) -> Option<form::Problem> {
         match self {
+            Field::Username(value) => {
+                if value.is_empty() {
+                    Some(form::Problem::new_invalid_field(self.key(), "username can't be blank"))
+                } else {
+                    None
+                }
+            },
             Field::Email(value) => {
                 if value.is_empty() {
                     Some(form::Problem::new_invalid_field(self.key(), "email can't be blank"))
@@ -73,10 +85,23 @@ impl FormField for Field {
                 }
             },
             Field::Password(value) => {
-                if value.is_empty() {
-                    Some(form::Problem::new_invalid_field(self.key(), "password can't be blank"))
-                } else {
-                    None
+                match value.graphemes(true).count() {
+                    0 => {
+                        Some(form::Problem::new_invalid_field(
+                            self.key(),
+                            "password can't be blank"
+                        ))
+                    }
+                    1...form::MAX_INVALID_PASSWORD_LENGTH => {
+                        Some(form::Problem::new_invalid_field(
+                            self.key(),
+                            format!(
+                                "password is too short (minimum is {} characters)",
+                                form::MIN_PASSWORD_LENGTH
+                            )
+                        ))
+                    }
+                    _ => None
                 }
             }
         }

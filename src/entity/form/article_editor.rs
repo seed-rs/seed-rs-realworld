@@ -2,7 +2,7 @@ use serde::Serialize;
 use indexmap::IndexMap;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
-use crate::form::{self, FormField};
+use crate::entity::form::{self, FormField};
 
 pub type Form = form::Form<Field>;
 pub type ValidForm = form::ValidForm<Field>;

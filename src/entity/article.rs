@@ -1,5 +1,6 @@
-use crate::{form::article_editor as form, author, timestamp, markdown, article};
+use crate::entity::{form::article_editor as form, author, timestamp, markdown, article};
 use article::tag::IntoStrings;
+
 pub mod feed;
 pub mod slug;
 pub mod tag;

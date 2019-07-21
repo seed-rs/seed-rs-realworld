@@ -1,17 +1,17 @@
 use serde::Deserialize;
-use crate::{avatar, profile, author, api};
+use crate::entity::{avatar, profile, author, Credentials};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct AuthorDTO {
+pub struct AuthorDto {
     username: String,
     bio: Option<String>,
     image: String,
     following: bool,
 }
 
-impl AuthorDTO {
-    pub fn into_author(self, credentials: Option<api::Credentials>) -> author::Author<'static> {
+impl AuthorDto {
+    pub fn into_author(self, credentials: Option<Credentials>) -> author::Author<'static> {
         let username = self.username.into();
         let profile = profile::Profile {
             bio: self.bio,

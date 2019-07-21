@@ -1,22 +1,20 @@
 use serde::Deserialize;
-use crate::{username, api, author, request, dto};
+use crate::entity::{username, Credentials, author};
+use crate::{request, dto};
 use futures::prelude::*;
 use seed::fetch;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct RootDto {
-    profile: dto::author::AuthorDTO
+    profile: dto::AuthorDto
 }
 
 pub fn load<Ms: 'static>(
-    credentials: Option<&api::Credentials>,
+    credentials: Option<Credentials>,
     username: username::Username<'static>,
     f: fn(Result<author::Author<'static>, (username::Username<'static>, Vec<String>)>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
-    let username = username.clone();
-    let credentials= credentials.map(|credentials| credentials.clone());
-
     request::new_api_request(
         &format!("profiles/{}", username.as_str()),
         credentials.as_ref()

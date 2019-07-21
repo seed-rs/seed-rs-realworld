@@ -1,5 +1,6 @@
 use serde::Deserialize;
-use crate::{api, article, dto};
+use crate::entity::{Credentials, article};
+use crate::dto;
 use std::convert::TryInto;
 
 #[derive(Deserialize, Debug)]
@@ -9,11 +10,11 @@ pub struct CommentDto {
     created_at: String,
     updated_at: String,
     body: String,
-    author: dto::author::AuthorDTO,
+    author: dto::author::AuthorDto,
 }
 
 impl CommentDto {
-    pub fn try_into_comment<'a>(self, credentials: Option<api::Credentials>,) -> Result<article::comment::Comment<'a>, String> {
+    pub fn try_into_comment<'a>(self, credentials: Option<Credentials>,) -> Result<article::comment::Comment<'a>, String> {
         let created_at = self.created_at.try_into()?;
         let updated_at = self.updated_at.try_into()?;
 

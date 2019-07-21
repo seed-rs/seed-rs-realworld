@@ -1,5 +1,6 @@
 use seed::prelude::*;
-use crate::{viewer, username, route};
+use crate::entity::{viewer, username};
+use crate::route;
 use std::borrow::{Borrow, Cow};
 
 pub mod article;

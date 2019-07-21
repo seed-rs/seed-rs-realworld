@@ -1,5 +1,6 @@
 use serde::Deserialize;
-use crate::{username, api, article, page, paginated_list, page_number, logger, request, dto};
+use crate::entity::{username, Credentials, article, paginated_list, page_number};
+use crate::{page, logger, request, dto};
 use futures::prelude::*;
 use seed::fetch;
 
@@ -8,12 +9,12 @@ const ARTICLES_PER_PAGE: usize = 5;
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct RootDto {
-    articles: Vec<dto::article::ArticleDTO>,
+    articles: Vec<dto::ArticleDto>,
     articles_count: usize
 }
 
 impl RootDto {
-    fn into_paginated_list(self, credentials: Option<api::Credentials>,) -> paginated_list::PaginatedList<article::Article> {
+    fn into_paginated_list(self, credentials: Option<Credentials>,) -> paginated_list::PaginatedList<article::Article> {
         paginated_list::PaginatedList {
             values: self.articles.into_iter().filter_map(|article_dto| {
                 // @TODO without clone / more effective?
@@ -49,7 +50,7 @@ pub fn request_url(
 }
 
 pub fn load<Ms: 'static>(
-    credentials: Option<api::Credentials>,
+    credentials: Option<Credentials>,
     username: username::Username<'static>,
     feed_tab: &page::profile::FeedTab,
     page_number: page_number::PageNumber,

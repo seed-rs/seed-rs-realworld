@@ -1,16 +1,7 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{
-    article,
-    session,
-    route,
-    GMsg,
-    form::article_editor as form,
-    loading,
-    request,
-    helper::take,
-    logger,
-};
+use crate::entity::{article, form::article_editor as form};
+use crate::{session, route, GMsg, loading, request, helper::take, logger};
 use std::borrow::Cow;
 
 // Model

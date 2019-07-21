@@ -3,7 +3,7 @@ use indexmap::IndexMap;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use unicode_segmentation::UnicodeSegmentation;
-use crate::form::{self, FormField};
+use crate::entity::form::{self, FormField};
 
 pub type Form = form::Form<Field>;
 pub type ValidForm = form::ValidForm<Field>;
@@ -23,7 +23,14 @@ impl ValidForm {
             user: self
                 .0
                 .iter()
-                .map(|(key, field)|(*key, field.value()))
+                .filter_map(|(key, field)|{
+                    match field {
+                        Field::Password(password) if password.is_empty() => {
+                            None
+                        }
+                        _ => Some((*key, field.value()))
+                    }
+                })
                 .collect()
         }
     }
@@ -38,15 +45,19 @@ pub struct ValidFormDTO<'a> {
 
 #[derive(Clone, EnumIter)]
 pub enum Field {
+    Avatar(String),
     Username(String),
+    Bio(String),
     Email(String),
-    Password(String)
+    Password(String),
 }
 
 impl FormField for Field {
     fn value(&self) -> &str {
         match self {
+            Field::Avatar(value) => value,
             Field::Username(value) => value,
+            Field::Bio(value) => value,
             Field::Email(value) => value,
             Field::Password(value) => value,
         }
@@ -54,7 +65,9 @@ impl FormField for Field {
 
     fn value_mut(&mut self) -> &mut String {
         match self {
+            Field::Avatar(value) => value,
             Field::Username(value) => value,
+            Field::Bio(value) => value,
             Field::Email(value) => value,
             Field::Password(value) => value,
         }
@@ -62,7 +75,9 @@ impl FormField for Field {
 
     fn key(&self) -> &'static str {
         match self {
+            Field::Avatar(_) => "image",
             Field::Username(_) => "username",
+            Field::Bio(_) => "bio",
             Field::Email(_) => "email",
             Field::Password(_) => "password",
         }
@@ -70,6 +85,7 @@ impl FormField for Field {
 
     fn validate(&self) -> Option<form::Problem> {
         match self {
+            Field::Avatar(_) => None,
             Field::Username(value) => {
                 if value.is_empty() {
                     Some(form::Problem::new_invalid_field(self.key(), "username can't be blank"))
@@ -77,6 +93,7 @@ impl FormField for Field {
                     None
                 }
             },
+            Field::Bio(_) => None,
             Field::Email(value) => {
                 if value.is_empty() {
                     Some(form::Problem::new_invalid_field(self.key(), "email can't be blank"))
@@ -86,12 +103,6 @@ impl FormField for Field {
             },
             Field::Password(value) => {
                 match value.graphemes(true).count() {
-                    0 => {
-                        Some(form::Problem::new_invalid_field(
-                            self.key(),
-                            "password can't be blank"
-                        ))
-                    }
                     1...form::MAX_INVALID_PASSWORD_LENGTH => {
                         Some(form::Problem::new_invalid_field(
                             self.key(),

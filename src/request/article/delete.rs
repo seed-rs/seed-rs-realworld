@@ -1,4 +1,5 @@
-use crate::{api, article, request};
+use crate::entity::{Credentials, article};
+use crate::request;
 use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
@@ -6,7 +7,7 @@ use seed::fetch;
 type RootDto = IndexMap<(), ()>;
 
 pub fn delete<Ms: 'static>(
-    credentials: Option<&api::Credentials>,
+    credentials: Option<&Credentials>,
     slug: &article::slug::Slug,
     f: fn(Result<(), Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {

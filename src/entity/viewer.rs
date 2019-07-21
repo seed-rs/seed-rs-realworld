@@ -1,10 +1,11 @@
-use crate::{avatar, api, username};
+use crate::entity::{avatar, Credentials, username};
+use crate::api;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Viewer {
     pub avatar: avatar::Avatar,
-    pub credentials: api::Credentials
+    pub credentials: Credentials
 }
 
 impl Viewer {

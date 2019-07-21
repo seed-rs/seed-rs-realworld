@@ -1,5 +1,6 @@
 use serde::Deserialize;
-use crate::{api, article, logger, request, dto};
+use crate::entity::{Credentials, article};
+use crate::{request, dto, logger};
 use futures::prelude::*;
 use seed::fetch;
 use std::collections::VecDeque;
@@ -7,11 +8,11 @@ use std::collections::VecDeque;
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct RootDto {
-    comments: VecDeque<dto::comment::CommentDto>,
+    comments: VecDeque<dto::CommentDto>,
 }
 
 impl RootDto {
-    fn into_comments<'a>(self, credentials: Option<api::Credentials>) -> VecDeque<article::comment::Comment<'a>> {
+    fn into_comments<'a>(self, credentials: Option<Credentials>) -> VecDeque<article::comment::Comment<'a>> {
         self.comments.into_iter().filter_map(|comment_dto| {
             // @TODO without clone / more effective?
             match comment_dto.try_into_comment(credentials.clone()) {
@@ -26,7 +27,7 @@ impl RootDto {
 }
 
 pub fn load_list<Ms: 'static>(
-    credentials: Option<api::Credentials>,
+    credentials: Option<Credentials>,
     slug: &article::slug::Slug,
     f: fn(Result<VecDeque<article::comment::Comment<'static>>, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {

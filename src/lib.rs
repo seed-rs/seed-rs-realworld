@@ -3,30 +3,18 @@ extern crate seed;
 use seed::prelude::*;
 use std::convert::TryInto;
 use helper::take;
+use entity::{article, username};
 
-mod helper;
-
-mod dto;
-mod paginated_list;
-mod profile;
-mod author;
-mod loading;
-mod form;
-mod asset;
-mod avatar;
-mod username;
 mod api;
-mod viewer;
-mod session;
-mod request;
-mod page;
-mod article;
-mod route;
-mod timestamp;
-mod page_number;
-mod comment_id;
+mod dto;
+mod entity;
+mod helper;
+mod loading;
 mod logger;
-mod markdown;
+mod page;
+mod request;
+mod route;
+mod session;
 
 // Model
 

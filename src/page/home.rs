@@ -1,13 +1,14 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, GMsg, api, article, paginated_list, loading, request, page_number, logger, page};
+use crate::entity::{Credentials, article, paginated_list, page_number};
+use crate::{session, GMsg, loading, request, logger, page};
 use futures::prelude::*;
 
 // Model
 
 #[derive(Clone)]
 pub enum FeedTab {
-    YourFeed(api::Credentials),
+    YourFeed(Credentials),
     GlobalFeed,
     TagFeed(article::tag::Tag)
 }
@@ -76,7 +77,7 @@ pub fn init(session: session::Session, orders: &mut impl Orders<Msg, GMsg>) -> M
 }
 
 fn fetch_feed(
-    credentials: Option<api::Credentials>,
+    credentials: Option<Credentials>,
     feed_tab: &FeedTab,
     page_number: page_number::PageNumber,
 ) -> impl Future<Item=Msg, Error=Msg> {
@@ -205,7 +206,7 @@ fn view_banner() -> Node<Msg> {
 fn view_tabs(model: &Model) -> Node<Msg> {
     let credentials = model.session().viewer().map(|viewer|&viewer.credentials);
 
-    let your_feed = |credentials: api::Credentials| {
+    let your_feed = |credentials: Credentials| {
         article::feed::Tab::new("Your Feed", Msg::TabClicked(FeedTab::YourFeed(credentials)))
     };
     let global_feed = article::feed::Tab::new("Global Feed", Msg::TabClicked(FeedTab::GlobalFeed));

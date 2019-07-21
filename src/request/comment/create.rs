@@ -1,12 +1,13 @@
 use serde::{Serialize, Deserialize};
-use crate::{api, article, request, dto};
+use crate::entity::{Credentials, article};
+use crate::{request, dto};
 use futures::prelude::*;
 use seed::fetch;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct RootDto {
-    comment: dto::comment::CommentDto
+    comment: dto::CommentDto
 }
 
 // @TODO commentToSend and formsDTO solve somehow (move to dto folder?) + dto in request
@@ -23,7 +24,7 @@ struct CommentToSendDTO {
 }
 
 pub fn create<Ms: 'static>(
-    credentials: Option<api::Credentials>,
+    credentials: Option<Credentials>,
     slug: &article::slug::Slug,
     text: String,
     f: fn(Result<article::comment::Comment<'static>, Vec<String>>) -> Ms

@@ -1,6 +1,7 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::{session, route, viewer, GMsg, form::login as form, request};
+use crate::entity::{viewer, form::login as form};
+use crate::{session, route, GMsg, request};
 
 // Model
 

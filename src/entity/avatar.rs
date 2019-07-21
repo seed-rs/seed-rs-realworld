@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-use crate::asset;
+use crate::entity::asset;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

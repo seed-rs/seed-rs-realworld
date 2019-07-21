@@ -1,5 +1,6 @@
 use serde::Deserialize;
-use crate::{form::article_editor as form, api, article, request, dto};
+use crate::entity::{form::article_editor as form, Credentials, article};
+use crate::{request, dto};
 use futures::prelude::*;
 use seed::fetch;
 
@@ -7,11 +8,11 @@ use seed::fetch;
 #[serde(rename_all = "camelCase")]
 // @TODO remove pub?
 pub struct RootDto {
-    article: dto::article::ArticleDTO
+    article: dto::ArticleDto
 }
 
 pub fn load_for_editor<Ms: 'static>(
-    credentials: Option<api::Credentials>,
+    credentials: Option<Credentials>,
     slug: article::slug::Slug,
     f: fn(Result<article::Article, (article::slug::Slug, Vec<form::Problem>)>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {

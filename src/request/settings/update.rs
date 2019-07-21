@@ -1,16 +1,17 @@
 use serde::Deserialize;
-use crate::{viewer, form::settings as form, api, request, dto};
+use crate::entity::{viewer, form::settings as form, Credentials};
+use crate::{request, dto};
 use futures::prelude::*;
 use seed::fetch;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct RootDto {
-    user: dto::viewer::Viewer
+    user: dto::Viewer
 }
 
 pub fn update<Ms: 'static>(
-    credentials: Option<&api::Credentials>,
+    credentials: Option<&Credentials>,
     valid_form: &form::ValidForm,
     f: fn(Result<viewer::Viewer, Vec<form::Problem>>) -> Ms
 ) -> impl Future<Item=Ms, Error=Ms>  {

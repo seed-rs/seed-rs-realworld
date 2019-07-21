@@ -1,21 +1,8 @@
-use crate::{username, viewer};
-use serde::{Deserialize, Serialize};
+use crate::entity::viewer;
 use seed::storage;
 use serde_json;
 
 const STORAGE_KEY: &'static str = "conduit";
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Credentials {
-    pub username: username::Username<'static>,
-    pub auth_token: String
-}
-
-impl Credentials{
-    pub fn username(&self) -> &username::Username {
-        &self.username
-    }
-}
 
 pub fn load_viewer() -> Option<viewer::Viewer> {
     local_storage()

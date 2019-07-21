@@ -5,20 +5,21 @@ use seed::fetch;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct ServerData {
-    user: ServerDataFields
+struct RootDto {
+    user: UserDto
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct ServerDataFields {
+// @TODO to dto folder?
+struct UserDto {
     email: String,
     username: String,
     bio: Option<String>,
     image: Option<String>,
 }
 
-impl ServerData {
+impl RootDto {
     fn into_form(self) -> form::Form {
         let fields: Vec<form::Field> = vec![
             form::Field::Avatar(self.user.image.unwrap_or_default()),
@@ -39,15 +40,15 @@ pub fn load_settings<Ms: 'static>(
         "user",
         session.viewer().map(|viewer| &viewer.credentials)
     )
-        .fetch_json_data(move |data_result| {
+        .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDto>| {
             f(data_result
-                .map(ServerData::into_form)
+                .map(RootDto::into_form)
                 .map_err(fail_reason_to_problems)
             )
         })
 }
 
-fn fail_reason_to_problems(fail_reason: fetch::FailReason<ServerData>) -> Vec<form::Problem> {
+fn fail_reason_to_problems(fail_reason: fetch::FailReason<RootDto>) -> Vec<form::Problem> {
     string_errors_to_problems(request::fail_reason_into_errors(fail_reason))
 }
 

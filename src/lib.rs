@@ -6,6 +6,7 @@ use helper::take;
 
 mod helper;
 
+mod dto;
 mod paginated_list;
 mod profile;
 mod author;

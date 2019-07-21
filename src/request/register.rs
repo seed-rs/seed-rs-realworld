@@ -1,32 +1,12 @@
 use serde::Deserialize;
-use crate::{viewer, avatar, api, form::register as form, request};
+use crate::{viewer, form::register as form, request, dto};
 use futures::prelude::*;
 use seed::fetch;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct ServerData {
-    user: ServerDataFields
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct ServerDataFields {
-    username: String,
-    image: Option<String>,
-    token: String,
-}
-
-impl ServerData {
-    fn into_viewer(self) -> viewer::Viewer {
-        viewer::Viewer {
-            avatar: avatar::Avatar::new(self.user.image),
-            credentials: api::Credentials {
-                username: self.user.username.into(),
-                auth_token: self.user.token
-            }
-        }
-    }
+struct RootDto {
+    user: dto::viewer::Viewer
 }
 
 pub fn register<Ms: 'static>(
@@ -36,15 +16,16 @@ pub fn register<Ms: 'static>(
     request::new_api_request("users", None)
         .method(fetch::Method::Post)
         .send_json(&valid_form.dto())
-        .fetch_json_data(move |data_result| {
+        .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDto>| {
             f(data_result
-                .map(ServerData::into_viewer)
+                .map(|root_dto| root_dto.user.into_viewer())
                 .map_err(fail_reason_to_problems)
             )
         })
 }
 
-fn fail_reason_to_problems(fail_reason: fetch::FailReason<ServerData>) -> Vec<form::Problem> {
+// @TODO refactor
+fn fail_reason_to_problems(fail_reason: fetch::FailReason<RootDto>) -> Vec<form::Problem> {
     string_errors_to_problems(request::fail_reason_into_errors(fail_reason))
 }
 

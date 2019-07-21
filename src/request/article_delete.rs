@@ -3,7 +3,7 @@ use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
 
-type ServerData = IndexMap<(), ()>;
+type RootDto = IndexMap<(), ()>;
 
 pub fn delete_article<Ms: 'static>(
     session: &session::Session,
@@ -15,7 +15,7 @@ pub fn delete_article<Ms: 'static>(
         session.viewer().map(|viewer| &viewer.credentials)
     )
         .method(fetch::Method::Delete)
-        .fetch_json_data(move |data_result: fetch::ResponseDataResult<ServerData>| {
+        .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDto>| {
             f(data_result
                 .map(move |_| ())
                 .map_err(request::fail_reason_into_errors)

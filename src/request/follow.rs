@@ -1,47 +1,12 @@
 use serde::Deserialize;
-use crate::{username, session, author, profile, avatar, request};
+use crate::{username, session, author, request, dto};
 use futures::prelude::*;
 use seed::fetch;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct ServerData {
-    profile: ServerDataFields
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct ServerDataFields {
-    username: String,
-    bio: Option<String>,
-    image: String,
-    following: bool,
-}
-
-impl ServerData {
-    fn into_author(self, session: session::Session) -> author::Author<'static> {
-        let username = self.profile.username.into();
-        let profile = profile::Profile {
-            bio: self.profile.bio,
-            avatar: avatar::Avatar::new(Some(self.profile.image)),
-        };
-
-        if let Some(viewer) = session.viewer() {
-            if &username == viewer.username() {
-                return author::Author::IsViewer(viewer.credentials.clone(), profile)
-            }
-        }
-
-        if self.profile.following {
-            author::Author::Following(
-                author::FollowedAuthor(username, profile)
-            )
-        } else {
-            author::Author::NotFollowing(
-                author::UnfollowedAuthor(username, profile)
-            )
-        }
-    }
+struct RootDto {
+    profile: dto::author::AuthorDTO
 }
 
 pub fn follow<Ms: 'static>(
@@ -57,9 +22,9 @@ pub fn follow<Ms: 'static>(
         session.viewer().map(|viewer| &viewer.credentials)
     )
         .method(fetch::Method::Post)
-        .fetch_json_data(move |data_result: fetch::ResponseDataResult<ServerData>| {
+        .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDto>| {
             f(data_result
-                .map(move |server_data| server_data.into_author(session))
+                .map(move |root_dto| root_dto.profile.into_author(session))
                 .map_err(request::fail_reason_into_errors)
             )
         })

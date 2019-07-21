@@ -67,36 +67,38 @@ impl<'a> From<Model<'a>> for session::Session {
     }
 }
 
-pub fn init<'a>(session: session::Session, username: &username::Username<'a>, orders: &mut impl Orders<Msg, GMsg>
+pub fn init<'a>(session: session::Session, username: username::Username<'static>, orders: &mut impl Orders<Msg, GMsg>
 ) -> Model<'a> {
-    let static_username = username.to_static();
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
-        .perform_cmd(request::author_load::load_author(session.clone(), static_username.clone(), Msg::AuthorLoadCompleted))
+        .perform_cmd(request::author::load(
+            session.credentials(),
+            username.clone(),
+            Msg::AuthorLoadCompleted))
         .perform_cmd(fetch_feed(
-            session.clone(),
-            static_username,
-            FeedTab::default(),
+            session.credentials().cloned(),
+            username.clone(),
+            &FeedTab::default(),
             page_number::PageNumber::default(),
         ));
 
     Model {
         session,
         author: Status::Loading(username.clone()),
-        feed: Status::Loading(username.clone()),
+        feed: Status::Loading(username),
         ..Model::default()
     }
 }
 
 // @TODO merge with home feed?
 fn fetch_feed(
-    session: session::Session,
+    credentials: Option<api::Credentials>,
     username: username::Username<'static>,
-    feed_tab: FeedTab,
+    feed_tab: &FeedTab,
     page_number: page_number::PageNumber,
 ) -> impl Future<Item=Msg, Error=Msg> {
-    request::feed_load::load_feed(
-        session,
+    request::feed::load(
+        credentials,
         username,
         feed_tab,
         page_number,
@@ -144,17 +146,18 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::FollowClicked => {
             orders.perform_cmd(
                 request::follow::follow(
-                    model.session.clone(),
-                    model.author.username().to_static(),
+                    model.session().credentials().cloned(),
+                    &model.author.username().to_static(),  // @TODO &str instead of 'static? (also below)
                     Msg::FollowChangeCompleted
                 )
             );
         },
         Msg::UnfollowClicked => {
             orders.perform_cmd(
-                request::unfollow::unfollow(
-                    model.session.clone(),
-                    model.author.username().to_static(),
+                request::follow::unfollow(
+                    // @TODO session() vs session?
+                    model.session().credentials().cloned(),
+                    &model.author.username().to_static(),
                     Msg::FollowChangeCompleted
                 )
             );
@@ -164,9 +167,9 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             model.feed_page = page_number::PageNumber::default();
             orders
                 .perform_cmd(fetch_feed(
-                    model.session.clone(),
+                    model.session().credentials().cloned(),
                     model.author.username().to_static(),
-                    feed_tab,
+                    &feed_tab,
                     model.feed_page,
                 ));
         },
@@ -174,9 +177,9 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             model.feed_page = page_number;
             orders
                 .perform_cmd(fetch_feed(
-                    model.session.clone(),
+                    model.session().credentials().cloned(),
                     model.author.username().to_static(),
-                    model.feed_tab,
+                    &model.feed_tab,
                     model.feed_page,
                 ));
             page::scroll_to_top();

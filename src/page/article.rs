@@ -50,12 +50,18 @@ impl<'a> From<Model<'a>> for session::Session {
     }
 }
 
-pub fn init<'a>(session: session::Session, slug: article::slug::Slug, orders: &mut impl Orders<Msg, GMsg>
+pub fn init<'a>(session: session::Session, slug: &article::slug::Slug, orders: &mut impl Orders<Msg, GMsg>
 ) -> Model<'a> {
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
-        .perform_cmd(request::article_article_load::load_article(&session, &slug,Msg::LoadArticleCompleted))
-        .perform_cmd(request::comments_load::load_comments(session.clone(), &slug,Msg::LoadCommentsCompleted));
+        .perform_cmd(request::article::load(
+            session.credentials().cloned(),
+            slug,
+            Msg::LoadArticleCompleted))
+        .perform_cmd(request::comment::load_list(
+            session.credentials().cloned(),
+            slug,
+            Msg::LoadCommentsCompleted));
 
     Model {
         session,
@@ -103,8 +109,8 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
     match msg {
         Msg::DeleteArticleClicked(slug) => {
             orders
-                .perform_cmd(request::article_delete::delete_article(
-                    model.session(),
+                .perform_cmd(request::article::delete(
+                    model.session().credentials(),
                     &slug,
                     Msg::DeleteArticleCompleted
                 ))
@@ -112,8 +118,8 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         }
         Msg::DeleteCommentClicked(slug, comment_id) => {
             orders
-                .perform_cmd(request::comment_delete::delete_comment(
-                    model.session(),
+                .perform_cmd(request::comment::delete(
+                    model.session().credentials(),
                     &slug,
                     comment_id,
                     Msg::DeleteCommentCompleted
@@ -126,8 +132,8 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::FavoriteClicked(slug) => {
             // @TODO check if handlers with only orders has skip() called (especially feed.rs)
             orders
-                .perform_cmd(request::unfavorite::unfavorite(
-                    &model.session,
+                .perform_cmd(request::favorite::unfavorite(
+                    model.session().credentials().cloned(),
                     &slug,
                     Msg::FavoriteChangeCompleted
                 ))
@@ -136,7 +142,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::UnfavoriteClicked(slug) => {
             orders
                 .perform_cmd(request::favorite::favorite(
-                    &model.session,
+                    model.session.credentials().cloned(),
                     &slug,
                     Msg::FavoriteChangeCompleted
                 ))
@@ -145,22 +151,23 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::FollowClicked(unfollowed_author) => {
             orders
                 .perform_cmd(request::follow::follow(
-                    model.session.clone(),
-                    unfollowed_author.0,
+                    model.session().credentials().cloned(),
+                    &unfollowed_author.0,  // @TODO refactor
                     Msg::FollowChangeCompleted
                 ))
                 .skip();
         }
         Msg::UnfollowClicked(followed_author) => {
             orders
-                .perform_cmd(request::unfollow::unfollow(
-                    model.session.clone(),
-                    followed_author.0,
+                .perform_cmd(request::follow::unfollow(
+                    model.session().credentials().cloned(),
+                    &followed_author.0,  // @TODO refactor
                     Msg::FollowChangeCompleted
                 ))
                 .skip();
         }
         Msg::PostCommentClicked => {
+            // @TODO unnecessary article? (pass slug through message?)
             if let Status::Loaded(article) = &model.article {
                 let model_comments = &mut model.comments;
                 match model_comments {
@@ -169,8 +176,8 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                     }
                     Status::Loaded((CommentText::Editing(text), comments)) => {
                         orders
-                            .perform_cmd(request::comment_create::create_comment(
-                                &model.session.clone(),
+                            .perform_cmd(request::comment::create(
+                                model.session.credentials().cloned(),
                                 &article.slug,
                                 text.clone(),
                                 Msg::PostCommentCompleted

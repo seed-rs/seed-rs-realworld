@@ -9,7 +9,7 @@ use crate::{
     loading,
     request,
     helper::take,
-    logger
+    logger,
 };
 use std::borrow::Cow;
 
@@ -68,6 +68,7 @@ impl From<Model> for session::Session {
 
 // Init
 
+// @TODO unnecessary Orders
 pub fn init_new(session: session::Session, _: &mut impl Orders<Msg, GMsg>) -> Model {
     Model {
         session,
@@ -77,15 +78,18 @@ pub fn init_new(session: session::Session, _: &mut impl Orders<Msg, GMsg>) -> Mo
 
 pub fn init_edit(
     session: session::Session,
-    slug: &article::slug::Slug,
+    slug: article::slug::Slug,
     orders: &mut impl Orders<Msg, GMsg>,
 ) -> Model {
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
-        .perform_cmd(request::article_load::load_article(&session, slug, Msg::ArticleLoadCompleted));
+        .perform_cmd(request::article::load_for_editor(
+            session.credentials().cloned(),
+            slug.clone(),
+            Msg::ArticleLoadCompleted));
     Model {
         session,
-        status: Status::Loading(slug.clone())
+        status: Status::Loading(slug)
     }
 }
 
@@ -133,8 +137,11 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                     match form.trim_fields().validate() {
                         Ok(valid_form) => {
                             orders.perform_cmd(
-                                request::article_update::update_article(
-                                    &model.session, &valid_form, &slug, Msg::EditCompleted
+                                request::article::update(
+                                    model.session.credentials().cloned(),
+                                    &valid_form,
+                                    &slug,
+                                    Msg::EditCompleted
                                 )
                             );
                             model.status = Status::Saving(take(slug), take(form));
@@ -148,8 +155,10 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                     match form.trim_fields().validate() {
                         Ok(valid_form) => {
                             orders.perform_cmd(
-                                request::article_create::create_article(
-                                    &model.session, &valid_form, Msg::CreateCompleted
+                                request::article::create(
+                                    model.session.credentials().cloned(),
+                                    &valid_form,
+                                    Msg::CreateCompleted
                                 )
                             );
                             model.status = Status::Creating(take(form));

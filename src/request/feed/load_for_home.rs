@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{session, article, page, paginated_list, page_number, logger, request, dto};
+use crate::{api, article, page, paginated_list, page_number, logger, request, dto};
 use futures::prelude::*;
 use seed::fetch;
 
@@ -13,11 +13,11 @@ struct RootDto {
 }
 
 impl RootDto {
-    fn into_paginated_list(self, session: session::Session) -> paginated_list::PaginatedList<article::Article> {
+    fn into_paginated_list(self, credentials: Option<api::Credentials>,) -> paginated_list::PaginatedList<article::Article> {
         paginated_list::PaginatedList {
             values: self.articles.into_iter().filter_map(|article_dto| {
                 // @TODO without clone / more effective?
-                match article_dto.try_into_article(session.clone()) {
+                match article_dto.try_into_article(credentials.clone()) {
                     Ok(article) => Some(article),
                     Err(error) => {
                         logger::error(error);
@@ -53,21 +53,19 @@ pub fn request_url(
     )
 }
 
-pub fn load_home_feed<Ms: 'static>(
-    session: session::Session,
-    feed_tab: page::home::FeedTab,
+pub fn load_for_home<Ms: 'static>(
+    credentials: Option<api::Credentials>,
+    feed_tab: &page::home::FeedTab,
     page_number: page_number::PageNumber,
     f: fn(Result<paginated_list::PaginatedList<article::Article>, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
-    let session = session.clone();
-
     request::new_api_request(
-        &request_url(&feed_tab, page_number),
-        session.viewer().map(|viewer| &viewer.credentials)
+        &request_url(feed_tab, page_number),
+        credentials.as_ref()
     )
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDto>| {
             f(data_result
-                .map(move |root_dto| root_dto.into_paginated_list(session))
+                .map(move |root_dto| root_dto.into_paginated_list(credentials))
                 .map_err(request::fail_reason_into_errors)
             )
         })

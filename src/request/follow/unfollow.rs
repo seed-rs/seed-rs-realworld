@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{username, session, author, request, dto};
+use crate::{username, author, request, dto, api};
 use futures::prelude::*;
 use seed::fetch;
 
@@ -10,21 +10,18 @@ struct RootDto {
 }
 
 pub fn unfollow<Ms: 'static>(
-    session: session::Session,
-    username: username::Username<'static>,
+    credentials: Option<api::Credentials>,
+    username: &username::Username<'static>,
     f: fn(Result<author::Author<'static>, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
-    let username = username.clone();
-    let session = session.clone();
-
     request::new_api_request(
         &format!("profiles/{}/follow", username.as_str()),
-        session.viewer().map(|viewer| &viewer.credentials)
+        credentials.as_ref()
     )
         .method(fetch::Method::Delete)
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDto>| {
             f(data_result
-                .map(move |root_dto| root_dto.profile.into_author(session))
+                .map(move |root_dto| root_dto.profile.into_author(credentials))
                 .map_err(request::fail_reason_into_errors)
             )
         })

@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{session, avatar, profile, author};
+use crate::{avatar, profile, author, api};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -11,16 +11,16 @@ pub struct AuthorDTO {
 }
 
 impl AuthorDTO {
-    pub fn into_author(self, session: session::Session) -> author::Author<'static> {
+    pub fn into_author(self, credentials: Option<api::Credentials>) -> author::Author<'static> {
         let username = self.username.into();
         let profile = profile::Profile {
             bio: self.bio,
             avatar: avatar::Avatar::new(Some(self.image)),
         };
 
-        if let Some(viewer) = session.viewer() {
-            if &username == viewer.username() {
-                return author::Author::IsViewer(viewer.credentials.clone(), profile)
+        if let Some(credentials) = credentials {
+            if &username == credentials.username() {
+                return author::Author::IsViewer(credentials, profile)
             }
         }
 

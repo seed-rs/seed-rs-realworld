@@ -213,15 +213,15 @@ pub fn update(
             model.errors.clear();
         },
         Msg::FavoriteClicked(slug) => {
-            orders.perform_cmd(request::unfavorite::unfavorite(
-                &model.session,
+            orders.perform_cmd(request::favorite::unfavorite(
+                model.session.credentials().cloned(),
                 &slug,
                 Msg::FavoriteCompleted
             ));
         },
         Msg::UnfavoriteClicked(slug) => {
             orders.perform_cmd(request::favorite::favorite(
-                &model.session,
+                model.session.credentials().cloned(),
                 &slug,
                 Msg::FavoriteCompleted
             ));

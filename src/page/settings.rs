@@ -41,7 +41,9 @@ impl From<Model> for session::Session {
 pub fn init<'a>(session: session::Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
-        .perform_cmd(request::settings_load::load_settings(&session, Msg::FormLoadCompleted));
+        .perform_cmd(request::settings::load(
+            session.credentials(),
+            Msg::FormLoadCompleted));
     Model {
         session,
         ..Model::default()
@@ -80,8 +82,8 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                         model.problems.clear();
                         orders
                             .perform_cmd(
-                                request::settings_update::update_settings(
-                                    &model.session,
+                                request::settings::update(
+                                    model.session.credentials(),
                                     &valid_form,
                                     Msg::SaveCompleted
                                 )

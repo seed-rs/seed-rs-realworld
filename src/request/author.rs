@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{username, session, author, request, dto};
+use crate::{username, api, author, request, dto};
 use futures::prelude::*;
 use seed::fetch;
 
@@ -9,21 +9,21 @@ struct RootDto {
     profile: dto::author::AuthorDTO
 }
 
-pub fn load_author<Ms: 'static>(
-    session: session::Session,
+pub fn load<Ms: 'static>(
+    credentials: Option<&api::Credentials>,
     username: username::Username<'static>,
     f: fn(Result<author::Author<'static>, (username::Username<'static>, Vec<String>)>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     let username = username.clone();
-    let session = session.clone();
+    let credentials= credentials.map(|credentials| credentials.clone());
 
     request::new_api_request(
         &format!("profiles/{}", username.as_str()),
-        session.viewer().map(|viewer| &viewer.credentials)
+        credentials.as_ref()
     )
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDto>| {
             f(data_result
-                .map(move |root_dto| root_dto.profile.into_author(session))
+                .map(move |root_dto| root_dto.profile.into_author(credentials))
                 .map_err(request::fail_reason_into_errors)
                 .map_err(move |errors| (username, errors))
             )

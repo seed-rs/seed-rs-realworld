@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{session, article, request, dto};
+use crate::{api, article, request, dto};
 use futures::prelude::*;
 use seed::fetch;
 
@@ -9,24 +9,21 @@ struct RootDto {
     article: dto::article::ArticleDTO
 }
 
-pub fn favorite<Ms: 'static>(
-    session: &session::Session,
+pub fn unfavorite<Ms: 'static>(
+    credentials: Option<api::Credentials>,
     slug: &article::slug::Slug,
     f: fn(Result<article::Article, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
-    let slug = slug.clone();
-    let session = session.clone();
-
     request::new_api_request(
         &format!("articles/{}/favorite", slug.as_str()),
-        session.viewer().map(|viewer| &viewer.credentials)
+        credentials.as_ref()
     )
-        .method(fetch::Method::Post)
+        .method(fetch::Method::Delete)
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDto>| {
             f(data_result
                 .map_err(request::fail_reason_into_errors)
                 .and_then(move |root_dto| {
-                    root_dto.article.try_into_article(session)
+                    root_dto.article.try_into_article(credentials)
                         .map_err(|error| vec![error])
                 })
             )

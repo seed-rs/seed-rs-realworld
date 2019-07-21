@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::{session, article, dto};
+use crate::{api, article, dto};
 use article::tag::IntoTags;
 use std::convert::TryInto;
 
@@ -19,7 +19,7 @@ pub struct ArticleDTO {
 }
 
 impl ArticleDTO {
-    pub fn try_into_article(self, session: session::Session) -> Result<article::Article, String> {
+    pub fn try_into_article(self, credentials: Option<api::Credentials>,) -> Result<article::Article, String> {
         let created_at = self.created_at.try_into()?;
         let updated_at = self.updated_at.try_into()?;
 
@@ -31,7 +31,7 @@ impl ArticleDTO {
             updated_at,
             tag_list: self.tag_list.into_tags(),
             description: self.description,
-            author: self.author.into_author(session),
+            author: self.author.into_author(credentials),
             favorited: self.favorited,
             favorites_count: self.favorites_count,
         })

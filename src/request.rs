@@ -3,28 +3,18 @@ use serde_json;
 use indexmap::IndexMap;
 use serde::Deserialize;
 use std::fmt::Debug;
-use crate::{logger, api};
+use crate::{logger, api, form};
 
-pub mod article_load;
-pub mod article_article_load;
-pub mod article_update;
-pub mod article_create;
-pub mod article_delete;
+pub mod article;
+pub mod author;
+pub mod comment;
+pub mod favorite;
+pub mod feed;
+pub mod follow;
 pub mod login;
 pub mod register;
-pub mod settings_load;
-pub mod settings_update;
-pub mod author_load;
-pub mod feed_load;
-pub mod home_feed_load;
-pub mod follow;
-pub mod unfollow;
-pub mod favorite;
-pub mod unfavorite;
-pub mod tags_load;
-pub mod comment_create;
-pub mod comment_delete;
-pub mod comments_load;
+pub mod settings;
+pub mod tag;
 
 static BASE_API_URL: &'static str = "https://conduit.productionready.io/api";
 const TIMEOUT: u32 = 5000;
@@ -45,14 +35,9 @@ pub fn new_api_request(path: &str, credentials: Option<&api::Credentials>) -> fe
     request
 }
 
-pub fn decode_server_errors(json: String) -> Result<Vec<String>, serde_json::Error> {
-    let server_error_data = serde_json::from_str::<ServerErrorData>(json.as_str())?;
-    Ok(server_error_data
-        .errors
-        .into_iter()
-        .map(|(field, errors)| {
-            format!("{} {}", field, errors.join(", "))
-        }).collect())
+pub fn fail_reason_into_problems<T: Debug>(fail_reason: fetch::FailReason<T>) -> Vec<form::Problem> {
+    fail_reason_into_errors(fail_reason)
+        .into_iter().map(form::Problem::new_server_error).collect()
 }
 
 pub fn fail_reason_into_errors<T: Debug>(fail_reason: fetch::FailReason<T>) -> Vec<String> {
@@ -82,4 +67,14 @@ pub fn fail_reason_into_errors<T: Debug>(fail_reason: fetch::FailReason<T>) -> V
             }
         }
     }
+}
+
+fn decode_server_errors(json: String) -> Result<Vec<String>, serde_json::Error> {
+    let server_error_data = serde_json::from_str::<ServerErrorData>(json.as_str())?;
+    Ok(server_error_data
+        .errors
+        .into_iter()
+        .map(|(field, errors)| {
+            format!("{} {}", field, errors.join(", "))
+        }).collect())
 }

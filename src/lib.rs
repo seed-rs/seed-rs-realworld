@@ -191,7 +191,7 @@ fn change_model_by_route<'a>(
             route::Route::EditArticle(slug) => {
                 *model = Model::ArticleEditor(
                     page::article_editor::init_edit(
-                        session(), &slug, &mut orders.proxy(Msg::ArticleEditorMsg)
+                        session(), slug.clone(), &mut orders.proxy(Msg::ArticleEditorMsg)
                     ),
                     Some(slug)
                 );
@@ -219,14 +219,14 @@ fn change_model_by_route<'a>(
             route::Route::Profile(username) => {
                 *model = Model::Profile(
                     page::profile::init(
-                        session(), &username, &mut orders.proxy(Msg::ProfileMsg)
+                        session(), username.to_static(), &mut orders.proxy(Msg::ProfileMsg)
                     ),
                     username.into_owned()
                 );
             },
             route::Route::Article(slug) => {
                 *model = Model::Article(
-                    page::article::init(session(), slug, &mut orders.proxy(Msg::ArticleMsg))
+                    page::article::init(session(), &slug, &mut orders.proxy(Msg::ArticleMsg))
                 );
             },
         }

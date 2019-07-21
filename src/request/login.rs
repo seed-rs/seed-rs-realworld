@@ -19,15 +19,8 @@ pub fn login<Ms: 'static>(
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDto>| {
             f(data_result
                 .map(|root_dto| root_dto.user.into_viewer())
-                .map_err(fail_reason_to_problems)
+                .map_err(request::fail_reason_into_problems)
             )
         })
 }
 
-fn fail_reason_to_problems(fail_reason: fetch::FailReason<RootDto>) -> Vec<form::Problem> {
-    string_errors_to_problems(request::fail_reason_into_errors(fail_reason))
-}
-
-fn string_errors_to_problems(errors: Vec<String>) -> Vec<form::Problem> {
-    errors.into_iter().map(form::Problem::new_server_error).collect()
-}

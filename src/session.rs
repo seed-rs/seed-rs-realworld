@@ -1,4 +1,4 @@
-use crate::viewer;
+use crate::{viewer, api};
 
 #[derive(Clone, Debug)]
 pub enum Session {
@@ -18,6 +18,9 @@ impl<'a> Session {
             Session::LoggedIn(viewer) => Some(viewer),
             Session::Guest => None,
         }
+    }
+    pub fn credentials(&self) -> Option<&api::Credentials> {
+        self.viewer().map(|viewer| &viewer.credentials)
     }
 }
 

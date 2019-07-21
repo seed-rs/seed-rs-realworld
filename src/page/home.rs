@@ -61,10 +61,10 @@ pub fn init(session: session::Session, orders: &mut impl Orders<Msg, GMsg>) -> M
 
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
-        .perform_cmd(request::tags_load::load_tags(Msg::TagsLoadCompleted))
+        .perform_cmd(request::tag::load_list(Msg::TagsLoadCompleted))
         .perform_cmd(fetch_feed(
-            session.clone(),
-            feed_tab.clone(),
+            session.credentials().cloned(),
+            &feed_tab,
             page_number::PageNumber::default(),
         ));
 
@@ -76,12 +76,12 @@ pub fn init(session: session::Session, orders: &mut impl Orders<Msg, GMsg>) -> M
 }
 
 fn fetch_feed(
-    session: session::Session,
-    feed_tab: FeedTab,
+    credentials: Option<api::Credentials>,
+    feed_tab: &FeedTab,
     page_number: page_number::PageNumber,
 ) -> impl Future<Item=Msg, Error=Msg> {
-    request::home_feed_load::load_home_feed(
-        session,
+    request::feed::load_for_home(
+        credentials,
         feed_tab,
         page_number,
         Msg::FeedLoadCompleted,
@@ -119,8 +119,8 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             model.feed_tab = FeedTab::TagFeed(tag);
             model.feed_page = page_number::PageNumber::default();
             orders.perform_cmd(fetch_feed(
-                model.session.clone(),
-                model.feed_tab.clone(),
+                model.session().credentials().cloned(),
+                &model.feed_tab,
                 model.feed_page,
             ));
         },
@@ -128,16 +128,16 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             model.feed_tab = feed_tab;
             model.feed_page = page_number::PageNumber::default();
             orders.perform_cmd(fetch_feed(
-                model.session.clone(),
-                model.feed_tab.clone(),
+                model.session().credentials().cloned(),
+                &model.feed_tab,
                 model.feed_page,
             ));
         },
         Msg::FeedPageClicked(page_number) => {
             model.feed_page = page_number;
             orders.perform_cmd(fetch_feed(
-                model.session.clone(),
-                model.feed_tab.clone(),
+                model.session().credentials().cloned(),
+                &model.feed_tab,
                 model.feed_page,
             ));
             page::scroll_to_top()

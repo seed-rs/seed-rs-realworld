@@ -10,7 +10,7 @@ struct RootDto {
     tags: Vec<String>,
 }
 
-pub fn load_tags<Ms: 'static>(
+pub fn load_list<Ms: 'static>(
     f: fn(Result<Vec<article::tag::Tag>, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request("tags",None)

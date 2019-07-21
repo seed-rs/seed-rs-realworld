@@ -1,5 +1,5 @@
 use crate::entity::{avatar, Credentials, username};
-use crate::api;
+use crate::storage;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -18,6 +18,6 @@ impl Viewer {
     }
 
     pub fn store(&self) {
-        api::store_viewer(self);
+        storage::store_viewer(self);
     }
 }

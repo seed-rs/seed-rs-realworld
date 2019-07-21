@@ -2,8 +2,6 @@ use crate::entity::viewer;
 use seed::storage;
 use serde_json;
 
-// @TODO better naming? api -> storage?
-
 const STORAGE_KEY: &'static str = "conduit";
 
 pub fn load_viewer() -> Option<viewer::Viewer> {
@@ -19,7 +17,7 @@ pub fn store_viewer(viewer: &viewer::Viewer) {
     storage::store_data(&local_storage(), STORAGE_KEY, viewer);
 }
 
-pub fn logout() {
+pub fn delete_app_data() {
     local_storage().remove_item(STORAGE_KEY).expect("remove item from local storage failed");
 }
 

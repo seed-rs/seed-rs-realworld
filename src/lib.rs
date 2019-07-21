@@ -5,7 +5,6 @@ use std::convert::TryInto;
 use helper::take;
 use entity::{article, username};
 
-mod api;
 mod dto;
 mod entity;
 mod helper;
@@ -15,6 +14,7 @@ mod page;
 mod request;
 mod route;
 mod session;
+mod storage;
 
 // Model
 
@@ -164,7 +164,7 @@ fn change_model_by_route<'a>(
                 route::go_to(route::Route::Home, orders)
             },
             route::Route::Logout => {
-                api::logout();
+                storage::delete_app_data();
                 orders.send_g_msg(GMsg::SessionChanged(None.into()));
                 route::go_to(route::Route::Home, orders)
             },
@@ -300,7 +300,7 @@ fn view<'a>(model: &Model) -> impl View<Msg<'static>> {
 
 fn init(url: Url, orders: &mut impl Orders<Msg<'static>, GMsg>) -> Model<'static> {
     orders.send_msg(Msg::RouteChanged(url.try_into().ok()));
-    Model::Redirect(api::load_viewer().into())
+    Model::Redirect(storage::load_viewer().into())
 }
 
 #[wasm_bindgen(start)]

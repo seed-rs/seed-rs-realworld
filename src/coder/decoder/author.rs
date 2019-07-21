@@ -3,14 +3,14 @@ use crate::entity::{avatar, profile, author, Credentials};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct AuthorDto {
+pub struct Author {
     username: String,
     bio: Option<String>,
     image: String,
     following: bool,
 }
 
-impl AuthorDto {
+impl Author {
     pub fn into_author(self, credentials: Option<Credentials>) -> author::Author<'static> {
         let username = self.username.into();
         let profile = profile::Profile {

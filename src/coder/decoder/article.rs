@@ -1,12 +1,12 @@
 use serde::Deserialize;
 use crate::entity::{Credentials, article};
-use crate::dto;
+use crate::coder::decoder;
 use article::tag::IntoTags;
 use std::convert::TryInto;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct ArticleDto {
+pub struct Article {
     title: String,
     slug: String,
     body: String,
@@ -14,12 +14,12 @@ pub struct ArticleDto {
     updated_at: String,
     tag_list: Vec<String>,
     description: String,
-    author: dto::author::AuthorDto,
+    author: decoder::Author,
     favorited: bool,
     favorites_count: usize,
 }
 
-impl ArticleDto {
+impl Article {
     pub fn try_into_article(self, credentials: Option<Credentials>,) -> Result<article::Article, String> {
         let created_at = self.created_at.try_into()?;
         let updated_at = self.updated_at.try_into()?;

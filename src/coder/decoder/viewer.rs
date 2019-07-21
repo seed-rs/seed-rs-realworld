@@ -3,7 +3,7 @@ use crate::entity::{viewer, avatar, Credentials};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct Viewer {
+pub struct Viewer{
     username: String,
     image: Option<String>,
     token: String,

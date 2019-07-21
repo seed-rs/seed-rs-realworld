@@ -93,7 +93,7 @@ pub enum Msg {
     UnfavoriteClicked(article::slug::Slug),
     FollowClicked(author::UnfollowedAuthor<'static>),
     UnfollowClicked(author::FollowedAuthor<'static>),
-    PostCommentClicked,
+    PostCommentClicked(article::slug::Slug),
     CommentTextEntered(String),
     LoadArticleCompleted(Result<article::Article, Vec<String>>),
     LoadCommentsCompleted(Result<VecDeque<article::comment::Comment<'static>>, Vec<String>>),
@@ -166,26 +166,23 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 ))
                 .skip();
         }
-        Msg::PostCommentClicked => {
-            // @TODO unnecessary article? (pass slug through message?)
-            if let Status::Loaded(article) = &model.article {
-                let model_comments = &mut model.comments;
-                match model_comments {
-                    Status::Loaded((CommentText::Editing(text), _)) if text.is_empty() => {
-                        orders.skip();
-                    }
-                    Status::Loaded((CommentText::Editing(text), comments)) => {
-                        orders
-                            .perform_cmd(request::comment::create(
-                                model.session.credentials().cloned(),
-                                &article.slug,
-                                text.clone(),
-                                Msg::PostCommentCompleted
-                            ));
-                        *model_comments = Status::Loaded((CommentText::Sending(take(text)), take(comments)));
-                    }
-                    _ => logger::error("Comment can be created only in Editing mode!")
+        Msg::PostCommentClicked(slug) => {
+            let model_comments = &mut model.comments;
+            match model_comments {
+                Status::Loaded((CommentText::Editing(text), _)) if text.is_empty() => {
+                    orders.skip();
                 }
+                Status::Loaded((CommentText::Editing(text), comments)) => {
+                    orders
+                        .perform_cmd(request::comment::create(
+                            model.session.credentials().cloned(),
+                            &slug,
+                            text.clone(),
+                            Msg::PostCommentCompleted
+                        ));
+                    *model_comments = Status::Loaded((CommentText::Sending(take(text)), take(comments)));
+                }
+                _ => logger::error("Comment can be created only in Editing mode!")
             }
         }
         Msg::CommentTextEntered(comment_text) => {
@@ -399,7 +396,7 @@ fn view_banner(article: &article::Article, model: &Model) -> Node<Msg> {
     ]
 }
 
-fn view_comment_form(comment_text: &CommentText, model: &Model) -> Node<Msg> {
+fn view_comment_form(slug: article::slug::Slug, comment_text: &CommentText, model: &Model) -> Node<Msg> {
     match model.session.viewer() {
         None => {
             p![
@@ -429,7 +426,7 @@ fn view_comment_form(comment_text: &CommentText, model: &Model) -> Node<Msg> {
                 class!["card", "comment-form"],
                 raw_ev(Ev::Submit, |event| {
                     event.prevent_default();
-                    Msg::PostCommentClicked
+                    Msg::PostCommentClicked(slug)
                 }),
                 div![
                     class!["card-block"],
@@ -523,7 +520,7 @@ fn view_form_and_comments(slug: &article::slug::Slug, model: &Model) -> Vec<Node
         Status::LoadingSlowly => vec![loading::icon()],
         Status::Failed => vec![loading::error("comments")],
         Status::Loaded((comment_text, comments)) => {
-            vec![view_comment_form(comment_text, model)]
+            vec![view_comment_form(slug.clone(), comment_text, model)]
                 .into_iter()
                 .chain(view_comments(slug, comments))
                 .collect()

@@ -13,7 +13,6 @@ pub enum FeedTab {
     TagFeed(article::tag::Tag)
 }
 
-// @TODO remove unnecessary defaults?
 impl Default for FeedTab {
     fn default() -> Self {
         FeedTab::GlobalFeed

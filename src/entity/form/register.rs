@@ -1,9 +1,8 @@
-use serde::Serialize;
-use indexmap::IndexMap;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use unicode_segmentation::UnicodeSegmentation;
 use crate::entity::form::{self, FormField};
+use crate::coder::encoder::form::register::ValidForm as ValidFormEncoder;
 
 pub type Form = form::Form<Field>;
 pub type ValidForm = form::ValidForm<Field>;
@@ -18,20 +17,9 @@ impl Default for Form {
 }
 
 impl ValidForm {
-    pub fn dto(&self) -> ValidFormDTO {
-        ValidFormDTO {
-            user: self
-                .0
-                .iter()
-                .map(|(key, field)|(*key, field.value()))
-                .collect()
-        }
+    pub fn to_encoder(&self) -> ValidFormEncoder {
+        ValidFormEncoder::new(self)
     }
-}
-
-#[derive(Serialize)]
-pub struct ValidFormDTO<'a> {
-    user: IndexMap<&'a str, &'a str>
 }
 
 // ---- Field ----

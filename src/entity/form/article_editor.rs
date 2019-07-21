@@ -1,8 +1,7 @@
-use serde::Serialize;
-use indexmap::IndexMap;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use crate::entity::form::{self, FormField};
+use crate::coder::encoder::form::article_editor::ValidForm as ValidFormEncoder;
 
 pub type Form = form::Form<Field>;
 pub type ValidForm = form::ValidForm<Field>;
@@ -17,36 +16,9 @@ impl Default for Form {
 }
 
 impl ValidForm {
-    pub fn dto(&self) -> ValidFormDTO {
-        ValidFormDTO {
-            article: self
-                .0
-                .iter()
-                .map(|(key, field)|{
-                    match field {
-                        Field::Tags(tags) => {
-                            ("tagList", ValidFormDTOValue::Vector(tags.split(" ").collect()))
-                        }
-                        _ => {
-                            (*key, ValidFormDTOValue::Text(field.value()))
-                        }
-                    }
-                })
-                .collect()
-        }
+    pub fn to_encoder(&self) -> ValidFormEncoder {
+        ValidFormEncoder::new(self)
     }
-}
-
-#[derive(Serialize)]
-#[serde(untagged)]
-pub enum ValidFormDTOValue<'a> {
-    Text(&'a str),
-    Vector(Vec<&'a str>)
-}
-
-#[derive(Serialize)]
-pub struct ValidFormDTO<'a> {
-    article: IndexMap<&'a str, ValidFormDTOValue<'a>>
 }
 
 // ---- Field ----

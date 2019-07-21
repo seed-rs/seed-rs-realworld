@@ -5,7 +5,7 @@ use std::convert::TryInto;
 use helper::take;
 use entity::{article, username};
 
-mod dto;
+mod coder;
 mod entity;
 mod helper;
 mod loading;

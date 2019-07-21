@@ -4,7 +4,7 @@ use indexmap::IndexMap;
 use futures::prelude::*;
 use seed::fetch;
 
-type RootDto = IndexMap<(), ()>;
+type RootDecoder = IndexMap<(), ()>;
 
 pub fn delete<Ms: 'static>(
     credentials: Option<&Credentials>,
@@ -16,7 +16,7 @@ pub fn delete<Ms: 'static>(
         credentials
     )
         .method(fetch::Method::Delete)
-        .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDto>| {
+        .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {
             f(data_result
                 .map(move |_| ())
                 .map_err(request::fail_reason_into_errors)

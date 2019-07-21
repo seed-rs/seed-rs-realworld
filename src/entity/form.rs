@@ -100,3 +100,9 @@ impl<T: FormField> TrimmedForm<T> {
 // ----- ValidForm -----
 
 pub struct ValidForm<T: FormField>(IndexMap<FieldKey, T>);
+
+impl<T: FormField> ValidForm<T> {
+    pub fn iter(&self) -> indexmap::map::Iter<FieldKey, T> {
+        self.0.iter()
+    }
+}

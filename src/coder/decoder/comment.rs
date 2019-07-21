@@ -1,19 +1,19 @@
 use serde::Deserialize;
 use crate::entity::{Credentials, article};
-use crate::dto;
+use crate::coder::decoder;
 use std::convert::TryInto;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct CommentDto {
+pub struct Comment {
     id: usize,
     created_at: String,
     updated_at: String,
     body: String,
-    author: dto::author::AuthorDto,
+    author: decoder::Author,
 }
 
-impl CommentDto {
+impl Comment {
     pub fn try_into_comment<'a>(self, credentials: Option<Credentials>,) -> Result<article::comment::Comment<'a>, String> {
         let created_at = self.created_at.try_into()?;
         let updated_at = self.updated_at.try_into()?;

@@ -147,28 +147,27 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::FollowClicked => {
             orders.perform_cmd(
                 request::follow::follow(
-                    model.session().credentials().cloned(),
-                    &model.author.username().to_static(),  // @TODO &str instead of 'static? (also below)
+                    model.session.credentials().cloned(),
+                    &model.author.username(),
                     Msg::FollowChangeCompleted
                 )
-            );
+            ).skip();
         },
         Msg::UnfollowClicked => {
             orders.perform_cmd(
                 request::follow::unfollow(
-                    // @TODO session() vs session?
-                    model.session().credentials().cloned(),
-                    &model.author.username().to_static(),
+                    model.session.credentials().cloned(),
+                    &model.author.username(),
                     Msg::FollowChangeCompleted
                 )
-            );
+            ).skip();
         },
         Msg::TabClicked(feed_tab) => {
             model.feed_tab = feed_tab;
             model.feed_page = page_number::PageNumber::default();
             orders
                 .perform_cmd(fetch_feed(
-                    model.session().credentials().cloned(),
+                    model.session.credentials().cloned(),
                     model.author.username().to_static(),
                     &feed_tab,
                     model.feed_page,
@@ -178,7 +177,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             model.feed_page = page_number;
             orders
                 .perform_cmd(fetch_feed(
-                    model.session().credentials().cloned(),
+                    model.session.credentials().cloned(),
                     model.author.username().to_static(),
                     &model.feed_tab,
                     model.feed_page,
@@ -253,13 +252,13 @@ fn title<'a>(model: &Model) -> Cow<'a, str> {
             title_for_other(author.username()).into()
         },
         Status::Loading(username) => {
-            title_for_me(model.session().viewer().map(|viewer|&viewer.credentials), username).into()
+            title_for_me(model.session.credentials(), username).into()
         },
         Status::LoadingSlowly(username) => {
-            title_for_me(model.session().viewer().map(|viewer|&viewer.credentials), username).into()
+            title_for_me(model.session.credentials(), username).into()
         },
         Status::Failed(username) => {
-            title_for_me(model.session().viewer().map(|viewer|&viewer.credentials), username).into()
+            title_for_me(model.session.credentials(), username).into()
         },
     }
 }
@@ -311,9 +310,7 @@ fn view_feed(model: &Model) -> Node<Msg> {
 }
 
 fn view_follow_button(author: &author::Author, model: &Model) -> Node<Msg> {
-    // @TODO helper for getting credentials and move it after match
-    let credentials = model.session().viewer().map(|viewer| &viewer.credentials);
-    match credentials {
+    match model.session.credentials() {
         None => empty![],
         Some(_) => {
             match author {

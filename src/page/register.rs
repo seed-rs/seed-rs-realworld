@@ -26,7 +26,7 @@ impl From<Model> for session::Session {
 
 // Init
 
-pub fn init(session: session::Session, _: &mut impl Orders<Msg, GMsg>) -> Model {
+pub fn init(session: session::Session) -> Model {
     Model {
         session,
         ..Model::default()

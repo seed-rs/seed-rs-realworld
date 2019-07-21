@@ -111,7 +111,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::DeleteArticleClicked(slug) => {
             orders
                 .perform_cmd(request::article::delete(
-                    model.session().credentials(),
+                    model.session.credentials(),
                     &slug,
                     Msg::DeleteArticleCompleted
                 ))
@@ -120,7 +120,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::DeleteCommentClicked(slug, comment_id) => {
             orders
                 .perform_cmd(request::comment::delete(
-                    model.session().credentials(),
+                    model.session.credentials(),
                     &slug,
                     comment_id,
                     Msg::DeleteCommentCompleted
@@ -131,10 +131,9 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             model.errors.clear();
         }
         Msg::FavoriteClicked(slug) => {
-            // @TODO check if handlers with only orders has skip() called (especially feed.rs)
             orders
                 .perform_cmd(request::favorite::unfavorite(
-                    model.session().credentials().cloned(),
+                    model.session.credentials().cloned(),
                     &slug,
                     Msg::FavoriteChangeCompleted
                 ))
@@ -152,8 +151,8 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::FollowClicked(unfollowed_author) => {
             orders
                 .perform_cmd(request::follow::follow(
-                    model.session().credentials().cloned(),
-                    &unfollowed_author.0,  // @TODO refactor
+                    model.session.credentials().cloned(),
+                    &unfollowed_author.username,
                     Msg::FollowChangeCompleted
                 ))
                 .skip();
@@ -161,8 +160,8 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::UnfollowClicked(followed_author) => {
             orders
                 .perform_cmd(request::follow::unfollow(
-                    model.session().credentials().cloned(),
-                    &followed_author.0,  // @TODO refactor
+                    model.session.credentials().cloned(),
+                    &followed_author.username,
                     Msg::FollowChangeCompleted
                 ))
                 .skip();
@@ -329,8 +328,7 @@ fn view_edit_button(slug: article::slug::Slug) -> Node<Msg> {
 }
 
 fn view_buttons(article: &article::Article, model: &Model) -> Vec<Node<Msg>> {
-    let credentials = model.session().viewer().map(|viewer|&viewer.credentials);
-    match credentials {
+    match model.session.credentials() {
         None => vec![],
         Some(_) => {
             match &article.author {
@@ -345,7 +343,7 @@ fn view_buttons(article: &article::Article, model: &Model) -> Vec<Node<Msg>> {
                     vec![
                         author::view_unfollow_button(
                             Msg::UnfollowClicked(followed_author.clone()),
-                            &followed_author.0
+                            &followed_author.username,
                         ),
                         plain![" "],
                         view_favorite_button(article),
@@ -355,7 +353,7 @@ fn view_buttons(article: &article::Article, model: &Model) -> Vec<Node<Msg>> {
                     vec![
                         author::view_follow_button(
                             Msg::FollowClicked(unfollowed_author.clone()),
-                            &unfollowed_author.0
+                            &unfollowed_author.username,
                         ),
                         plain![" "],
                         view_favorite_button(article),
@@ -402,7 +400,7 @@ fn view_banner(article: &article::Article, model: &Model) -> Node<Msg> {
 }
 
 fn view_comment_form(comment_text: &CommentText, model: &Model) -> Node<Msg> {
-    match model.session().viewer() {
+    match model.session.viewer() {
         None => {
             p![
                 a![

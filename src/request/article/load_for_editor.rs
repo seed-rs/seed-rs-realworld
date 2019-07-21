@@ -6,8 +6,7 @@ use seed::fetch;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-// @TODO remove pub?
-pub struct RootDto {
+struct RootDto {
     article: dto::ArticleDto
 }
 

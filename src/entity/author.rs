@@ -13,26 +13,32 @@ pub enum Author<'a> {
 impl<'a> Author<'a> {
     pub fn username(&'a self) -> &'a username::Username<'a> {
         match self {
-            Author::Following(FollowedAuthor(username, _)) => username,
-            Author::NotFollowing(UnfollowedAuthor(username, _)) => username,
+            Author::Following(FollowedAuthor { username, .. }) => username,
+            Author::NotFollowing(UnfollowedAuthor { username, ..}) => username,
             Author::IsViewer(credentials,_) => credentials.username(),
         }
     }
 
     pub fn profile(&self) -> &profile::Profile {
         match self {
-            Author::Following(FollowedAuthor(_, profile)) => profile,
-            Author::NotFollowing(UnfollowedAuthor(_, profile)) => profile,
+            Author::Following(FollowedAuthor{ profile, ..}) => profile,
+            Author::NotFollowing(UnfollowedAuthor{ profile, ..}) => profile,
             Author::IsViewer(_, profile) => profile,
         }
     }
 }
 
 #[derive(Clone)]
-pub struct FollowedAuthor<'a>(pub username::Username<'a>, pub profile::Profile);
+pub struct FollowedAuthor<'a> {
+    pub username: username::Username<'a>,
+    pub profile: profile::Profile
+}
 
 #[derive(Clone)]
-pub struct UnfollowedAuthor<'a>(pub username::Username<'a>, pub profile::Profile);
+pub struct UnfollowedAuthor<'a> {
+    pub username: username::Username<'a>,
+    pub profile: profile::Profile
+}
 
 pub fn view<Ms>(username: &username::Username) -> Node<Ms> {
     a![

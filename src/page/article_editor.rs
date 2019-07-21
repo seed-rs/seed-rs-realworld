@@ -59,8 +59,7 @@ impl From<Model> for session::Session {
 
 // Init
 
-// @TODO unnecessary Orders
-pub fn init_new(session: session::Session, _: &mut impl Orders<Msg, GMsg>) -> Model {
+pub fn init_new(session: session::Session) -> Model {
     Model {
         session,
         ..Model::default()
@@ -316,7 +315,7 @@ fn view_content(model: &Model) -> Node<Msg> {
                 div![
                     class!["col-md-6", "offset-md-3", "col-x32-12"],
 
-                    if let Some(_) = model.session().viewer() {
+                    if model.session.viewer().is_some() {
                         view_authenticated(model)
                     } else {
                         vec![

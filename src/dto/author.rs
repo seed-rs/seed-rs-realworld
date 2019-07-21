@@ -26,11 +26,11 @@ impl AuthorDto {
 
         if self.following {
             author::Author::Following(
-                author::FollowedAuthor(username, profile)
+                author::FollowedAuthor { username, profile }
             )
         } else {
             author::Author::NotFollowing(
-                author::UnfollowedAuthor(username, profile)
+                author::UnfollowedAuthor { username, profile }
             )
         }
     }

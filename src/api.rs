@@ -2,6 +2,8 @@ use crate::entity::viewer;
 use seed::storage;
 use serde_json;
 
+// @TODO better naming? api -> storage?
+
 const STORAGE_KEY: &'static str = "conduit";
 
 pub fn load_viewer() -> Option<viewer::Viewer> {

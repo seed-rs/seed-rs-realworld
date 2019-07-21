@@ -218,14 +218,14 @@ pub fn update(
                 model.session.credentials().cloned(),
                 &slug,
                 Msg::FavoriteCompleted
-            ));
+            )).skip();
         },
         Msg::UnfavoriteClicked(slug) => {
             orders.perform_cmd(request::favorite::favorite(
                 model.session.credentials().cloned(),
                 &slug,
                 Msg::FavoriteCompleted
-            ));
+            )).skip();
         },
         Msg::FavoriteCompleted(Ok(article)) => {
             model

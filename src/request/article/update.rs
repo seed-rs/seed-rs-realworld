@@ -6,7 +6,7 @@ use seed::fetch;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct RootDto {
+struct RootDto {
     article: dto::ArticleDto
 }
 

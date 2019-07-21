@@ -17,7 +17,6 @@ impl RootDto {
     fn into_paginated_list(self, credentials: Option<Credentials>,) -> paginated_list::PaginatedList<article::Article> {
         paginated_list::PaginatedList {
             values: self.articles.into_iter().filter_map(|article_dto| {
-                // @TODO without clone / more effective?
                 match article_dto.try_into_article(credentials.clone()) {
                     Ok(article) => Some(article),
                     Err(error) => {
@@ -36,22 +35,22 @@ pub fn request_url(
     feed_tab: &page::home::FeedTab,
     page_number: page_number::PageNumber,
 ) -> String {
-    // @TODO refactor!
-    format!(
-        "articles{}?{}limit={}&offset={}",
-        match feed_tab {
-            page::home::FeedTab::YourFeed(_) => "/feed",
-            page::home::FeedTab::GlobalFeed => "",
-            page::home::FeedTab::TagFeed(_) => "",
-        },
-        match feed_tab {
-            page::home::FeedTab::YourFeed(_) => "".to_string(),
-            page::home::FeedTab::GlobalFeed => "".to_string(),
-            page::home::FeedTab::TagFeed(tag) => format!("tag={}&", tag),
-        },
-        ARTICLES_PER_PAGE,
-        (page_number.to_usize() - 1) * ARTICLES_PER_PAGE
-    )
+    use page::home::FeedTab::*;
+
+    let (path, tag_param) = match feed_tab {
+        YourFeed(_) => (Some("/feed"), None),
+        GlobalFeed => (None, None),
+        TagFeed(tag) => (None, Some(format!("tag={}", tag))),
+    };
+
+    let mut parameters = vec![
+        format!("limit={}", ARTICLES_PER_PAGE),
+        format!("offset={}", (page_number.to_usize() - 1) * ARTICLES_PER_PAGE)
+    ];
+    if let Some(tag_param) = tag_param {
+        parameters.push(tag_param)
+    }
+    format!("articles{}?{}", path.unwrap_or_default(), parameters.join("&"))
 }
 
 pub fn load_for_home<Ms: 'static>(

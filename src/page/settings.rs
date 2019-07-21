@@ -251,7 +251,7 @@ fn view_content<'a>(model: &Model) -> Node<Msg> {
                         "Your Settings"
                     ],
 
-                    if let Some(_) = model.session().viewer() {
+                    if model.session.viewer().is_some() {
                         vec![
                             ul![
                                 class!["error-messages"],

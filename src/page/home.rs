@@ -91,7 +91,7 @@ fn fetch_feed(
 
 // Sink
 
-pub fn sink(g_msg: GMsg, model: &mut Model, _: &mut impl Orders<Msg, GMsg>) {
+pub fn sink(g_msg: GMsg, model: &mut Model) {
     match g_msg {
         GMsg::SessionChanged(session) => {
             model.session = session;
@@ -120,7 +120,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             model.feed_tab = FeedTab::TagFeed(tag);
             model.feed_page = page_number::PageNumber::default();
             orders.perform_cmd(fetch_feed(
-                model.session().credentials().cloned(),
+                model.session.credentials().cloned(),
                 &model.feed_tab,
                 model.feed_page,
             ));
@@ -129,7 +129,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             model.feed_tab = feed_tab;
             model.feed_page = page_number::PageNumber::default();
             orders.perform_cmd(fetch_feed(
-                model.session().credentials().cloned(),
+                model.session.credentials().cloned(),
                 &model.feed_tab,
                 model.feed_page,
             ));
@@ -137,7 +137,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::FeedPageClicked(page_number) => {
             model.feed_page = page_number;
             orders.perform_cmd(fetch_feed(
-                model.session().credentials().cloned(),
+                model.session.credentials().cloned(),
                 &model.feed_tab,
                 model.feed_page,
             ));
@@ -204,7 +204,7 @@ fn view_banner() -> Node<Msg> {
 }
 
 fn view_tabs(model: &Model) -> Node<Msg> {
-    let credentials = model.session().viewer().map(|viewer|&viewer.credentials);
+    let credentials = model.session.credentials();
 
     let your_feed = |credentials: Credentials| {
         article::feed::Tab::new("Your Feed", Msg::TabClicked(FeedTab::YourFeed(credentials)))

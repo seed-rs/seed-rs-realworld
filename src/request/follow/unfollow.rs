@@ -12,7 +12,7 @@ struct RootDto {
 
 pub fn unfollow<Ms: 'static>(
     credentials: Option<Credentials>,
-    username: &username::Username<'static>,
+    username: &username::Username,
     f: fn(Result<author::Author<'static>, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(

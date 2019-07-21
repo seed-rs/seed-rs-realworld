@@ -17,7 +17,6 @@ impl RootDto {
     fn into_paginated_list(self, credentials: Option<Credentials>,) -> paginated_list::PaginatedList<article::Article> {
         paginated_list::PaginatedList {
             values: self.articles.into_iter().filter_map(|article_dto| {
-                // @TODO without clone / more effective?
                 match article_dto.try_into_article(credentials.clone()) {
                     Ok(article) => Some(article),
                     Err(error) => {

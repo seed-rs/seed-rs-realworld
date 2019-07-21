@@ -14,7 +14,6 @@ struct RootDto {
 impl RootDto {
     fn into_comments<'a>(self, credentials: Option<Credentials>) -> VecDeque<article::comment::Comment<'a>> {
         self.comments.into_iter().filter_map(|comment_dto| {
-            // @TODO without clone / more effective?
             match comment_dto.try_into_comment(credentials.clone()) {
                 Ok(comment) => Some(comment),
                 Err(error) => {

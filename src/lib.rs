@@ -75,7 +75,7 @@ fn sink<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Orders<Msg<'st
             page::settings::sink(g_msg, model, &mut orders.proxy(Msg::SettingsMsg));
         },
         Model::Home(model) => {
-            page::home::sink(g_msg, model, &mut orders.proxy(Msg::HomeMsg));
+            page::home::sink(g_msg, model);
         },
         Model::Login(model) => {
             page::login::sink(g_msg, model, &mut orders.proxy(Msg::LoginMsg));
@@ -170,9 +170,7 @@ fn change_model_by_route<'a>(
             },
             route::Route::NewArticle => {
                 *model = Model::ArticleEditor(
-                    page::article_editor::init_new(
-                    session(), &mut orders.proxy(Msg::ArticleEditorMsg)
-                    ),
+                    page::article_editor::init_new(session()),
                     None
                 );
             },
@@ -196,12 +194,12 @@ fn change_model_by_route<'a>(
             },
             route::Route::Login => {
                 *model = Model::Login(
-                    page::login::init(session(), &mut orders.proxy(Msg::LoginMsg))
+                    page::login::init(session())
                 );
             },
             route::Route::Register => {
                 *model = Model::Register(
-                    page::register::init(session(),&mut orders.proxy(Msg::RegisterMsg))
+                    page::register::init(session())
                 );
             },
             route::Route::Profile(username) => {

@@ -328,7 +328,7 @@ fn view_content(model: &Model) -> Node<Msg> {
         Status::Failed(_) => loading::error("profile"),
         Status::Loaded(author) => div![
             class!["profile-page"],
-            page::view_errors(Msg::DismissErrorsClicked, model.errors.clone()),
+            page::view_errors(Msg::DismissErrorsClicked, &model.errors),
             div![
                 class!["user-info"],
                 div![

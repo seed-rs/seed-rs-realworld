@@ -388,7 +388,7 @@ fn view_banner(article: &Article, model: &Model) -> Node<Msg> {
             class!["container"],
             h1![article.title],
             view_article_meta(article, model),
-            page::view_errors(Msg::DismissErrorsClicked, model.errors.clone()),
+            page::view_errors(Msg::DismissErrorsClicked, &model.errors),
         ]
     ]
 }

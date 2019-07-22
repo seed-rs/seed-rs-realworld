@@ -1,4 +1,5 @@
 use crate::entity::{Author, Timestamp};
+use shrinkwraprs::Shrinkwrap;
 
 // ------ Comment ------
 
@@ -13,15 +14,9 @@ pub struct Comment {
 
 // ------ CommentId ------
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Shrinkwrap, Clone, PartialEq, Eq)]
 #[allow(clippy::module_name_repetitions)]
 pub struct CommentId(String);
-
-impl CommentId {
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
 
 impl From<usize> for CommentId {
     fn from(id: usize) -> Self {

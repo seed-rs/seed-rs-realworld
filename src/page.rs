@@ -155,7 +155,7 @@ impl<'a> Page<'a> {
     }
 }
 
-pub fn view_errors<Ms: Clone>(dismiss_errors: Ms, errors: Vec<String>) -> Node<Ms> {
+pub fn view_errors<Ms: Clone>(dismiss_errors: Ms, errors: &[String]) -> Node<Ms> {
     if errors.is_empty() {
         empty![]
     } else {
@@ -169,7 +169,7 @@ pub fn view_errors<Ms: Clone>(dismiss_errors: Ms, errors: Vec<String>) -> Node<M
                 "border" => "1px solid",
                 "z-index" => 9999,
             },
-            errors.into_iter().map(|error| p![error]),
+            errors.iter().map(|error| p![error]),
             button![simple_ev(Ev::Click, dismiss_errors), "Ok"]
         ]
     }

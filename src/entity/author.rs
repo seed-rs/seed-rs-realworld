@@ -1,4 +1,4 @@
-use crate::entity::{Username, Profile, Credentials};
+use crate::entity::{Username, Credentials, Avatar};
 use crate::Route;
 use seed::prelude::*;
 use std::borrow::Cow;
@@ -38,6 +38,12 @@ pub struct FollowedAuthor<'a> {
 pub struct UnfollowedAuthor<'a> {
     pub username: Username<'a>,
     pub profile: Profile
+}
+
+#[derive(Clone)]
+pub struct Profile {
+    pub bio: Option<String>,
+    pub avatar: Avatar
 }
 
 pub fn view<Ms>(username: &Username) -> Node<Ms> {

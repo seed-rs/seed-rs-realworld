@@ -5,7 +5,7 @@ pub mod asset;
 pub use asset::Image;
 
 pub mod author;
-pub use author::{Author, UnfollowedAuthor, FollowedAuthor};
+pub use author::{Author, UnfollowedAuthor, FollowedAuthor, Profile};
 
 pub mod avatar;
 pub use avatar::Avatar;
@@ -23,9 +23,6 @@ pub use page_number::PageNumber;
 
 pub mod paginated_list;
 pub use paginated_list::PaginatedList;
-
-pub mod profile;
-pub use profile::Profile;
 
 pub mod timestamp;
 pub use timestamp::Timestamp;

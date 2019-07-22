@@ -1,3 +1,4 @@
+#[allow(clippy::module_inception)]
 mod favorite;
 pub use favorite::favorite;
 

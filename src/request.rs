@@ -17,7 +17,7 @@ pub mod register;
 pub mod settings;
 pub mod tag;
 
-static BASE_API_URL: &'static str = "https://conduit.productionready.io/api";
+static BASE_API_URL: &str = "https://conduit.productionready.io/api";
 const TIMEOUT: u32 = 5000;
 
 #[derive(Deserialize)]
@@ -25,7 +25,7 @@ pub struct ServerErrorData {
     errors: IndexMap<String, Vec<String>>,
 }
 
-pub fn new_api_request(path: &str, viewer: Option<&Viewer>) -> fetch::Request {
+pub fn new(path: &str, viewer: Option<&Viewer>) -> fetch::Request {
     let mut request = fetch::Request::new(format!("{}/{}", BASE_API_URL, path)).timeout(TIMEOUT);
 
     if let Some(viewer) = viewer {

@@ -18,7 +18,7 @@ pub fn update<Ms: 'static>(
     valid_form: &ValidForm,
     f: fn(Result<Viewer, Vec<Problem>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
-    request::new_api_request("user", viewer)
+    request::new("user", viewer)
         .method(fetch::Method::Put)
         .send_json(&valid_form.to_encoder())
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {

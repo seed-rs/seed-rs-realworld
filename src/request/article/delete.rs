@@ -11,7 +11,7 @@ pub fn delete<Ms: 'static>(
     slug: &Slug,
     f: fn(Result<(), Vec<String>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
-    request::new_api_request(&format!("articles/{}", slug.as_str()), viewer)
+    request::new(&format!("articles/{}", slug.as_str()), viewer)
         .method(fetch::Method::Delete)
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {
             f(data_result

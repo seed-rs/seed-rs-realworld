@@ -2,7 +2,7 @@ use crate::entity::Viewer;
 use seed::storage;
 use serde_json;
 
-const STORAGE_KEY: &'static str = "conduit";
+const STORAGE_KEY: &str = "conduit";
 
 pub fn load_viewer() -> Option<Viewer> {
     local_storage()

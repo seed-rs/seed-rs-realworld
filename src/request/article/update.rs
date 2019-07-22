@@ -20,7 +20,7 @@ pub fn update<Ms: 'static>(
     slug: &Slug,
     f: fn(Result<Article, Vec<Problem>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
-    request::new_api_request(&format!("articles/{}", slug.as_str()), viewer.as_ref())
+    request::new(&format!("articles/{}", slug.as_str()), viewer.as_ref())
         .method(fetch::Method::Put)
         .send_json(&valid_form.to_encoder())
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {

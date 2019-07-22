@@ -16,7 +16,7 @@ pub fn favorite<Ms: 'static>(
     slug: &Slug,
     f: fn(Result<Article, Vec<String>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
-    request::new_api_request(
+    request::new(
         &format!("articles/{}/favorite", slug.as_str()),
         viewer.as_ref(),
     )

@@ -100,6 +100,7 @@ fn sink<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Orders<Msg<'st
 
 // Update
 
+#[allow(clippy::enum_variant_names)]
 enum Msg<'a> {
     RouteChanged(Option<Route<'a>>),
     HomeMsg(page::home::Msg),

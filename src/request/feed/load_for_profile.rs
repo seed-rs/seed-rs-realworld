@@ -64,7 +64,7 @@ pub fn load_for_profile<Ms: 'static>(
     page_number: PageNumber,
     f: fn(Result<PaginatedList<Article>, (Username<'static>, Vec<String>)>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
-    request::new_api_request(
+    request::new(
         &request_url(&username, &feed_tab, page_number),
         viewer.as_ref(),
     )

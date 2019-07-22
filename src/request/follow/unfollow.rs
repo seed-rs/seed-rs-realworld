@@ -16,7 +16,7 @@ pub fn unfollow<Ms: 'static>(
     username: &Username,
     f: fn(Result<Author, Vec<String>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
-    request::new_api_request(
+    request::new(
         &format!("profiles/{}/follow", username.as_str()),
         viewer.as_ref(),
     )

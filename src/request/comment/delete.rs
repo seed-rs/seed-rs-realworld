@@ -12,7 +12,7 @@ pub fn delete<Ms: 'static>(
     comment_id: CommentId,
     f: fn(Result<CommentId, Vec<String>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
-    request::new_api_request(
+    request::new(
         &format!(
             "articles/{}/comments/{}",
             slug.as_str(),

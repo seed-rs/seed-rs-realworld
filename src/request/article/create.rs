@@ -19,7 +19,7 @@ pub fn create<Ms: 'static>(
     valid_form: &ValidForm,
     f: fn(Result<Article, Vec<Problem>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
-    request::new_api_request("articles", viewer.as_ref())
+    request::new("articles", viewer.as_ref())
         .method(fetch::Method::Post)
         .send_json(&valid_form.to_encoder())
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {

@@ -34,7 +34,7 @@ pub fn load_list<Ms: 'static>(
     slug: &Slug,
     f: fn(Result<VecDeque<Comment>, Vec<String>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
-    request::new_api_request(
+    request::new(
         &format!("articles/{}/comments", slug.as_str()),
         viewer.as_ref(),
     )

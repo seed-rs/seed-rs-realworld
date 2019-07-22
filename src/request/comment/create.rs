@@ -20,7 +20,7 @@ pub fn create<Ms: 'static>(
     text: String,
     f: fn(Result<Comment, Vec<String>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
-    request::new_api_request(
+    request::new(
         &format!("articles/{}/comments", slug.as_str()),
         viewer.as_ref(),
     )

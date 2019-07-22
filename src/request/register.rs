@@ -17,7 +17,7 @@ pub fn register<Ms: 'static>(
     valid_form: &ValidForm,
     f: fn(Result<Viewer, Vec<Problem>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
-    request::new_api_request("users", None)
+    request::new("users", None)
         .method(fetch::Method::Post)
         .send_json(&valid_form.to_encoder())
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {

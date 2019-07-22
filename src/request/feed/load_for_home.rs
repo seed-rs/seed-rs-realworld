@@ -72,7 +72,7 @@ pub fn load_for_home<Ms: 'static>(
     page_number: PageNumber,
     f: fn(Result<PaginatedList<Article>, Vec<String>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
-    request::new_api_request(&request_url(feed_tab, page_number), viewer.as_ref()).fetch_json_data(
+    request::new(&request_url(feed_tab, page_number), viewer.as_ref()).fetch_json_data(
         move |data_result: fetch::ResponseDataResult<RootDecoder>| {
             f(data_result
                 .map(move |root_decoder| root_decoder.into_paginated_list(viewer))

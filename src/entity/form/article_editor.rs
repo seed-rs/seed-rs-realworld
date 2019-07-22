@@ -1,7 +1,7 @@
+use crate::coder::encoder::form::article_editor::ValidForm as ValidFormEncoder;
+use crate::entity::form::{self, FormField};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
-use crate::entity::form::{self, FormField};
-use crate::coder::encoder::form::article_editor::ValidForm as ValidFormEncoder;
 
 pub type Form = form::Form<Field>;
 pub type ValidForm = form::ValidForm<Field>;
@@ -63,19 +63,25 @@ impl FormField for Field {
         match self {
             Field::Title(value) => {
                 if value.is_empty() {
-                    Some(form::Problem::new_invalid_field(self.key(), "title can't be blank"))
+                    Some(form::Problem::new_invalid_field(
+                        self.key(),
+                        "title can't be blank",
+                    ))
                 } else {
                     None
                 }
-            },
+            }
             Field::Description(_) => None,
             Field::Body(value) => {
                 if value.is_empty() {
-                    Some(form::Problem::new_invalid_field(self.key(), "body can't be blank"))
+                    Some(form::Problem::new_invalid_field(
+                        self.key(),
+                        "body can't be blank",
+                    ))
                 } else {
                     None
                 }
-            },
+            }
             Field::Tags(_) => None,
         }
     }

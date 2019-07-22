@@ -1,5 +1,5 @@
+use crate::entity::form::settings::{Field, Form};
 use serde::Deserialize;
-use crate::entity::form::settings::{Form, Field};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]

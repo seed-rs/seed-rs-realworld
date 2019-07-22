@@ -3,7 +3,7 @@ use crate::entity::Viewer;
 #[derive(Clone, Debug)]
 pub enum Session {
     LoggedIn(Viewer),
-    Guest
+    Guest,
 }
 
 impl<'a> Default for Session {
@@ -25,7 +25,7 @@ impl From<Option<Viewer>> for Session {
     fn from(viewer: Option<Viewer>) -> Session {
         match viewer {
             Some(viewer) => Session::LoggedIn(viewer),
-            None => Session::default()
+            None => Session::default(),
         }
     }
 }

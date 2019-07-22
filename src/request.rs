@@ -1,10 +1,10 @@
-use seed::fetch;
-use serde_json;
-use indexmap::IndexMap;
-use serde::Deserialize;
-use std::fmt::Debug;
-use crate::entity::{Viewer, form::Problem};
+use crate::entity::{form::Problem, Viewer};
 use crate::logger;
+use indexmap::IndexMap;
+use seed::fetch;
+use serde::Deserialize;
+use serde_json;
+use std::fmt::Debug;
 
 pub mod article;
 pub mod author;
@@ -22,12 +22,11 @@ const TIMEOUT: u32 = 5000;
 
 #[derive(Deserialize)]
 pub struct ServerErrorData {
-    errors: IndexMap<String, Vec<String>>
+    errors: IndexMap<String, Vec<String>>,
 }
 
 pub fn new_api_request(path: &str, viewer: Option<&Viewer>) -> fetch::Request {
-    let mut request = fetch::Request::new(format!("{}/{}", BASE_API_URL, path))
-        .timeout(TIMEOUT);
+    let mut request = fetch::Request::new(format!("{}/{}", BASE_API_URL, path)).timeout(TIMEOUT);
 
     if let Some(viewer) = viewer {
         let auth_token = viewer.auth_token.as_str();
@@ -38,7 +37,9 @@ pub fn new_api_request(path: &str, viewer: Option<&Viewer>) -> fetch::Request {
 
 pub fn fail_reason_into_problems<T: Debug>(fail_reason: fetch::FailReason<T>) -> Vec<Problem> {
     fail_reason_into_errors(fail_reason)
-        .into_iter().map(Problem::new_server_error).collect()
+        .into_iter()
+        .map(Problem::new_server_error)
+        .collect()
 }
 
 pub fn fail_reason_into_errors<T: Debug>(fail_reason: fetch::FailReason<T>) -> Vec<String> {
@@ -54,13 +55,11 @@ pub fn fail_reason_into_errors<T: Debug>(fail_reason: fetch::FailReason<T>) -> V
         fetch::FailReason::Status(_, fetch_object) => {
             let response = fetch_object.result.unwrap();
             match response.data {
-                Err(fetch::DataError::SerdeError(_, json)) => {
-                    decode_server_errors(json)
-                        .unwrap_or_else(|serde_error|{
-                            logger::error(serde_error);
-                            vec!["Data error".into()]
-                        })
-                }
+                Err(fetch::DataError::SerdeError(_, json)) => decode_server_errors(json)
+                    .unwrap_or_else(|serde_error| {
+                        logger::error(serde_error);
+                        vec!["Data error".into()]
+                    }),
                 data => {
                     logger::error(data);
                     vec!["Data error".into()]
@@ -75,7 +74,6 @@ fn decode_server_errors(json: String) -> Result<Vec<String>, serde_json::Error> 
     Ok(server_error_data
         .errors
         .into_iter()
-        .map(|(field, errors)| {
-            format!("{} {}", field, errors.join(", "))
-        }).collect())
+        .map(|(field, errors)| format!("{} {}", field, errors.join(", ")))
+        .collect())
 }

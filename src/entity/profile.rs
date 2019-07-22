@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::entity::{Avatar, Username};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Profile {

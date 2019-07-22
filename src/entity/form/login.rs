@@ -1,7 +1,7 @@
+use crate::coder::encoder::form::login::ValidForm as ValidFormEncoder;
+use crate::entity::form::{self, FormField};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
-use crate::entity::form::{self, FormField};
-use crate::coder::encoder::form::login::ValidForm as ValidFormEncoder;
 
 pub type Form = form::Form<Field>;
 pub type ValidForm = form::ValidForm<Field>;
@@ -26,7 +26,7 @@ impl ValidForm {
 #[derive(Clone, EnumIter)]
 pub enum Field {
     Email(String),
-    Password(String)
+    Password(String),
 }
 
 impl FormField for Field {
@@ -55,14 +55,20 @@ impl FormField for Field {
         match self {
             Field::Email(value) => {
                 if value.is_empty() {
-                    Some(form::Problem::new_invalid_field(self.key(), "email can't be blank"))
+                    Some(form::Problem::new_invalid_field(
+                        self.key(),
+                        "email can't be blank",
+                    ))
                 } else {
                     None
                 }
-            },
+            }
             Field::Password(value) => {
                 if value.is_empty() {
-                    Some(form::Problem::new_invalid_field(self.key(), "password can't be blank"))
+                    Some(form::Problem::new_invalid_field(
+                        self.key(),
+                        "password can't be blank",
+                    ))
                 } else {
                     None
                 }

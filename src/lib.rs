@@ -1,12 +1,12 @@
 #[macro_use]
 extern crate seed;
+use entity::{article, username};
+use helper::take;
 use seed::prelude::*;
 use std::convert::TryInto;
-use helper::take;
-use entity::{article, username};
 
-pub use session::Session;
 pub use route::Route;
+pub use session::Session;
 
 mod coder;
 mod entity;
@@ -30,7 +30,7 @@ enum Model<'a> {
     Register(page::register::Model),
     Profile(page::profile::Model<'a>, username::Username<'a>),
     Article(page::article::Model),
-    ArticleEditor(page::article_editor::Model, Option<article::slug::Slug>)
+    ArticleEditor(page::article_editor::Model, Option<article::slug::Slug>),
 }
 
 impl<'a> Default for Model<'a> {
@@ -59,7 +59,7 @@ impl<'a> From<Model<'a>> for Session {
 
 pub enum GMsg {
     RoutePushed(Route<'static>),
-    SessionChanged(Session)
+    SessionChanged(Session),
 }
 
 fn sink<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Orders<Msg<'static>, GMsg>) {
@@ -73,28 +73,28 @@ fn sink<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Orders<Msg<'st
                 *model = Model::Redirect(session);
                 route::go_to(Route::Home, orders);
             }
-        },
+        }
         Model::Settings(model) => {
             page::settings::sink(g_msg, model, &mut orders.proxy(Msg::SettingsMsg));
-        },
+        }
         Model::Home(model) => {
             page::home::sink(g_msg, model);
-        },
+        }
         Model::Login(model) => {
             page::login::sink(g_msg, model, &mut orders.proxy(Msg::LoginMsg));
-        },
+        }
         Model::Register(model) => {
             page::register::sink(g_msg, model, &mut orders.proxy(Msg::RegisterMsg));
-        },
+        }
         Model::Profile(model, _) => {
             page::profile::sink(g_msg, model, &mut orders.proxy(Msg::ProfileMsg));
-        },
+        }
         Model::Article(model) => {
             page::article::sink(g_msg, model, &mut orders.proxy(Msg::ArticleMsg));
-        },
+        }
         Model::ArticleEditor(model, _) => {
             page::article_editor::sink(g_msg, model, &mut orders.proxy(Msg::ArticleEditorMsg));
-        },
+        }
     }
 }
 
@@ -115,110 +115,118 @@ fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut impl Orders<Msg<
     match msg {
         Msg::RouteChanged(route) => {
             change_model_by_route(route, model, orders);
-        },
+        }
         Msg::HomeMsg(module_msg) => {
             if let Model::Home(module_model) = model {
                 page::home::update(module_msg, module_model, &mut orders.proxy(Msg::HomeMsg));
             }
-        },
+        }
         Msg::SettingsMsg(module_msg) => {
             if let Model::Settings(module_model) = model {
-                page::settings::update(module_msg, module_model, &mut orders.proxy(Msg::SettingsMsg));
+                page::settings::update(
+                    module_msg,
+                    module_model,
+                    &mut orders.proxy(Msg::SettingsMsg),
+                );
             }
-        },
+        }
         Msg::LoginMsg(module_msg) => {
             if let Model::Login(module_model) = model {
                 page::login::update(module_msg, module_model, &mut orders.proxy(Msg::LoginMsg));
             }
-        },
+        }
         Msg::RegisterMsg(module_msg) => {
             if let Model::Register(module_model) = model {
-                page::register::update(module_msg, module_model, &mut orders.proxy(Msg::RegisterMsg));
+                page::register::update(
+                    module_msg,
+                    module_model,
+                    &mut orders.proxy(Msg::RegisterMsg),
+                );
             }
-        },
+        }
         Msg::ProfileMsg(module_msg) => {
             if let Model::Profile(module_model, _) = model {
                 page::profile::update(module_msg, module_model, &mut orders.proxy(Msg::ProfileMsg));
             }
-        },
+        }
         Msg::ArticleMsg(module_msg) => {
             if let Model::Article(module_model) = model {
                 page::article::update(module_msg, module_model, &mut orders.proxy(Msg::ArticleMsg));
             }
-        },
+        }
         Msg::ArticleEditorMsg(module_msg) => {
             if let Model::ArticleEditor(module_model, _) = model {
-                page::article_editor::update(module_msg, module_model, &mut orders.proxy(Msg::ArticleEditorMsg));
+                page::article_editor::update(
+                    module_msg,
+                    module_model,
+                    &mut orders.proxy(Msg::ArticleEditorMsg),
+                );
             }
-        },
+        }
     }
 }
 
 fn change_model_by_route<'a>(
     route: Option<Route<'a>>,
     model: &mut Model<'a>,
-    orders:&mut impl Orders<Msg<'static>, GMsg>,
+    orders: &mut impl Orders<Msg<'static>, GMsg>,
 ) {
     let mut session = || Session::from(take(model));
     match route {
-        None => { *model = Model::NotFound(session()) },
+        None => *model = Model::NotFound(session()),
         Some(route) => match route {
-            Route::Root => {
-                route::go_to(Route::Home, orders)
-            },
+            Route::Root => route::go_to(Route::Home, orders),
             Route::Logout => {
                 storage::delete_app_data();
                 orders.send_g_msg(GMsg::SessionChanged(None.into()));
                 route::go_to(Route::Home, orders)
-            },
+            }
             Route::NewArticle => {
-                *model = Model::ArticleEditor(
-                    page::article_editor::init_new(session()),
-                    None
-                );
-            },
+                *model = Model::ArticleEditor(page::article_editor::init_new(session()), None);
+            }
             Route::EditArticle(slug) => {
                 *model = Model::ArticleEditor(
                     page::article_editor::init_edit(
-                        session(), slug.clone(), &mut orders.proxy(Msg::ArticleEditorMsg)
+                        session(),
+                        slug.clone(),
+                        &mut orders.proxy(Msg::ArticleEditorMsg),
                     ),
-                    Some(slug)
+                    Some(slug),
                 );
-            },
+            }
             Route::Settings => {
                 *model = Model::Settings(page::settings::init(
-                    session(), &mut orders.proxy(Msg::SettingsMsg)
+                    session(),
+                    &mut orders.proxy(Msg::SettingsMsg),
                 ));
-            },
+            }
             Route::Home => {
-                *model = Model::Home(
-                    page::home::init(session(), &mut orders.proxy(Msg::HomeMsg))
-                );
-            },
+                *model = Model::Home(page::home::init(session(), &mut orders.proxy(Msg::HomeMsg)));
+            }
             Route::Login => {
-                *model = Model::Login(
-                    page::login::init(session())
-                );
-            },
+                *model = Model::Login(page::login::init(session()));
+            }
             Route::Register => {
-                *model = Model::Register(
-                    page::register::init(session())
-                );
-            },
+                *model = Model::Register(page::register::init(session()));
+            }
             Route::Profile(username) => {
                 *model = Model::Profile(
                     page::profile::init(
-                        session(), username.to_static(), &mut orders.proxy(Msg::ProfileMsg)
+                        session(),
+                        username.to_static(),
+                        &mut orders.proxy(Msg::ProfileMsg),
                     ),
-                    username.into_owned()
+                    username.into_owned(),
                 );
-            },
+            }
             Route::Article(slug) => {
-                *model = Model::Article(
-                    page::article::init(session(), &slug, &mut orders.proxy(Msg::ArticleMsg))
-                );
-            },
-        }
+                *model = Model::Article(page::article::init(
+                    session(),
+                    &slug,
+                    &mut orders.proxy(Msg::ArticleMsg),
+                ));
+            }
+        },
     };
 }
 
@@ -227,75 +235,59 @@ fn change_model_by_route<'a>(
 fn view<'a>(model: &Model) -> impl View<Msg<'static>> {
     match model {
         Model::Redirect(session) => {
-            page::view(
-                page::Page::Other,
-                page::blank::view(),
-                session.viewer(),
-            )
-        },
+            page::view(page::Page::Other, page::blank::view(), session.viewer())
+        }
         Model::NotFound(session) => {
-            page::view(
-                page::Page::Other,
-                page::not_found::view(),
-                session.viewer(),
-            )
-        },
-        Model::Settings(model) => {
-            page::view(
-                page::Page::Settings,
-                page::settings::view(model),
-                model.session().viewer(),
-            ).map_message(Msg::SettingsMsg)
-        },
-        Model::Home(model) => {
-            page::view(
-                page::Page::Home,
-                page::home::view(model),
-                model.session().viewer(),
-            ).map_message(Msg::HomeMsg)
-        },
-        Model::Login(model) => {
-            page::view(
-                page::Page::Login,
-                page::login::view(model),
-                model.session().viewer(),
-            ).map_message(Msg::LoginMsg)
-        },
-        Model::Register(model) => {
-            page::view(
-                page::Page::Register,
-                page::register::view(model),
-                model.session().viewer(),
-            ).map_message(Msg::RegisterMsg)
-        },
-        Model::Profile(model, username) => {
-            page::view(
-                page::Page::Profile(username),
-                page::profile::view(model),
-                model.session().viewer(),
-            ).map_message(Msg::ProfileMsg)
-        },
-        Model::Article(model) => {
-            page::view(
-                page::Page::Other,
-                page::article::view(model),
-                model.session().viewer(),
-            ).map_message(Msg::ArticleMsg)
-        },
-        Model::ArticleEditor(model, None) => {
-            page::view(
-                page::Page::NewArticle,
-                page::article_editor::view(model),
-                model.session().viewer(),
-            ).map_message(Msg::ArticleEditorMsg)
-        },
-        Model::ArticleEditor(model, Some(_)) => {
-            page::view(
-                page::Page::Other,
-                page::article_editor::view(model),
-                model.session().viewer(),
-            ).map_message(Msg::ArticleEditorMsg)
-        },
+            page::view(page::Page::Other, page::not_found::view(), session.viewer())
+        }
+        Model::Settings(model) => page::view(
+            page::Page::Settings,
+            page::settings::view(model),
+            model.session().viewer(),
+        )
+        .map_message(Msg::SettingsMsg),
+        Model::Home(model) => page::view(
+            page::Page::Home,
+            page::home::view(model),
+            model.session().viewer(),
+        )
+        .map_message(Msg::HomeMsg),
+        Model::Login(model) => page::view(
+            page::Page::Login,
+            page::login::view(model),
+            model.session().viewer(),
+        )
+        .map_message(Msg::LoginMsg),
+        Model::Register(model) => page::view(
+            page::Page::Register,
+            page::register::view(model),
+            model.session().viewer(),
+        )
+        .map_message(Msg::RegisterMsg),
+        Model::Profile(model, username) => page::view(
+            page::Page::Profile(username),
+            page::profile::view(model),
+            model.session().viewer(),
+        )
+        .map_message(Msg::ProfileMsg),
+        Model::Article(model) => page::view(
+            page::Page::Other,
+            page::article::view(model),
+            model.session().viewer(),
+        )
+        .map_message(Msg::ArticleMsg),
+        Model::ArticleEditor(model, None) => page::view(
+            page::Page::NewArticle,
+            page::article_editor::view(model),
+            model.session().viewer(),
+        )
+        .map_message(Msg::ArticleEditorMsg),
+        Model::ArticleEditor(model, Some(_)) => page::view(
+            page::Page::Other,
+            page::article_editor::view(model),
+            model.session().viewer(),
+        )
+        .map_message(Msg::ArticleEditorMsg),
     }
 }
 
@@ -309,9 +301,7 @@ fn init(url: Url, orders: &mut impl Orders<Msg<'static>, GMsg>) -> Model<'static
 #[wasm_bindgen(start)]
 pub fn render() {
     seed::App::build(init, update, view)
-        .routes(|url| {
-            Msg::RouteChanged(url.try_into().ok())
-        })
+        .routes(|url| Msg::RouteChanged(url.try_into().ok()))
         .sink(sink)
         .finish()
         .run();

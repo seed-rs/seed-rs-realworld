@@ -10,7 +10,8 @@ impl Slug {
 }
 
 impl<T> From<T> for Slug
-    where T: Into<Cow<'static, str>>
+where
+    T: Into<Cow<'static, str>>,
 {
     fn from(value: T) -> Slug {
         Slug(value.into())

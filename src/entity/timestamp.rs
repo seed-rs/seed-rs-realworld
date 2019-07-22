@@ -1,6 +1,6 @@
+use chrono::prelude::*;
 use seed::prelude::*;
 use std::{convert::TryFrom, fmt};
-use chrono::prelude::*;
 
 #[derive(Clone)]
 pub struct Timestamp(DateTime<Local>);
@@ -27,7 +27,7 @@ impl TryFrom<String> for Timestamp {
     }
 }
 
-pub fn view<Ms>(timestamp: &Timestamp) -> Node<Ms>{
+pub fn view<Ms>(timestamp: &Timestamp) -> Node<Ms> {
     span![
         class!["date"],
         // "February 14, 2018"

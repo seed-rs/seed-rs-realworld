@@ -1,6 +1,6 @@
-use seed::prelude::*;
-use crate::entity::{Viewer, Username};
+use crate::entity::{Username, Viewer};
 use crate::Route;
+use seed::prelude::*;
 use std::borrow::{Borrow, Cow};
 
 pub mod article;
@@ -15,14 +15,14 @@ pub mod settings;
 
 pub struct ViewPage<'a, Ms: 'static> {
     title_prefix: Cow<'a, str>,
-    content: Node<Ms>
+    content: Node<Ms>,
 }
 
 impl<'a, Ms> ViewPage<'a, Ms> {
     pub fn new(title_prefix: impl Into<Cow<'a, str>>, content: Node<Ms>) -> Self {
         Self {
             title_prefix: title_prefix.into(),
-            content
+            content,
         }
     }
     pub fn title(&self) -> String {
@@ -33,7 +33,11 @@ impl<'a, Ms> ViewPage<'a, Ms> {
     }
 }
 
-pub fn view<'a, Ms>(page: Page<'a>, view_page: ViewPage<'a, Ms>, viewer: Option<&Viewer>) -> Vec<Node<Ms>> {
+pub fn view<'a, Ms>(
+    page: Page<'a>,
+    view_page: ViewPage<'a, Ms>,
+    viewer: Option<&Viewer>,
+) -> Vec<Node<Ms>> {
     seed::document().set_title(&view_page.title());
 
     vec![
@@ -50,7 +54,7 @@ pub enum Page<'a> {
     Register,
     Settings,
     Profile(&'a Username<'a>),
-    NewArticle
+    NewArticle,
 }
 
 impl<'a> Page<'a> {
@@ -62,7 +66,7 @@ impl<'a> Page<'a> {
             (Page::Settings, Route::Settings) => true,
             (Page::Profile(username), Route::Profile(route_username)) => {
                 *username == route_username.borrow()
-            },
+            }
             (Page::NewArticle, Route::NewArticle) => true,
             _ => false,
         }
@@ -76,7 +80,7 @@ impl<'a> Page<'a> {
                     "nav-link",
                     "active" => self.is_active(route),
                 ],
-                attrs!{At::Href => route.to_string()},
+                attrs! {At::Href => route.to_string()},
                 link_content
             ]
         ]
@@ -84,45 +88,31 @@ impl<'a> Page<'a> {
 
     fn view_menu<Ms>(&self, viewer: Option<&Viewer>) -> Vec<Node<Ms>> {
         match viewer {
-            None => {
-                vec![
-                    self.view_navbar_link(&Route::Login, "Sign in"),
-                    self.view_navbar_link(&Route::Register, "Sign up"),
-                ]
-            },
-            Some(viewer) => {
-                vec![
-                    self.view_navbar_link(
-                        &Route::NewArticle,
-                        vec![
-                            i![
-                                class!["ion-compose"]
-                            ],
-                            plain!("\u{00A0}New Post")
-                        ]
-                    ),
-                    self.view_navbar_link(
-                        &Route::Settings,
-                        vec![
-                            i![
-                                class!["ion-gear-a"]
-                            ],
-                            plain!("\u{00A0}Settings")
-                        ]
-                    ),
-                    self.view_navbar_link(
-                        &Route::Profile(Cow::Borrowed(viewer.username())),
-                        vec![
-                            img![
-                                class!["user-pic"],
-                                attrs!{At::Src => viewer.avatar().src()}
-                            ],
-                            plain!(viewer.username().to_string())
-                        ]
-                    ),
-                    self.view_navbar_link(&Route::Logout, "Sign out"),
-                ]
-            }
+            None => vec![
+                self.view_navbar_link(&Route::Login, "Sign in"),
+                self.view_navbar_link(&Route::Register, "Sign up"),
+            ],
+            Some(viewer) => vec![
+                self.view_navbar_link(
+                    &Route::NewArticle,
+                    vec![i![class!["ion-compose"]], plain!("\u{00A0}New Post")],
+                ),
+                self.view_navbar_link(
+                    &Route::Settings,
+                    vec![i![class!["ion-gear-a"]], plain!("\u{00A0}Settings")],
+                ),
+                self.view_navbar_link(
+                    &Route::Profile(Cow::Borrowed(viewer.username())),
+                    vec![
+                        img![
+                            class!["user-pic"],
+                            attrs! {At::Src => viewer.avatar().src()}
+                        ],
+                        plain!(viewer.username().to_string()),
+                    ],
+                ),
+                self.view_navbar_link(&Route::Logout, "Sign out"),
+            ],
         }
     }
 
@@ -133,7 +123,7 @@ impl<'a> Page<'a> {
                 class!["container"],
                 a![
                     class!["navbar-brand"],
-                    attrs!{At::Href => Route::Home.to_string()},
+                    attrs! {At::Href => Route::Home.to_string()},
                     "conduit"
                 ],
                 ul![
@@ -146,25 +136,20 @@ impl<'a> Page<'a> {
     }
 
     fn view_footer<Ms>(&self) -> Node<Ms> {
-        footer![
-            div![
-                class!["container"],
-                a![
-                    class!["logo-font"],
-                    attrs!{At::Href => Route::Home.to_string()},
-                    "conduit"
-                ],
-                span![
-                    class!["attribution"],
-                    "An interactive learning project from ",
-                    a![
-                        attrs!{At::Href => "https://thinkster.io"},
-                        "Thinkster"
-                    ],
-                    ". Code & design licensed under MIT."
-                ]
+        footer![div![
+            class!["container"],
+            a![
+                class!["logo-font"],
+                attrs! {At::Href => Route::Home.to_string()},
+                "conduit"
+            ],
+            span![
+                class!["attribution"],
+                "An interactive learning project from ",
+                a![attrs! {At::Href => "https://thinkster.io"}, "Thinkster"],
+                ". Code & design licensed under MIT."
             ]
-        ]
+        ]]
     }
 }
 
@@ -174,7 +159,7 @@ pub fn view_errors<Ms: Clone>(dismiss_errors: Ms, errors: Vec<String>) -> Node<M
     } else {
         div![
             class!["error-messages"],
-            style!{
+            style! {
                 "position" => "fixed",
                 "top" => 0,
                 "background" => "rgb(250, 250, 250)",
@@ -182,11 +167,8 @@ pub fn view_errors<Ms: Clone>(dismiss_errors: Ms, errors: Vec<String>) -> Node<M
                 "border" => "1px solid",
                 "z-index" => 9999,
             },
-            errors.into_iter().map(|error| p![ error ]),
-            button![
-                simple_ev(Ev::Click, dismiss_errors),
-                "Ok"
-            ]
+            errors.into_iter().map(|error| p![error]),
+            button![simple_ev(Ev::Click, dismiss_errors), "Ok"]
         ]
     }
 }
@@ -196,6 +178,6 @@ pub fn scroll_to_top() {
         web_sys::ScrollToOptions::new()
             .top(0.)
             .left(0.)
-            .behavior(web_sys::ScrollBehavior::Smooth)
+            .behavior(web_sys::ScrollBehavior::Smooth),
     )
 }

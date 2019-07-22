@@ -1,10 +1,13 @@
-use serde::Serialize;
+use crate::entity::form::{
+    settings::{Field, ValidForm as EntityValidForm},
+    FormField,
+};
 use indexmap::IndexMap;
-use crate::entity::form::{FormField, settings::{Field, ValidForm as EntityValidForm}};
+use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct ValidForm<'a> {
-    user: IndexMap<&'a str, &'a str>
+    user: IndexMap<&'a str, &'a str>,
 }
 
 impl<'a> ValidForm<'a> {
@@ -12,15 +15,11 @@ impl<'a> ValidForm<'a> {
         ValidForm {
             user: form
                 .iter()
-                .filter_map(|(key, field)|{
-                    match field {
-                        Field::Password(password) if password.is_empty() => {
-                            None
-                        }
-                        _ => Some((*key, field.value()))
-                    }
+                .filter_map(|(key, field)| match field {
+                    Field::Password(password) if password.is_empty() => None,
+                    _ => Some((*key, field.value())),
                 })
-                .collect()
+                .collect(),
         }
     }
 }

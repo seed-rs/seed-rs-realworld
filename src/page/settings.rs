@@ -1,7 +1,14 @@
-use seed::prelude::*;
 use super::ViewPage;
-use crate::entity::{Viewer, form::settings::{Field, Form, Problem}};
-use crate::{Session, route::{self, Route}, GMsg, request, loading, logger};
+use crate::entity::{
+    form::settings::{Field, Form, Problem},
+    Viewer,
+};
+use crate::{
+    loading, logger, request,
+    route::{self, Route},
+    GMsg, Session,
+};
+use seed::prelude::*;
 
 // Model
 
@@ -16,7 +23,7 @@ enum Status {
     Loading,
     LoadingSlowly,
     Loaded(Form),
-    Failed
+    Failed,
 }
 
 impl Default for Status {
@@ -41,10 +48,14 @@ impl From<Model> for Session {
 
 pub fn init<'a>(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     orders
-        .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
+        .perform_cmd(loading::slow_threshold(
+            Msg::SlowLoadThresholdPassed,
+            Msg::Unreachable,
+        ))
         .perform_cmd(request::settings::load(
             session.viewer(),
-            Msg::FormLoadCompleted));
+            Msg::FormLoadCompleted,
+        ));
     Model {
         session,
         ..Model::default()
@@ -59,7 +70,7 @@ pub fn sink<'a>(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GM
             model.session = session;
             route::go_to(Route::Home, orders);
         }
-        _ => ()
+        _ => (),
     }
 }
 
@@ -81,15 +92,12 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 match form.trim_fields().validate() {
                     Ok(valid_form) => {
                         model.problems.clear();
-                        orders
-                            .perform_cmd(
-                                request::settings::update(
-                                    model.session.viewer(),
-                                    &valid_form,
-                                    Msg::SaveCompleted
-                                )
-                            );
-                    },
+                        orders.perform_cmd(request::settings::update(
+                            model.session.viewer(),
+                            &valid_form,
+                            Msg::SaveCompleted,
+                        ));
+                    }
                     Err(problems) => {
                         model.problems = problems;
                     }
@@ -111,16 +119,16 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::SaveCompleted(Ok(viewer)) => {
             viewer.store();
             orders.send_g_msg(GMsg::SessionChanged(Some(viewer).into()));
-        },
+        }
         Msg::SaveCompleted(Err(problems)) => {
             model.problems = problems;
-        },
+        }
         Msg::SlowLoadThresholdPassed => {
             if let Status::Loading = model.status {
                 model.status = Status::LoadingSlowly
             }
         }
-        Msg::Unreachable => { logger::error("Unreachable!") },
+        Msg::Unreachable => logger::error("Unreachable!"),
     }
 }
 
@@ -132,86 +140,76 @@ pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
 
 fn view_fieldset(field: &Field) -> Node<Msg> {
     match field {
-        Field::Avatar(value) => {
-            fieldset![
-                class!["form-group"],
-                input![
-                    class!["form-control"],
-                    attrs!{
-                        At::Type => "text",
-                        At::Placeholder => "URL of profile picture",
-                        At::Value => value
-                    },
-                    input_ev(Ev::Input, |new_value| Msg::FieldChanged(
-                        Field::Avatar(new_value)
-                    )),
-                ]
+        Field::Avatar(value) => fieldset![
+            class!["form-group"],
+            input![
+                class!["form-control"],
+                attrs! {
+                    At::Type => "text",
+                    At::Placeholder => "URL of profile picture",
+                    At::Value => value
+                },
+                input_ev(Ev::Input, |new_value| Msg::FieldChanged(Field::Avatar(
+                    new_value
+                ))),
             ]
-        }
-        Field::Username(value) => {
-            fieldset![
-                class!["form-group"],
-                input![
-                    class!["form-control", "form-control-lg"],
-                    attrs!{
-                        At::Type => "text",
-                        At::Placeholder => "Your Name",
-                        At::Value => value
-                    },
-                    input_ev(Ev::Input, |new_value| Msg::FieldChanged(
-                        Field::Username(new_value)
-                    )),
-                ]
+        ],
+        Field::Username(value) => fieldset![
+            class!["form-group"],
+            input![
+                class!["form-control", "form-control-lg"],
+                attrs! {
+                    At::Type => "text",
+                    At::Placeholder => "Your Name",
+                    At::Value => value
+                },
+                input_ev(Ev::Input, |new_value| Msg::FieldChanged(Field::Username(
+                    new_value
+                ))),
             ]
-        }
-        Field::Bio(value) => {
-            fieldset![
-                class!["form-group"],
-                textarea![
-                    class!["form-control", "form-control-lg"],
-                    attrs!{
-                        At::Rows => 8,
-                        At::Placeholder => "Short bio about you",
-                    },
-                    value,
-                    input_ev(Ev::Input, |new_value| Msg::FieldChanged(
-                        Field::Bio(new_value)
-                    )),
-                ]
+        ],
+        Field::Bio(value) => fieldset![
+            class!["form-group"],
+            textarea![
+                class!["form-control", "form-control-lg"],
+                attrs! {
+                    At::Rows => 8,
+                    At::Placeholder => "Short bio about you",
+                },
+                value,
+                input_ev(Ev::Input, |new_value| Msg::FieldChanged(Field::Bio(
+                    new_value
+                ))),
             ]
-        }
-        Field::Email(value) => {
-            fieldset![
-                class!["form-group"],
-                input![
-                    class!["form-control", "form-control-lg"],
-                    attrs!{
-                        At::Type => "text",
-                        At::Placeholder => "Email",
-                        At::Value => value
-                    },
-                    input_ev(Ev::Input, |new_value| Msg::FieldChanged(
-                        Field::Email(new_value)
-                    )),
-                ]
+        ],
+        Field::Email(value) => fieldset![
+            class!["form-group"],
+            input![
+                class!["form-control", "form-control-lg"],
+                attrs! {
+                    At::Type => "text",
+                    At::Placeholder => "Email",
+                    At::Value => value
+                },
+                input_ev(Ev::Input, |new_value| Msg::FieldChanged(Field::Email(
+                    new_value
+                ))),
             ]
-        }
-        Field::Password(value) => {
-            fieldset![
-                class!["form-group"],
-                input![
-                    class!["form-control", "form-control-lg"],
-                    attrs!{
-                        At::Type => "password",
-                        At::Placeholder => "Password",
-                        At::Value => value
-                    },
-                    input_ev(Ev::Input, |new_value| Msg::FieldChanged(
-                        Field::Password(new_value)
-                    )),
-                ]
+        ],
+        Field::Password(value) => fieldset![
+            class!["form-group"],
+            input![
+                class!["form-control", "form-control-lg"],
+                attrs! {
+                    At::Type => "password",
+                    At::Placeholder => "Password",
+                    At::Value => value
+                },
+                input_ev(Ev::Input, |new_value| Msg::FieldChanged(Field::Password(
+                    new_value
+                ))),
             ]
-        }
+        ],
     }
 }
 
@@ -219,20 +217,18 @@ fn view_form<'a>(model: &Model) -> Node<Msg> {
     match &model.status {
         Status::Loading => empty![],
         Status::LoadingSlowly => loading::icon(),
-        Status::Loaded(form) => {
-            form![
-                raw_ev(Ev::Submit, |event| {
-                    event.prevent_default();
-                    Msg::FormSubmitted
-                }),
-                form.iter().map(view_fieldset),
-                button![
-                    class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
-                    "Update Settings"
-                ]
+        Status::Loaded(form) => form![
+            raw_ev(Ev::Submit, |event| {
+                event.prevent_default();
+                Msg::FormSubmitted
+            }),
+            form.iter().map(view_fieldset),
+            button![
+                class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
+                "Update Settings"
             ]
-        },
-        Status::Failed => loading::error("page")
+        ],
+        Status::Failed => loading::error("page"),
     }
 }
 
@@ -243,33 +239,21 @@ fn view_content<'a>(model: &Model) -> Node<Msg> {
             class!["container", "page"],
             div![
                 class!["row"],
-
                 div![
                     class!["col-md-6", "offset-md-3", "col-x32-12"],
-                    h1![
-                        class!["text-xs-center"],
-                        "Your Settings"
-                    ],
-
+                    h1![class!["text-xs-center"], "Your Settings"],
                     if model.session.viewer().is_some() {
                         vec![
                             ul![
                                 class!["error-messages"],
-                                model.problems.iter().map(|problem| li![
-                                    problem.message()
-                                ])
+                                model.problems.iter().map(|problem| li![problem.message()])
                             ],
                             view_form(model),
                         ]
                     } else {
-                        vec![
-                            div![
-                                "Sign in to view your settings."
-                            ]
-                        ]
+                        vec![div!["Sign in to view your settings."]]
                     }
                 ]
-
             ]
         ]
     ]

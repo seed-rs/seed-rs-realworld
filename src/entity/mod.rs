@@ -1,11 +1,16 @@
 pub mod article;
-pub use article::{comment::{Comment, CommentId}, slug::Slug, tag::Tag, Article};
+pub use article::{
+    comment::{Comment, CommentId},
+    slug::Slug,
+    tag::Tag,
+    Article,
+};
 
 pub mod asset;
 pub use asset::Image;
 
 pub mod author;
-pub use author::{Author, UnfollowedAuthor, FollowedAuthor};
+pub use author::{Author, FollowedAuthor, UnfollowedAuthor};
 
 pub mod avatar;
 pub use avatar::Avatar;

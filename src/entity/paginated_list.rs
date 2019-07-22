@@ -19,7 +19,7 @@ impl<T> Default for PaginatedList<T> {
         Self {
             items: Vec::new(),
             per_page: NonZeroUsize::new(5).unwrap(),
-            total: 0
+            total: 0,
         }
     }
 }

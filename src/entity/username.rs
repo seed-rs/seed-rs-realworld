@@ -1,5 +1,5 @@
-use std::borrow::{Borrow, Cow};
 use serde::{Deserialize, Serialize};
+use std::borrow::{Borrow, Cow};
 
 #[derive(Eq, PartialEq, Clone, Debug, Deserialize, Serialize, Default)]
 pub struct Username<'a>(Cow<'a, str>);
@@ -17,7 +17,8 @@ impl<'a> Username<'a> {
 }
 
 impl<'a, T> From<T> for Username<'a>
-    where T: Into<Cow<'a, str>>
+where
+    T: Into<Cow<'a, str>>,
 {
     fn from(value: T) -> Username<'a> {
         Username(value.into())

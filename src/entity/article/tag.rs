@@ -21,7 +21,7 @@ pub trait IntoStrings {
 
 impl IntoStrings for Vec<Tag> {
     fn into_strings(self) -> Vec<String> {
-        self.into_iter().map(|tag|tag.to_string()).collect()
+        self.into_iter().map(|tag| tag.to_string()).collect()
     }
 }
 

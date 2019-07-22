@@ -1,8 +1,8 @@
+use crate::coder::encoder::form::settings::ValidForm as ValidFormEncoder;
+use crate::entity::form::{self, FormField};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use unicode_segmentation::UnicodeSegmentation;
-use crate::entity::form::{self, FormField};
-use crate::coder::encoder::form::settings::ValidForm as ValidFormEncoder;
 
 pub type Form = form::Form<Field>;
 pub type ValidForm = form::ValidForm<Field>;
@@ -69,33 +69,35 @@ impl FormField for Field {
             Field::Avatar(_) => None,
             Field::Username(value) => {
                 if value.is_empty() {
-                    Some(form::Problem::new_invalid_field(self.key(), "username can't be blank"))
+                    Some(form::Problem::new_invalid_field(
+                        self.key(),
+                        "username can't be blank",
+                    ))
                 } else {
                     None
                 }
-            },
+            }
             Field::Bio(_) => None,
             Field::Email(value) => {
                 if value.is_empty() {
-                    Some(form::Problem::new_invalid_field(self.key(), "email can't be blank"))
+                    Some(form::Problem::new_invalid_field(
+                        self.key(),
+                        "email can't be blank",
+                    ))
                 } else {
                     None
                 }
-            },
-            Field::Password(value) => {
-                match value.graphemes(true).count() {
-                    1...form::MAX_INVALID_PASSWORD_LENGTH => {
-                        Some(form::Problem::new_invalid_field(
-                            self.key(),
-                            format!(
-                                "password is too short (minimum is {} characters)",
-                                form::MIN_PASSWORD_LENGTH
-                            )
-                        ))
-                    }
-                    _ => None
-                }
             }
+            Field::Password(value) => match value.graphemes(true).count() {
+                1...form::MAX_INVALID_PASSWORD_LENGTH => Some(form::Problem::new_invalid_field(
+                    self.key(),
+                    format!(
+                        "password is too short (minimum is {} characters)",
+                        form::MIN_PASSWORD_LENGTH
+                    ),
+                )),
+                _ => None,
+            },
         }
     }
 }

@@ -1,11 +1,14 @@
-use crate::entity::{form::article_editor::{Form, Field}, Author, Timestamp, Markdown, Tag};
 use crate::entity::article::tag::IntoStrings;
+use crate::entity::{
+    form::article_editor::{Field, Form},
+    Author, Markdown, Tag, Timestamp,
+};
 use slug::Slug;
 
+pub mod comment;
 pub mod feed;
 pub mod slug;
 pub mod tag;
-pub mod comment;
 
 #[derive(Clone)]
 pub struct Article {

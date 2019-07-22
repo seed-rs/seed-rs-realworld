@@ -1,5 +1,5 @@
+use crate::entity::{self, Avatar, FollowedAuthor, Profile, UnfollowedAuthor, Viewer};
 use serde::Deserialize;
-use crate::entity::{self, Avatar, Profile, FollowedAuthor, UnfollowedAuthor, Viewer};
 use std::borrow::Cow;
 
 #[derive(Deserialize, Debug)]
@@ -17,24 +17,20 @@ impl Author {
 
         if let Some(viewer) = viewer {
             if &username == viewer.username() {
-                return entity::Author::IsViewer(viewer.into_owned())
+                return entity::Author::IsViewer(viewer.into_owned());
             }
         }
 
         let profile = Profile {
             bio: self.bio,
             avatar: Avatar::new(Some(self.image)),
-            username
+            username,
         };
 
         if self.following {
-            entity::Author::Following(
-                FollowedAuthor { profile }
-            )
+            entity::Author::Following(FollowedAuthor { profile })
         } else {
-            entity::Author::NotFollowing(
-                UnfollowedAuthor { profile }
-            )
+            entity::Author::NotFollowing(UnfollowedAuthor { profile })
         }
     }
 }

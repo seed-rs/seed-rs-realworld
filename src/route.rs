@@ -1,7 +1,7 @@
+use crate::{article, username, GMsg};
 use seed::prelude::*;
-use crate::{username, article, GMsg};
+use std::{borrow::Cow, convert::TryFrom, fmt};
 use tool::non_empty;
-use std::{convert::TryFrom, fmt, borrow::Cow};
 
 type Path<'a> = Vec<&'a str>;
 
@@ -16,7 +16,7 @@ pub enum Route<'a> {
     Article(article::slug::Slug),
     Profile(Cow<'a, username::Username<'a>>),
     NewArticle,
-    EditArticle(article::slug::Slug)
+    EditArticle(article::slug::Slug),
 }
 
 impl<'a> Route<'a> {
@@ -59,31 +59,27 @@ impl<'a> TryFrom<seed::Url> for Route<'a> {
             Some("login") => Some(Route::Login),
             Some("logout") => Some(Route::Logout),
             Some("settings") => Some(Route::Settings),
-            Some("profile") => {
-                path
-                    .next()
-                    .filter(non_empty)
-                    .map(username::Username::from)
-                    .map(Cow::Owned)
-                    .map(Route::Profile)
-            },
+            Some("profile") => path
+                .next()
+                .filter(non_empty)
+                .map(username::Username::from)
+                .map(Cow::Owned)
+                .map(Route::Profile),
             Some("register") => Some(Route::Register),
-            Some("article") => {
-                path
-                    .next()
-                    .filter(non_empty)
-                    .map(article::slug::Slug::from)
-                    .map(Route::Article)
-            },
-            Some("editor") => {
-                path.next()
-                    .filter(non_empty)
-                    .map(article::slug::Slug::from)
-                    .map(Route::EditArticle)
-                    .or_else(|| Some(Route::NewArticle))
-            },
+            Some("article") => path
+                .next()
+                .filter(non_empty)
+                .map(article::slug::Slug::from)
+                .map(Route::Article),
+            Some("editor") => path
+                .next()
+                .filter(non_empty)
+                .map(article::slug::Slug::from)
+                .map(Route::EditArticle)
+                .or_else(|| Some(Route::NewArticle)),
             _ => None,
-        }.ok_or(())
+        }
+        .ok_or(())
     }
 }
 

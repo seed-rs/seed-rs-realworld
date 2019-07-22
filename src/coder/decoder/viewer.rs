@@ -1,13 +1,13 @@
-use serde::Deserialize;
 use crate::entity::{self, Avatar, Profile};
+use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct Viewer{
+pub struct Viewer {
     username: String,
     image: Option<String>,
     token: String,
-    bio: Option<String>
+    bio: Option<String>,
 }
 
 impl Viewer {
@@ -18,7 +18,7 @@ impl Viewer {
                 username: self.username.into(),
                 bio: self.bio,
             },
-            auth_token: self.token
+            auth_token: self.token,
         }
     }
 }

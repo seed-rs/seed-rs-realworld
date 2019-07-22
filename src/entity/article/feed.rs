@@ -189,7 +189,7 @@ pub fn view_articles(model: &Model) -> Vec<Node<Msg>> {
                     ]
                 ]
             } else {
-                model.articles.values.iter().map(|article| view_article_preview(credentials, article)).collect()
+                model.articles.items.iter().map(|article| view_article_preview(credentials, article)).collect()
             }
         ).collect()
 }
@@ -230,7 +230,7 @@ pub fn update(
         Msg::FavoriteCompleted(Ok(article)) => {
             model
                 .articles
-                .values
+                .items
                 .iter_mut()
                 .find(|old_article| old_article.slug == article.slug)
                 .map(|old_article| *old_article = article);

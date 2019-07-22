@@ -20,7 +20,7 @@ struct RootDecoder {
 impl RootDecoder {
     fn into_paginated_list(self, credentials: Option<Credentials>,) -> PaginatedList<Article> {
         PaginatedList {
-            values: self.articles.into_iter().filter_map(|article_decoder| {
+            items: self.articles.into_iter().filter_map(|article_decoder| {
                 match article_decoder.try_into_article(credentials.clone()) {
                     Ok(article) => Some(article),
                     Err(error) => {

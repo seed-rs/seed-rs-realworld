@@ -3,7 +3,7 @@ use std::num::NonZeroUsize;
 
 #[derive(Clone)]
 pub struct PaginatedList<T> {
-    pub values: Vec<T>,
+    pub items: Vec<T>,
     pub per_page: NonZeroUsize,
     pub total: usize,
 }
@@ -17,7 +17,7 @@ impl<T> PaginatedList<T> {
 impl<T> Default for PaginatedList<T> {
     fn default() -> Self {
         Self {
-            values: Vec::new(),
+            items: Vec::new(),
             per_page: NonZeroUsize::new(5).unwrap(),
             total: 0
         }

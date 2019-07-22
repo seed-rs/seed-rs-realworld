@@ -3,8 +3,12 @@ use crate::entity::{username, Credentials, article, paginated_list, page_number}
 use crate::{page, logger, request, coder::decoder};
 use futures::prelude::*;
 use seed::fetch;
+use std::num::NonZeroUsize;
+use lazy_static::lazy_static;
 
-const ARTICLES_PER_PAGE: usize = 5;
+lazy_static! {
+    static ref ARTICLES_PER_PAGE: NonZeroUsize = NonZeroUsize::new(5).unwrap();
+}
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -25,7 +29,7 @@ impl RootDecoder {
                     }
                 }
             }).collect(),
-            per_page: ARTICLES_PER_PAGE,
+            per_page: *ARTICLES_PER_PAGE,
             total: self.articles_count
         }
     }
@@ -43,8 +47,8 @@ pub fn request_url(
             page::profile::FeedTab::FavoritedArticles => "favorited",
         },
         username.as_str(),
-        ARTICLES_PER_PAGE,
-        (page_number.to_usize() - 1) * ARTICLES_PER_PAGE
+        *ARTICLES_PER_PAGE,
+        (page_number.to_usize() - 1) * ARTICLES_PER_PAGE.get()
     )
 }
 

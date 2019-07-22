@@ -1,16 +1,16 @@
 use num_integer;
+use std::num::NonZeroUsize;
 
-// @TODO encapsulate ; per_page has to be > 0
 #[derive(Clone)]
 pub struct PaginatedList<T> {
     pub values: Vec<T>,
-    pub per_page: usize,
+    pub per_page: NonZeroUsize,
     pub total: usize,
 }
 
 impl<T> PaginatedList<T> {
     pub fn total_pages(&self) -> usize {
-        num_integer::div_ceil(self.total, self.per_page)
+        num_integer::div_ceil(self.total, self.per_page.get())
     }
 }
 
@@ -18,7 +18,7 @@ impl<T> Default for PaginatedList<T> {
     fn default() -> Self {
         Self {
             values: Vec::new(),
-            per_page: 5,
+            per_page: NonZeroUsize::new(5).unwrap(),
             total: 0
         }
     }

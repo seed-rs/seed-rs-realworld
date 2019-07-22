@@ -5,7 +5,7 @@ pub mod asset;
 pub use asset::Image;
 
 pub mod author;
-pub use author::{Author, UnfollowedAuthor, FollowedAuthor, Profile};
+pub use author::{Author, UnfollowedAuthor, FollowedAuthor};
 
 pub mod avatar;
 pub use avatar::Avatar;
@@ -29,3 +29,6 @@ pub use username::Username;
 
 pub mod viewer;
 pub use viewer::Viewer;
+
+pub mod profile;
+pub use profile::Profile;

@@ -1,21 +1,21 @@
-use crate::entity::{Username, Viewer, Avatar};
+use crate::entity::{Username, Viewer, Profile};
 use crate::Route;
 use seed::prelude::*;
 use std::borrow::Cow;
 
 #[derive(Clone)]
-pub enum Author<'a> {
-    Following(FollowedAuthor<'a>),
-    NotFollowing(UnfollowedAuthor<'a>),
-    IsViewer(Viewer, Profile),
+pub enum Author {
+    Following(FollowedAuthor),
+    NotFollowing(UnfollowedAuthor),
+    IsViewer(Viewer),
 }
 
-impl<'a> Author<'a> {
-    pub fn username(&'a self) -> &'a Username<'a> {
+impl Author {
+    pub fn username(&self) -> &Username {
         match self {
-            Author::Following(FollowedAuthor { username, .. }) => username,
-            Author::NotFollowing(UnfollowedAuthor { username, ..}) => username,
-            Author::IsViewer(viewer,_) => viewer.username(),
+            Author::Following(FollowedAuthor { profile}) => &profile.username,
+            Author::NotFollowing(UnfollowedAuthor { profile}) => &profile.username,
+            Author::IsViewer(viewer) => viewer.username(),
         }
     }
 
@@ -23,27 +23,19 @@ impl<'a> Author<'a> {
         match self {
             Author::Following(FollowedAuthor{ profile, ..}) => profile,
             Author::NotFollowing(UnfollowedAuthor{ profile, ..}) => profile,
-            Author::IsViewer(_, profile) => profile,
+            Author::IsViewer(viewer) => viewer.profile(),
         }
     }
 }
 
 #[derive(Clone)]
-pub struct FollowedAuthor<'a> {
-    pub username: Username<'a>,
+pub struct FollowedAuthor {
     pub profile: Profile
 }
 
 #[derive(Clone)]
-pub struct UnfollowedAuthor<'a> {
-    pub username: Username<'a>,
+pub struct UnfollowedAuthor {
     pub profile: Profile
-}
-
-#[derive(Clone)]
-pub struct Profile {
-    pub bio: Option<String>,
-    pub avatar: Avatar
 }
 
 pub fn view<Ms>(username: &Username) -> Node<Ms> {

@@ -16,7 +16,7 @@ pub struct Article {
     pub updated_at: Timestamp,
     pub tag_list: Vec<Tag>,
     pub description: String,
-    pub author: Author<'static>,
+    pub author: Author,
     pub favorited: bool,
     pub favorites_count: usize,
 }

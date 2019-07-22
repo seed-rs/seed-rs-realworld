@@ -12,7 +12,7 @@ struct RootDecoder {
 }
 
 impl RootDecoder {
-    fn into_comments<'a>(self, viewer: Option<Viewer>) -> VecDeque<Comment<'a>> {
+    fn into_comments(self, viewer: Option<Viewer>) -> VecDeque<Comment> {
         self.comments.into_iter().filter_map(|comment_decoder| {
             match comment_decoder.try_into_comment(viewer.clone()) {
                 Ok(comment) => Some(comment),
@@ -28,7 +28,7 @@ impl RootDecoder {
 pub fn load_list<Ms: 'static>(
     viewer: Option<Viewer>,
     slug: &Slug,
-    f: fn(Result<VecDeque<Comment<'static>>, Vec<String>>) -> Ms,
+    f: fn(Result<VecDeque<Comment>, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &format!("articles/{}/comments", slug.as_str()),

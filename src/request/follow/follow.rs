@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{username, Viewer, author};
+use crate::entity::{username, Viewer, Author};
 use crate::{request, coder::decoder};
 use futures::prelude::*;
 use seed::fetch;
@@ -13,7 +13,7 @@ struct RootDecoder {
 pub fn follow<Ms: 'static>(
     viewer: Option<Viewer>,
     username: &username::Username,
-    f: fn(Result<author::Author<'static>, Vec<String>>) -> Ms,
+    f: fn(Result<Author, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &format!("profiles/{}/follow", username.as_str()),

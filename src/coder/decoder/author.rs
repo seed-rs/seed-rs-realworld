@@ -11,26 +11,28 @@ pub struct Author {
 }
 
 impl Author {
-    pub fn into_author(self, viewer: Option<Viewer>) -> entity::Author<'static> {
+    pub fn into_author(self, viewer: Option<Viewer>) -> entity::Author {
         let username = self.username.into();
-        let profile = Profile {
-            bio: self.bio,
-            avatar: Avatar::new(Some(self.image)),
-        };
 
         if let Some(viewer) = viewer {
             if &username == viewer.username() {
-                return entity::Author::IsViewer(viewer, profile)
+                return entity::Author::IsViewer(viewer)
             }
         }
 
+        let profile = Profile {
+            bio: self.bio,
+            avatar: Avatar::new(Some(self.image)),
+            username
+        };
+
         if self.following {
             entity::Author::Following(
-                FollowedAuthor { username, profile }
+                FollowedAuthor { profile }
             )
         } else {
             entity::Author::NotFollowing(
-                UnfollowedAuthor { username, profile }
+                UnfollowedAuthor { profile }
             )
         }
     }

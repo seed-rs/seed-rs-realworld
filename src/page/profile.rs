@@ -16,11 +16,11 @@ pub struct Model<'a> {
     errors: Vec<String>,
     feed_tab: FeedTab,
     feed_page: PageNumber,
-    author: Status<'a, Author<'a>>,
+    author: Status<'a, Author>,
     feed: Status<'a, article::feed::Model>
 }
 
-impl<'a> Status<'a, Author<'a>> {
+impl<'a> Status<'a, Author> {
     pub fn username(&'a self) -> &Username<'a> {
         match self {
             Status::Loading(username) => username,
@@ -127,8 +127,8 @@ pub enum Msg {
     UnfollowClicked,
     TabClicked(FeedTab),
     FeedPageClicked(PageNumber),
-    FollowChangeCompleted(Result<Author<'static>, Vec<String>>),
-    AuthorLoadCompleted(Result<Author<'static>, (Username<'static>, Vec<String>)>),
+    FollowChangeCompleted(Result<Author, Vec<String>>),
+    AuthorLoadCompleted(Result<Author, (Username<'static>, Vec<String>)>),
     FeedLoadCompleted(
         Result<PaginatedList<Article>,
         (Username<'static>, Vec<String>)>
@@ -235,7 +235,7 @@ fn title_for_other(username: &Username) -> String {
 
 fn title_for_me(viewer: Option<&Viewer>, username: &Username) -> &'static str {
     if let Some(viewer) = viewer {
-        if username == &viewer.username {
+        if username == viewer.username() {
             return MY_PROFILE_TITLE
         }
     }

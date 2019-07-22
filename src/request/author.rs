@@ -13,7 +13,7 @@ struct RootDecoder {
 pub fn load<Ms: 'static>(
     viewer: Option<Viewer>,
     username: Username<'static>,
-    f: fn(Result<Author<'static>, (Username<'static>, Vec<String>)>) -> Ms,
+    f: fn(Result<Author, (Username<'static>, Vec<String>)>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &format!("profiles/{}", username.as_str()),

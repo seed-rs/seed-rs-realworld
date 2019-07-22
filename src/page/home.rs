@@ -13,7 +13,7 @@ pub enum FeedTab {
     TagFeed(Tag)
 }
 
-impl Default for FeedTab {
+impl<'a> Default for FeedTab {
     fn default() -> Self {
         FeedTab::GlobalFeed
     }

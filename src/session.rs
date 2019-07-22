@@ -21,7 +21,7 @@ impl<'a> Session {
     }
 }
 
-impl<'a> From<Option<Viewer>> for Session {
+impl From<Option<Viewer>> for Session {
     fn from(viewer: Option<Viewer>) -> Session {
         match viewer {
             Some(viewer) => Session::LoggedIn(viewer),

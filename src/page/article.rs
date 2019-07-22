@@ -32,27 +32,27 @@ impl Default for CommentText {
 }
 
 #[derive(Default)]
-pub struct Model<'a> {
+pub struct Model {
     session: Session,
     errors: Vec<String>,
-    comments: Status<(CommentText, VecDeque<Comment<'a>>)>,
+    comments: Status<(CommentText, VecDeque<Comment>)>,
     article: Status<Article>
 }
 
-impl<'a> Model<'a> {
+impl Model {
     pub fn session(&self) -> &Session {
         &self.session
     }
 }
 
-impl<'a> From<Model<'a>> for Session {
+impl From<Model> for Session {
     fn from(model: Model) -> Session {
         model.session
     }
 }
 
-pub fn init<'a>(session: Session, slug: &Slug, orders: &mut impl Orders<Msg, GMsg>
-) -> Model<'a> {
+pub fn init(session: Session, slug: &Slug, orders: &mut impl Orders<Msg, GMsg>
+) -> Model {
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
         .perform_cmd(request::article::load(
@@ -91,17 +91,17 @@ pub enum Msg {
     DismissErrorsClicked,
     FavoriteClicked(Slug),
     UnfavoriteClicked(Slug),
-    FollowClicked(UnfollowedAuthor<'static>),
-    UnfollowClicked(FollowedAuthor<'static>),
+    FollowClicked(UnfollowedAuthor),
+    UnfollowClicked(FollowedAuthor),
     PostCommentClicked(Slug),
     CommentTextEntered(String),
     LoadArticleCompleted(Result<Article, Vec<String>>),
-    LoadCommentsCompleted(Result<VecDeque<Comment<'static>>, Vec<String>>),
+    LoadCommentsCompleted(Result<VecDeque<Comment>, Vec<String>>),
     DeleteArticleCompleted(Result<(), Vec<String>>),
     DeleteCommentCompleted(Result<CommentId, Vec<String>>),
     FavoriteChangeCompleted(Result<Article, Vec<String>>),
-    FollowChangeCompleted(Result<Author<'static>, Vec<String>>),
-    PostCommentCompleted(Result<Comment<'static>, Vec<String>>),
+    FollowChangeCompleted(Result<Author, Vec<String>>),
+    PostCommentCompleted(Result<Comment, Vec<String>>),
     SlowLoadThresholdPassed,
     Unreachable
 }
@@ -152,7 +152,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             orders
                 .perform_cmd(request::follow::follow(
                     model.session.viewer().cloned(),
-                    &unfollowed_author.username,
+                    &unfollowed_author.profile.username,
                     Msg::FollowChangeCompleted
                 ))
                 .skip();
@@ -161,7 +161,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             orders
                 .perform_cmd(request::follow::unfollow(
                     model.session.viewer().cloned(),
-                    &followed_author.username,
+                    &followed_author.profile.username,
                     Msg::FollowChangeCompleted
                 ))
                 .skip();
@@ -350,7 +350,7 @@ fn view_buttons(article: &Article, model: &Model) -> Vec<Node<Msg>> {
                     vec![
                         author::view_unfollow_button(
                             Msg::UnfollowClicked(followed_author.clone()),
-                            &followed_author.username,
+                            &followed_author.profile.username,
                         ),
                         plain![" "],
                         view_favorite_button(article),
@@ -360,7 +360,7 @@ fn view_buttons(article: &Article, model: &Model) -> Vec<Node<Msg>> {
                     vec![
                         author::view_follow_button(
                             Msg::FollowClicked(unfollowed_author.clone()),
-                            &unfollowed_author.username,
+                            &unfollowed_author.profile.username,
                         ),
                         plain![" "],
                         view_favorite_button(article),

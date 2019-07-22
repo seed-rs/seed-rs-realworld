@@ -13,7 +13,7 @@ struct RootDecoder {
 pub fn unfollow<Ms: 'static>(
     viewer: Option<Viewer>,
     username: &Username,
-    f: fn(Result<Author<'static>, Vec<String>>) -> Ms,
+    f: fn(Result<Author, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &format!("profiles/{}/follow", username.as_str()),

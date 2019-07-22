@@ -14,7 +14,7 @@ pub fn create<Ms: 'static>(
     viewer: Option<Viewer>,
     slug: &Slug,
     text: String,
-    f: fn(Result<Comment<'static>, Vec<String>>) -> Ms
+    f: fn(Result<Comment, Vec<String>>) -> Ms
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &format!("articles/{}/comments", slug.as_str()),

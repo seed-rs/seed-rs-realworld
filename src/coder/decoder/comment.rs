@@ -14,7 +14,7 @@ pub struct Comment {
 }
 
 impl Comment {
-    pub fn try_into_comment<'a>(self, viewer: Option<Viewer>,) -> Result<entity::Comment<'a>, String> {
+    pub fn try_into_comment(self, viewer: Option<Viewer>,) -> Result<entity::Comment, String> {
         let created_at = self.created_at.try_into()?;
         let updated_at = self.updated_at.try_into()?;
 

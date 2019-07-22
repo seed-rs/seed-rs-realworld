@@ -11,6 +11,7 @@ struct RootDecoder {
     profile: decoder::Author,
 }
 
+#[allow(clippy::type_complexity)]
 pub fn load<Ms: 'static>(
     viewer: Option<Viewer>,
     username: Username<'static>,

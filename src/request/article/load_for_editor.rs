@@ -11,6 +11,7 @@ struct RootDecoder {
     article: decoder::Article,
 }
 
+#[allow(clippy::type_complexity)]
 pub fn load_for_editor<Ms: 'static>(
     viewer: Option<Viewer>,
     slug: Slug,

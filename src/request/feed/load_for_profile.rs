@@ -57,6 +57,7 @@ pub fn request_url(
     )
 }
 
+#[allow(clippy::type_complexity)]
 pub fn load_for_profile<Ms: 'static>(
     viewer: Option<Viewer>,
     username: Username<'static>,

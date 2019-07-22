@@ -1,7 +1,7 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::entity::{article, author, timestamp};
-use crate::{session, GMsg, route, logger, request, helper::take, loading, page};
+use crate::entity::{Comment, CommentId, author::{self, Author, FollowedAuthor, UnfollowedAuthor}, timestamp, Slug, Article};
+use crate::{Session, GMsg, route::{self, Route}, logger, request, helper::take, loading, page};
 use std::collections::VecDeque;
 use std::borrow::Cow;
 
@@ -33,25 +33,25 @@ impl Default for CommentText {
 
 #[derive(Default)]
 pub struct Model<'a> {
-    session: session::Session,
+    session: Session,
     errors: Vec<String>,
-    comments: Status<(CommentText, VecDeque<article::comment::Comment<'a>>)>,
-    article: Status<article::Article>
+    comments: Status<(CommentText, VecDeque<Comment<'a>>)>,
+    article: Status<Article>
 }
 
 impl<'a> Model<'a> {
-    pub fn session(&self) -> &session::Session {
+    pub fn session(&self) -> &Session {
         &self.session
     }
 }
 
-impl<'a> From<Model<'a>> for session::Session {
-    fn from(model: Model) -> session::Session {
+impl<'a> From<Model<'a>> for Session {
+    fn from(model: Model) -> Session {
         model.session
     }
 }
 
-pub fn init<'a>(session: session::Session, slug: &article::slug::Slug, orders: &mut impl Orders<Msg, GMsg>
+pub fn init<'a>(session: Session, slug: &Slug, orders: &mut impl Orders<Msg, GMsg>
 ) -> Model<'a> {
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
@@ -76,7 +76,7 @@ pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>)
     match g_msg {
         GMsg::SessionChanged(session) => {
             model.session = session;
-            route::go_to(route::Route::Home, orders);
+            route::go_to(Route::Home, orders);
         }
         _ => ()
     }
@@ -86,22 +86,22 @@ pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>)
 
 #[derive(Clone)]
 pub enum Msg {
-    DeleteArticleClicked(article::slug::Slug),
-    DeleteCommentClicked(article::slug::Slug, article::comment::CommentId),
+    DeleteArticleClicked(Slug),
+    DeleteCommentClicked(Slug, CommentId),
     DismissErrorsClicked,
-    FavoriteClicked(article::slug::Slug),
-    UnfavoriteClicked(article::slug::Slug),
-    FollowClicked(author::UnfollowedAuthor<'static>),
-    UnfollowClicked(author::FollowedAuthor<'static>),
-    PostCommentClicked(article::slug::Slug),
+    FavoriteClicked(Slug),
+    UnfavoriteClicked(Slug),
+    FollowClicked(UnfollowedAuthor<'static>),
+    UnfollowClicked(FollowedAuthor<'static>),
+    PostCommentClicked(Slug),
     CommentTextEntered(String),
-    LoadArticleCompleted(Result<article::Article, Vec<String>>),
-    LoadCommentsCompleted(Result<VecDeque<article::comment::Comment<'static>>, Vec<String>>),
+    LoadArticleCompleted(Result<Article, Vec<String>>),
+    LoadCommentsCompleted(Result<VecDeque<Comment<'static>>, Vec<String>>),
     DeleteArticleCompleted(Result<(), Vec<String>>),
-    DeleteCommentCompleted(Result<article::comment::CommentId, Vec<String>>),
-    FavoriteChangeCompleted(Result<article::Article, Vec<String>>),
-    FollowChangeCompleted(Result<author::Author<'static>, Vec<String>>),
-    PostCommentCompleted(Result<article::comment::Comment<'static>, Vec<String>>),
+    DeleteCommentCompleted(Result<CommentId, Vec<String>>),
+    FavoriteChangeCompleted(Result<Article, Vec<String>>),
+    FollowChangeCompleted(Result<Author<'static>, Vec<String>>),
+    PostCommentCompleted(Result<Comment<'static>, Vec<String>>),
     SlowLoadThresholdPassed,
     Unreachable
 }
@@ -211,7 +211,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         }
 
         Msg::DeleteArticleCompleted(Ok(())) => {
-            route::go_to(route::Route::Home, orders);
+            route::go_to(Route::Home, orders);
         }
         Msg::DeleteArticleCompleted(Err(errors)) => {
             logger::errors(errors.clone());
@@ -280,7 +280,7 @@ pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
     ViewPage::new("Conduit",view_content(model))
 }
 
-fn view_favorite_button(article: &article::Article) -> Node<Msg> {
+fn view_favorite_button(article: &Article) -> Node<Msg> {
     if article.favorited {
         button![
             class!["btn","btn-primary", "btn-sm"],
@@ -302,7 +302,7 @@ fn view_favorite_button(article: &article::Article) -> Node<Msg> {
     }
 }
 
-fn view_delete_button(slug: article::slug::Slug) -> Node<Msg> {
+fn view_delete_button(slug: Slug) -> Node<Msg> {
     button![
         class!["btn", "btn-outline-danger", "btn-sm"],
         simple_ev(Ev::Click, Msg::DeleteArticleClicked(slug)),
@@ -313,10 +313,10 @@ fn view_delete_button(slug: article::slug::Slug) -> Node<Msg> {
     ]
 }
 
-fn view_edit_button(slug: article::slug::Slug) -> Node<Msg> {
+fn view_edit_button(slug: Slug) -> Node<Msg> {
     a![
         class!["btn", "btn-outline-secondary", "btn-sm"],
-        attrs!{At::Href => route::Route::EditArticle(slug).to_string()},
+        attrs!{At::Href => Route::EditArticle(slug).to_string()},
         i![
             class!["ion-edit"],
         ],
@@ -324,19 +324,19 @@ fn view_edit_button(slug: article::slug::Slug) -> Node<Msg> {
     ]
 }
 
-fn view_buttons(article: &article::Article, model: &Model) -> Vec<Node<Msg>> {
+fn view_buttons(article: &Article, model: &Model) -> Vec<Node<Msg>> {
     match model.session.credentials() {
         None => vec![],
         Some(_) => {
             match &article.author {
-                author::Author::IsViewer(..) => {
+                Author::IsViewer(..) => {
                     vec![
                         view_edit_button(article.slug.clone()),
                         plain![" "],
                         view_delete_button(article.slug.clone())
                     ]
                 }
-                author::Author::Following(followed_author) => {
+                Author::Following(followed_author) => {
                     vec![
                         author::view_unfollow_button(
                             Msg::UnfollowClicked(followed_author.clone()),
@@ -346,7 +346,7 @@ fn view_buttons(article: &article::Article, model: &Model) -> Vec<Node<Msg>> {
                         view_favorite_button(article),
                     ]
                 }
-                author::Author::NotFollowing(unfollowed_author) => {
+                Author::NotFollowing(unfollowed_author) => {
                     vec![
                         author::view_follow_button(
                             Msg::FollowClicked(unfollowed_author.clone()),
@@ -361,11 +361,11 @@ fn view_buttons(article: &article::Article, model: &Model) -> Vec<Node<Msg>> {
     }
 }
 
-fn view_article_meta(article: &article::Article, model: &Model) -> Node<Msg> {
+fn view_article_meta(article: &Article, model: &Model) -> Node<Msg> {
     div![
         class!["article-meta"],
         a![
-            attrs!{At::Href => route::Route::Profile(Cow::Borrowed(article.author.username())).to_string()},
+            attrs!{At::Href => Route::Profile(Cow::Borrowed(article.author.username())).to_string()},
             img![
                 attrs!{At::Src => article.author.profile().avatar.src()}
             ]
@@ -382,7 +382,7 @@ fn view_article_meta(article: &article::Article, model: &Model) -> Node<Msg> {
     ]
 }
 
-fn view_banner(article: &article::Article, model: &Model) -> Node<Msg> {
+fn view_banner(article: &Article, model: &Model) -> Node<Msg> {
     div![
         class!["banner"],
         div![
@@ -396,18 +396,18 @@ fn view_banner(article: &article::Article, model: &Model) -> Node<Msg> {
     ]
 }
 
-fn view_comment_form(slug: article::slug::Slug, comment_text: &CommentText, model: &Model) -> Node<Msg> {
+fn view_comment_form(slug: Slug, comment_text: &CommentText, model: &Model) -> Node<Msg> {
     match model.session.viewer() {
         None => {
             p![
                 a![
                     "Sign in",
-                    attrs!{At::Href => route::Route::Login.to_string()}
+                    attrs!{At::Href => Route::Login.to_string()}
                 ],
                 " or ",
                 a![
                     "Sign up",
-                    attrs!{At::Href => route::Route::Register.to_string()}
+                    attrs!{At::Href => Route::Register.to_string()}
                 ],
                 " to comment."
             ]
@@ -457,9 +457,9 @@ fn view_comment_form(slug: article::slug::Slug, comment_text: &CommentText, mode
     }
 }
 
-fn view_delete_comment_button(slug: &article::slug::Slug, comment: &article::comment::Comment) -> Node<Msg> {
+fn view_delete_comment_button(slug: &Slug, comment: &Comment) -> Node<Msg> {
     match comment.author {
-        author::Author::IsViewer(..) => {
+        Author::IsViewer(..) => {
             span![
                 class!["mod-options"],
                 i![
@@ -472,7 +472,7 @@ fn view_delete_comment_button(slug: &article::slug::Slug, comment: &article::com
     }
 }
 
-fn view_comment(slug: &article::slug::Slug, comment: &article::comment::Comment) -> Node<Msg> {
+fn view_comment(slug: &Slug, comment: &Comment) -> Node<Msg> {
     div![
         class!["card"],
         div![
@@ -486,7 +486,7 @@ fn view_comment(slug: &article::slug::Slug, comment: &article::comment::Comment)
             class!["card-footer"],
             a![
                 class!["comment-author"],
-                attrs!{At::Href => route::Route::Profile(Cow::Borrowed(comment.author.username())).to_string()},
+                attrs!{At::Href => Route::Profile(Cow::Borrowed(comment.author.username())).to_string()},
                 img![
                     class!["comment-author-img"],
                     attrs!{At::Src => comment.author.profile().avatar.src()}
@@ -495,7 +495,7 @@ fn view_comment(slug: &article::slug::Slug, comment: &article::comment::Comment)
             raw!("&nbsp;"),
             a![
                 class!["comment-author"],
-                attrs!{At::Href => route::Route::Profile(Cow::Borrowed(comment.author.username())).to_string()},
+                attrs!{At::Href => Route::Profile(Cow::Borrowed(comment.author.username())).to_string()},
                 comment.author.username().to_string()
             ],
             span![
@@ -507,14 +507,14 @@ fn view_comment(slug: &article::slug::Slug, comment: &article::comment::Comment)
     ]
 }
 
-fn view_comments(slug: &article::slug::Slug, comments: &VecDeque<article::comment::Comment>) -> Vec<Node<Msg>> {
+fn view_comments(slug: &Slug, comments: &VecDeque<Comment>) -> Vec<Node<Msg>> {
     comments
         .iter()
         .map(|comment| view_comment(slug, comment))
         .collect()
 }
 
-fn view_form_and_comments(slug: &article::slug::Slug, model: &Model) -> Vec<Node<Msg>> {
+fn view_form_and_comments(slug: &Slug, model: &Model) -> Vec<Node<Msg>> {
     match &model.comments {
         Status::Loading => vec![],
         Status::LoadingSlowly => vec![loading::icon()],

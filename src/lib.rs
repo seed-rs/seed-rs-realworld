@@ -5,6 +5,9 @@ use std::convert::TryInto;
 use helper::take;
 use entity::{article, username};
 
+pub use session::Session;
+pub use route::Route;
+
 mod coder;
 mod entity;
 mod helper;
@@ -19,8 +22,8 @@ mod storage;
 // Model
 
 enum Model<'a> {
-    Redirect(session::Session),
-    NotFound(session::Session),
+    Redirect(Session),
+    NotFound(Session),
     Home(page::home::Model),
     Settings(page::settings::Model),
     Login(page::login::Model),
@@ -32,12 +35,12 @@ enum Model<'a> {
 
 impl<'a> Default for Model<'a> {
     fn default() -> Self {
-        Model::Redirect(session::Session::default())
+        Model::Redirect(Session::default())
     }
 }
 
-impl<'a> From<Model<'a>> for session::Session {
-    fn from(model: Model<'a>) -> session::Session {
+impl<'a> From<Model<'a>> for Session {
+    fn from(model: Model<'a>) -> Session {
         match model {
             Model::Redirect(session) => session,
             Model::NotFound(session) => session,
@@ -55,8 +58,8 @@ impl<'a> From<Model<'a>> for session::Session {
 // Sink
 
 pub enum GMsg {
-    RoutePushed(route::Route<'static>),
-    SessionChanged(session::Session)
+    RoutePushed(Route<'static>),
+    SessionChanged(Session)
 }
 
 fn sink<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Orders<Msg<'static>, GMsg>) {
@@ -68,7 +71,7 @@ fn sink<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Orders<Msg<'st
         Model::NotFound(_) | Model::Redirect(_) => {
             if let GMsg::SessionChanged(session) = g_msg {
                 *model = Model::Redirect(session);
-                route::go_to(route::Route::Home, orders);
+                route::go_to(Route::Home, orders);
             }
         },
         Model::Settings(model) => {
@@ -98,7 +101,7 @@ fn sink<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Orders<Msg<'st
 // Update
 
 enum Msg<'a> {
-    RouteChanged(Option<route::Route<'a>>),
+    RouteChanged(Option<Route<'a>>),
     HomeMsg(page::home::Msg),
     SettingsMsg(page::settings::Msg),
     LoginMsg(page::login::Msg),
@@ -152,29 +155,29 @@ fn update<'a>(msg: Msg<'a>, model: &mut Model<'a>, orders: &mut impl Orders<Msg<
 }
 
 fn change_model_by_route<'a>(
-    route: Option<route::Route<'a>>,
+    route: Option<Route<'a>>,
     model: &mut Model<'a>,
     orders:&mut impl Orders<Msg<'static>, GMsg>,
 ) {
-    let mut session = || session::Session::from(take(model));
+    let mut session = || Session::from(take(model));
     match route {
         None => { *model = Model::NotFound(session()) },
         Some(route) => match route {
-            route::Route::Root => {
-                route::go_to(route::Route::Home, orders)
+            Route::Root => {
+                route::go_to(Route::Home, orders)
             },
-            route::Route::Logout => {
+            Route::Logout => {
                 storage::delete_app_data();
                 orders.send_g_msg(GMsg::SessionChanged(None.into()));
-                route::go_to(route::Route::Home, orders)
+                route::go_to(Route::Home, orders)
             },
-            route::Route::NewArticle => {
+            Route::NewArticle => {
                 *model = Model::ArticleEditor(
                     page::article_editor::init_new(session()),
                     None
                 );
             },
-            route::Route::EditArticle(slug) => {
+            Route::EditArticle(slug) => {
                 *model = Model::ArticleEditor(
                     page::article_editor::init_edit(
                         session(), slug.clone(), &mut orders.proxy(Msg::ArticleEditorMsg)
@@ -182,27 +185,27 @@ fn change_model_by_route<'a>(
                     Some(slug)
                 );
             },
-            route::Route::Settings => {
+            Route::Settings => {
                 *model = Model::Settings(page::settings::init(
                     session(), &mut orders.proxy(Msg::SettingsMsg)
                 ));
             },
-            route::Route::Home => {
+            Route::Home => {
                 *model = Model::Home(
                     page::home::init(session(), &mut orders.proxy(Msg::HomeMsg))
                 );
             },
-            route::Route::Login => {
+            Route::Login => {
                 *model = Model::Login(
                     page::login::init(session())
                 );
             },
-            route::Route::Register => {
+            Route::Register => {
                 *model = Model::Register(
                     page::register::init(session())
                 );
             },
-            route::Route::Profile(username) => {
+            Route::Profile(username) => {
                 *model = Model::Profile(
                     page::profile::init(
                         session(), username.to_static(), &mut orders.proxy(Msg::ProfileMsg)
@@ -210,7 +213,7 @@ fn change_model_by_route<'a>(
                     username.into_owned()
                 );
             },
-            route::Route::Article(slug) => {
+            Route::Article(slug) => {
                 *model = Model::Article(
                     page::article::init(session(), &slug, &mut orders.proxy(Msg::ArticleMsg))
                 );

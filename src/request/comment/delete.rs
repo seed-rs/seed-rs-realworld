@@ -1,4 +1,4 @@
-use crate::entity::{Credentials, article};
+use crate::entity::{Credentials, CommentId, Slug};
 use crate::request;
 use futures::prelude::*;
 use seed::fetch;
@@ -8,9 +8,9 @@ type RootDecoder = IndexMap<(), ()>;
 
 pub fn delete<Ms: 'static>(
     credentials: Option<&Credentials>,
-    slug: &article::slug::Slug,
-    comment_id: article::comment::CommentId,
-    f: fn(Result<article::comment::CommentId, Vec<String>>) -> Ms,
+    slug: &Slug,
+    comment_id: CommentId,
+    f: fn(Result<CommentId, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &format!("articles/{}/comments/{}", slug.as_str(), comment_id.as_str()),

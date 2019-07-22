@@ -1,29 +1,27 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::entity::{article, form::article_editor as form};
-use crate::{session, route, GMsg, loading, request, helper::take, logger};
+use crate::entity::{Article, form::article_editor::{Form, Problem, Field}, Slug};
+use crate::{Session, route::{self, Route}, GMsg, loading, request, helper::take, logger};
 use std::borrow::Cow;
 
 // Model
 
 #[derive(Default)]
 pub struct Model {
-    session: session::Session,
+    session: Session,
     status: Status
 }
-
-type Slug = article::slug::Slug;
 
 enum Status {
     // -- edit article --
     Loading(Slug),
     LoadingSlowly(Slug),
-    LoadingFailed(Slug, Vec<form::Problem>),
-    Saving(Slug, form::Form),
-    Editing(Slug, Vec<form::Problem>, form::Form),
+    LoadingFailed(Slug, Vec<Problem>),
+    Saving(Slug, Form),
+    Editing(Slug, Vec<Problem>, Form),
     // -- new article --
-    EditingNew(Vec<form::Problem>, form::Form),
-    Creating(form::Form),
+    EditingNew(Vec<Problem>, Form),
+    Creating(Form),
 }
 
 impl Status {
@@ -41,25 +39,25 @@ impl Status {
 
 impl Default for Status {
     fn default() -> Self {
-        Status::EditingNew(Vec::default(), form::Form::default())
+        Status::EditingNew(Vec::default(), Form::default())
     }
 }
 
 impl Model {
-    pub fn session(&self) -> &session::Session {
+    pub fn session(&self) -> &Session {
         &self.session
     }
 }
 
-impl From<Model> for session::Session {
-    fn from(model: Model) -> session::Session {
+impl From<Model> for Session {
+    fn from(model: Model) -> Session {
         model.session
     }
 }
 
 // Init
 
-pub fn init_new(session: session::Session) -> Model {
+pub fn init_new(session: Session) -> Model {
     Model {
         session,
         ..Model::default()
@@ -67,8 +65,8 @@ pub fn init_new(session: session::Session) -> Model {
 }
 
 pub fn init_edit(
-    session: session::Session,
-    slug: article::slug::Slug,
+    session: Session,
+    slug: Slug,
     orders: &mut impl Orders<Msg, GMsg>,
 ) -> Model {
     orders
@@ -89,7 +87,7 @@ pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>)
     match g_msg {
         GMsg::SessionChanged(session) => {
             model.session = session;
-            route::go_to(route::Route::Home, orders);
+            route::go_to(Route::Home, orders);
         }
         _ => ()
     }
@@ -99,11 +97,11 @@ pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>)
 
 #[derive(Clone)]
 pub enum Msg {
-    FieldChanged(form::Field),
+    FieldChanged(Field),
     FormSubmitted,
-    CreateCompleted(Result<article::Article, Vec<form::Problem>>),
-    EditCompleted(Result<article::Article, Vec<form::Problem>>),
-    ArticleLoadCompleted(Result<article::Article, (article::slug::Slug, Vec<form::Problem>)>),
+    CreateCompleted(Result<Article, Vec<Problem>>),
+    EditCompleted(Result<Article, Vec<Problem>>),
+    ArticleLoadCompleted(Result<Article, (Slug, Vec<Problem>)>),
     SlowLoadThresholdPassed,
     Unreachable,
 }
@@ -162,7 +160,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             }
         },
         Msg::CreateCompleted(Ok(article)) => {
-            route::go_to(route::Route::Article(article.slug), orders)
+            route::go_to(Route::Article(article.slug), orders)
         },
         Msg::CreateCompleted(Err(problems)) => {
             if let Status::Creating(form) = &mut model.status {
@@ -170,7 +168,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             }
         },
         Msg::EditCompleted(Ok(article)) => {
-            route::go_to(route::Route::Article(article.slug), orders)
+            route::go_to(Route::Article(article.slug), orders)
         },
         Msg::EditCompleted(Err(problems)) => {
             if let Status::Saving(slug, form) = &mut model.status {
@@ -204,9 +202,9 @@ pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
     ViewPage::new(title, view_content(model))
 }
 
-fn view_fieldset(field: &form::Field) -> Node<Msg> {
+fn view_fieldset(field: &Field) -> Node<Msg> {
     match field {
-        form::Field::Title(value) => {
+        Field::Title(value) => {
             fieldset![
                 class!["form-group"],
                 input![
@@ -217,12 +215,12 @@ fn view_fieldset(field: &form::Field) -> Node<Msg> {
                         At::Value => value
                     },
                     input_ev(Ev::Input, |new_value| Msg::FieldChanged(
-                        form::Field::Title(new_value)
+                        Field::Title(new_value)
                     )),
                 ]
             ]
         }
-        form::Field::Description(value) => {
+        Field::Description(value) => {
             fieldset![
                 class!["form-group"],
                 input![
@@ -233,12 +231,12 @@ fn view_fieldset(field: &form::Field) -> Node<Msg> {
                         At::Value => value
                     },
                     input_ev(Ev::Input, |new_value| Msg::FieldChanged(
-                        form::Field::Description(new_value)
+                        Field::Description(new_value)
                     )),
                 ]
             ]
         }
-        form::Field::Body(value) => {
+        Field::Body(value) => {
             fieldset![
                 class!["form-group"],
                 textarea![
@@ -249,12 +247,12 @@ fn view_fieldset(field: &form::Field) -> Node<Msg> {
                     },
                     value,
                     input_ev(Ev::Input, |new_value| Msg::FieldChanged(
-                        form::Field::Body(new_value)
+                        Field::Body(new_value)
                     )),
                 ]
             ]
         }
-        form::Field::Tags(value) => {
+        Field::Tags(value) => {
             fieldset![
                 class!["form-group"],
                 input![
@@ -265,7 +263,7 @@ fn view_fieldset(field: &form::Field) -> Node<Msg> {
                         At::Value => value
                     },
                     input_ev(Ev::Input, |new_value| Msg::FieldChanged(
-                        form::Field::Tags(new_value)
+                        Field::Tags(new_value)
                     )),
                 ],
                 div![
@@ -276,7 +274,7 @@ fn view_fieldset(field: &form::Field) -> Node<Msg> {
     }
 }
 
-fn view_form(form: &form::Form, save_button: Node<Msg>) -> Node<Msg> {
+fn view_form(form: &Form, save_button: Node<Msg>) -> Node<Msg> {
     form![
         raw_ev(Ev::Submit, |event| {
             event.prevent_default();
@@ -366,7 +364,7 @@ fn view_authenticated(model: &Model) -> Vec<Node<Msg>> {
     }
 }
 
-fn view_problems(problems: &[form::Problem]) -> Node<Msg> {
+fn view_problems(problems: &[Problem]) -> Node<Msg> {
     ul![
         class!["error-messages"],
         problems.iter().map(|problem| li![

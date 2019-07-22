@@ -3,7 +3,7 @@ use serde_json;
 use indexmap::IndexMap;
 use serde::Deserialize;
 use std::fmt::Debug;
-use crate::entity::{Credentials, form};
+use crate::entity::{Credentials, form::Problem};
 use crate::logger;
 
 pub mod article;
@@ -36,9 +36,9 @@ pub fn new_api_request(path: &str, credentials: Option<&Credentials>) -> fetch::
     request
 }
 
-pub fn fail_reason_into_problems<T: Debug>(fail_reason: fetch::FailReason<T>) -> Vec<form::Problem> {
+pub fn fail_reason_into_problems<T: Debug>(fail_reason: fetch::FailReason<T>) -> Vec<Problem> {
     fail_reason_into_errors(fail_reason)
-        .into_iter().map(form::Problem::new_server_error).collect()
+        .into_iter().map(Problem::new_server_error).collect()
 }
 
 pub fn fail_reason_into_errors<T: Debug>(fail_reason: fetch::FailReason<T>) -> Vec<String> {

@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{Credentials, article};
+use crate::entity::{self, Credentials};
 use crate::coder::decoder;
 use std::convert::TryInto;
 
@@ -14,11 +14,11 @@ pub struct Comment {
 }
 
 impl Comment {
-    pub fn try_into_comment<'a>(self, credentials: Option<Credentials>,) -> Result<article::comment::Comment<'a>, String> {
+    pub fn try_into_comment<'a>(self, credentials: Option<Credentials>,) -> Result<entity::Comment<'a>, String> {
         let created_at = self.created_at.try_into()?;
         let updated_at = self.updated_at.try_into()?;
 
-        Ok(article::comment::Comment {
+        Ok(entity::Comment {
             id: self.id.to_string().into(),
             body: self.body,
             created_at,

@@ -1,7 +1,7 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::entity::{username, article, author, Credentials, paginated_list, page_number};
-use crate::{session, GMsg, route, loading, request, helper::take, logger, page};
+use crate::entity::{Username, article::{self, Article}, author::{self, Author}, Credentials, PaginatedList, PageNumber};
+use crate::{Session, GMsg, route::{self, Route}, loading, request, helper::take, logger, page};
 use std::borrow::Cow;
 use futures::prelude::*;
 
@@ -12,16 +12,16 @@ static DEFAULT_PROFILE: &'static str = "Profile";
 
 #[derive(Default)]
 pub struct Model<'a> {
-    session: session::Session,
+    session: Session,
     errors: Vec<String>,
     feed_tab: FeedTab,
-    feed_page: page_number::PageNumber,
-    author: Status<'a, author::Author<'a>>,
+    feed_page: PageNumber,
+    author: Status<'a, Author<'a>>,
     feed: Status<'a, article::feed::Model>
 }
 
-impl<'a> Status<'a, author::Author<'a>> {
-    pub fn username(&'a self) -> &username::Username<'a> {
+impl<'a> Status<'a, Author<'a>> {
+    pub fn username(&'a self) -> &Username<'a> {
         match self {
             Status::Loading(username) => username,
             Status::LoadingSlowly(username) => username,
@@ -44,10 +44,10 @@ impl Default for FeedTab {
 }
 
 enum Status<'a, T> {
-    Loading(username::Username<'a>),
-    LoadingSlowly(username::Username<'a>),
+    Loading(Username<'a>),
+    LoadingSlowly(Username<'a>),
     Loaded(T),
-    Failed(username::Username<'a>),
+    Failed(Username<'a>),
 }
 
 impl<'a, T> Default for Status<'a, T> {
@@ -57,18 +57,18 @@ impl<'a, T> Default for Status<'a, T> {
 }
 
 impl<'a> Model<'a> {
-    pub fn session(&self) -> &session::Session {
+    pub fn session(&self) -> &Session {
         &self.session
     }
 }
 
-impl<'a> From<Model<'a>> for session::Session {
-    fn from(model: Model) -> session::Session {
+impl<'a> From<Model<'a>> for Session {
+    fn from(model: Model) -> Session {
         model.session
     }
 }
 
-pub fn init<'a>(session: session::Session, username: username::Username<'static>, orders: &mut impl Orders<Msg, GMsg>
+pub fn init<'a>(session: Session, username: Username<'static>, orders: &mut impl Orders<Msg, GMsg>
 ) -> Model<'a> {
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
@@ -80,7 +80,7 @@ pub fn init<'a>(session: session::Session, username: username::Username<'static>
             session.credentials().cloned(),
             username.clone(),
             &FeedTab::default(),
-            page_number::PageNumber::default(),
+            PageNumber::default(),
         ));
 
     Model {
@@ -93,9 +93,9 @@ pub fn init<'a>(session: session::Session, username: username::Username<'static>
 
 fn fetch_feed(
     credentials: Option<Credentials>,
-    username: username::Username<'static>,
+    username: Username<'static>,
     feed_tab: &FeedTab,
-    page_number: page_number::PageNumber,
+    page_number: PageNumber,
 ) -> impl Future<Item=Msg, Error=Msg> {
     request::feed::load_for_profile(
         credentials,
@@ -112,7 +112,7 @@ pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>)
     match g_msg {
         GMsg::SessionChanged(session) => {
             model.session = session;
-            route::go_to(route::Route::Home, orders);
+            route::go_to(Route::Home, orders);
         }
         _ => ()
     }
@@ -126,12 +126,12 @@ pub enum Msg {
     FollowClicked,
     UnfollowClicked,
     TabClicked(FeedTab),
-    FeedPageClicked(page_number::PageNumber),
-    FollowChangeCompleted(Result<author::Author<'static>, Vec<String>>),
-    AuthorLoadCompleted(Result<author::Author<'static>, (username::Username<'static>, Vec<String>)>),
+    FeedPageClicked(PageNumber),
+    FollowChangeCompleted(Result<Author<'static>, Vec<String>>),
+    AuthorLoadCompleted(Result<Author<'static>, (Username<'static>, Vec<String>)>),
     FeedLoadCompleted(
-        Result<paginated_list::PaginatedList<article::Article>,
-        (username::Username<'static>, Vec<String>)>
+        Result<PaginatedList<Article>,
+        (Username<'static>, Vec<String>)>
     ),
     FeedMsg(article::feed::Msg),
     SlowLoadThresholdPassed,
@@ -163,7 +163,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         },
         Msg::TabClicked(feed_tab) => {
             model.feed_tab = feed_tab;
-            model.feed_page = page_number::PageNumber::default();
+            model.feed_page = PageNumber::default();
             orders
                 .perform_cmd(fetch_feed(
                     model.session.credentials().cloned(),
@@ -229,11 +229,11 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
 
 // View
 
-fn title_for_other(username: &username::Username) -> String {
+fn title_for_other(username: &Username) -> String {
     format!("Profile - {}", username.as_str())
 }
 
-fn title_for_me(credentials: Option<&Credentials>, username: &username::Username) -> &'static str {
+fn title_for_me(credentials: Option<&Credentials>, username: &Username) -> &'static str {
     if let Some(credentials) = credentials {
         if username == &credentials.username {
             return MY_PROFILE_TITLE
@@ -244,7 +244,7 @@ fn title_for_me(credentials: Option<&Credentials>, username: &username::Username
 
 fn title<'a>(model: &Model) -> Cow<'a, str> {
     match &model.author {
-        Status::Loaded(author::Author::IsViewer(..)) => {
+        Status::Loaded(Author::IsViewer(..)) => {
             MY_PROFILE_TITLE.into()
         },
         Status::Loaded(author ) => {
@@ -308,21 +308,21 @@ fn view_feed(model: &Model) -> Node<Msg> {
     }
 }
 
-fn view_follow_button(author: &author::Author, model: &Model) -> Node<Msg> {
+fn view_follow_button(author: &Author, model: &Model) -> Node<Msg> {
     match model.session.credentials() {
         None => empty![],
         Some(_) => {
             match author {
-                author::Author::IsViewer(..) => {
+                Author::IsViewer(..) => {
                     empty![]
                 },
-                author::Author::Following(_) => {
+                Author::Following(_) => {
                     author::view_unfollow_button(
                         Msg::UnfollowClicked,
                         author.username()
                     )
                 }
-                author::Author::NotFollowing(_) => {
+                Author::NotFollowing(_) => {
                     author::view_follow_button(
                         Msg::FollowClicked,
                         author.username()

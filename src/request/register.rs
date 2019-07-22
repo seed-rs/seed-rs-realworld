@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{viewer, form::register as form};
+use crate::entity::{Viewer, form::register::{ValidForm, Problem}};
 use crate::{request, coder::decoder};
 use futures::prelude::*;
 use seed::fetch;
@@ -11,8 +11,8 @@ struct RootDecoder {
 }
 
 pub fn register<Ms: 'static>(
-    valid_form: &form::ValidForm,
-    f: fn(Result<viewer::Viewer, Vec<form::Problem>>) -> Ms
+    valid_form: &ValidForm,
+    f: fn(Result<Viewer, Vec<Problem>>) -> Ms
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request("users", None)
         .method(fetch::Method::Post)

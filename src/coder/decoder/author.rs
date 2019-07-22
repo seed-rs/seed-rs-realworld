@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{avatar, profile, author, Credentials};
+use crate::entity::{self, Avatar, Profile, FollowedAuthor, UnfollowedAuthor, Credentials};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -11,26 +11,26 @@ pub struct Author {
 }
 
 impl Author {
-    pub fn into_author(self, credentials: Option<Credentials>) -> author::Author<'static> {
+    pub fn into_author(self, credentials: Option<Credentials>) -> entity::Author<'static> {
         let username = self.username.into();
-        let profile = profile::Profile {
+        let profile = Profile {
             bio: self.bio,
-            avatar: avatar::Avatar::new(Some(self.image)),
+            avatar: Avatar::new(Some(self.image)),
         };
 
         if let Some(credentials) = credentials {
             if &username == credentials.username() {
-                return author::Author::IsViewer(credentials, profile)
+                return entity::Author::IsViewer(credentials, profile)
             }
         }
 
         if self.following {
-            author::Author::Following(
-                author::FollowedAuthor { username, profile }
+            entity::Author::Following(
+                FollowedAuthor { username, profile }
             )
         } else {
-            author::Author::NotFollowing(
-                author::UnfollowedAuthor { username, profile }
+            entity::Author::NotFollowing(
+                UnfollowedAuthor { username, profile }
             )
         }
     }

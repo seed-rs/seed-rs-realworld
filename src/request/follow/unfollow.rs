@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{username, author, Credentials};
+use crate::entity::{Username, Author, Credentials};
 use crate::{request, coder::decoder};
 use futures::prelude::*;
 use seed::fetch;
@@ -12,8 +12,8 @@ struct RootDecoder {
 
 pub fn unfollow<Ms: 'static>(
     credentials: Option<Credentials>,
-    username: &username::Username,
-    f: fn(Result<author::Author<'static>, Vec<String>>) -> Ms,
+    username: &Username,
+    f: fn(Result<Author<'static>, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &format!("profiles/{}/follow", username.as_str()),

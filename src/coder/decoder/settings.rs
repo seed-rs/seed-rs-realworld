@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{form::settings as form};
+use crate::entity::form::settings::{Form, Field};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -11,14 +11,14 @@ pub struct Settings {
 }
 
 impl Settings {
-    pub fn into_form(self) -> form::Form {
-        let fields: Vec<form::Field> = vec![
-            form::Field::Avatar(self.image.unwrap_or_default()),
-            form::Field::Username(self.username),
-            form::Field::Bio(self.bio.unwrap_or_default()),
-            form::Field::Email(self.email),
-            form::Field::Password(String::default()),
+    pub fn into_form(self) -> Form {
+        let fields: Vec<Field> = vec![
+            Field::Avatar(self.image.unwrap_or_default()),
+            Field::Username(self.username),
+            Field::Bio(self.bio.unwrap_or_default()),
+            Field::Email(self.email),
+            Field::Password(String::default()),
         ];
-        form::Form::new(fields)
+        Form::new(fields)
     }
 }

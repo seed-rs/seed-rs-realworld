@@ -1,4 +1,4 @@
-use crate::entity::{Credentials, article};
+use crate::entity::{Credentials, Slug};
 use crate::request;
 use indexmap::IndexMap;
 use futures::prelude::*;
@@ -8,7 +8,7 @@ type RootDecoder = IndexMap<(), ()>;
 
 pub fn delete<Ms: 'static>(
     credentials: Option<&Credentials>,
-    slug: &article::slug::Slug,
+    slug: &Slug,
     f: fn(Result<(), Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(

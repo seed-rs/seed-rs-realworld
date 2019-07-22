@@ -1,7 +1,7 @@
 use serde::Deserialize;
-use crate::entity::{Credentials, article};
+use crate::entity::{self, Credentials};
 use crate::coder::decoder;
-use article::tag::IntoTags;
+use crate::entity::article::tag::IntoTags;
 use std::convert::TryInto;
 
 #[derive(Deserialize, Debug)]
@@ -20,11 +20,11 @@ pub struct Article {
 }
 
 impl Article {
-    pub fn try_into_article(self, credentials: Option<Credentials>,) -> Result<article::Article, String> {
+    pub fn try_into_article(self, credentials: Option<Credentials>,) -> Result<entity::Article, String> {
         let created_at = self.created_at.try_into()?;
         let updated_at = self.updated_at.try_into()?;
 
-        Ok(article::Article {
+        Ok(entity::Article {
             title: self.title,
             slug: self.slug.into(),
             body: self.body.into(),

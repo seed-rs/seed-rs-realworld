@@ -1,15 +1,37 @@
 pub mod article;
-pub mod asset;
-pub mod author;
-pub mod avatar;
-pub mod credentials;
-pub mod form;
-pub mod markdown;
-pub mod page_number;
-pub mod paginated_list;
-pub mod profile;
-pub mod timestamp;
-pub mod username;
-pub mod viewer;
+pub use article::{comment::{Comment, CommentId}, slug::Slug, tag::Tag, Article};
 
+pub mod asset;
+pub use asset::Image;
+
+pub mod author;
+pub use author::{Author, UnfollowedAuthor, FollowedAuthor};
+
+pub mod avatar;
+pub use avatar::Avatar;
+
+pub mod credentials;
 pub use credentials::Credentials;
+
+pub mod form;
+
+pub mod markdown;
+pub use markdown::Markdown;
+
+pub mod page_number;
+pub use page_number::PageNumber;
+
+pub mod paginated_list;
+pub use paginated_list::PaginatedList;
+
+pub mod profile;
+pub use profile::Profile;
+
+pub mod timestamp;
+pub use timestamp::Timestamp;
+
+pub mod username;
+pub use username::Username;
+
+pub mod viewer;
+pub use viewer::Viewer;

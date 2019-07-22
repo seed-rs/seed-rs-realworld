@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{Credentials, article};
+use crate::entity::{Credentials, Article, Slug};
 use crate::{request, coder::decoder};
 use futures::prelude::*;
 use seed::fetch;
@@ -12,8 +12,8 @@ struct RootDecoder {
 
 pub fn unfavorite<Ms: 'static>(
     credentials: Option<Credentials>,
-    slug: &article::slug::Slug,
-    f: fn(Result<article::Article, Vec<String>>) -> Ms,
+    slug: &Slug,
+    f: fn(Result<Article, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &format!("articles/{}/favorite", slug.as_str()),

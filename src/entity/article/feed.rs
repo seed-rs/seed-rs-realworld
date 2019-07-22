@@ -1,5 +1,5 @@
-use crate::entity::{paginated_list, article, Credentials, author, timestamp, page_number};
-use crate::{session, GMsg, route, request, page, logger};
+use crate::entity::{PaginatedList, Article, Credentials, author, timestamp, PageNumber, Slug, Tag};
+use crate::{Session, GMsg, Route, request, page, logger};
 use seed::prelude::*;
 use std::borrow::Cow;
 
@@ -7,16 +7,16 @@ use std::borrow::Cow;
 
 #[derive(Default)]
 pub struct Model {
-    session: session::Session,
+    session: Session,
     errors: Vec<String>,
-    articles: paginated_list::PaginatedList<article::Article>,
+    articles: PaginatedList<Article>,
 }
 
 // Init
 
 pub fn init(
-    session: session::Session,
-    articles: paginated_list::PaginatedList<article::Article>
+    session: Session,
+    articles: PaginatedList<Article>
 ) -> Model {
     Model {
         session,
@@ -67,7 +67,7 @@ fn view_tab<Ms: Clone>(tab: Tab<Ms>) -> Node<Ms> {
 }
 
 fn view_page_link<Ms: Clone>(
-    page_number: page_number::PageNumber,
+    page_number: PageNumber,
     active: bool,
     msg: Ms
 ) -> Node<Ms> {
@@ -84,14 +84,14 @@ fn view_page_link<Ms: Clone>(
 
 pub fn view_pagination<Ms: Clone>(
     model: &Model,
-    current_page: page_number::PageNumber,
-    msg_constructor: fn(page_number::PageNumber) -> Ms
+    current_page: PageNumber,
+    msg_constructor: fn(PageNumber) -> Ms
 ) -> Node<Ms> {
     if model.articles.total_pages() > 1 {
         ul![
             class!["pagination"],
             (1..=model.articles.total_pages())
-                .map(page_number::PageNumber::new)
+                .map(PageNumber::new)
                 .map(|page_number| view_page_link(
                     page_number,
                     page_number == current_page,
@@ -103,7 +103,7 @@ pub fn view_pagination<Ms: Clone>(
     }
 }
 
-fn view_favorite_button(credentials: Option<&Credentials>, article: &article::Article) -> Node<Msg> {
+fn view_favorite_button(credentials: Option<&Credentials>, article: &Article) -> Node<Msg> {
     match credentials {
         None => empty![],
         Some(_) => {
@@ -130,20 +130,20 @@ fn view_favorite_button(credentials: Option<&Credentials>, article: &article::Ar
     }
 }
 
-fn view_tag(tag: article::tag::Tag) -> Node<Msg> {
+fn view_tag(tag: Tag) -> Node<Msg> {
     li![
         class!["tag-default", "tag-pill", "tag-outline"],
         tag.to_string()
     ]
 }
 
-fn view_article_preview(credentials: Option<&Credentials>, article: &article::Article) -> Node<Msg> {
+fn view_article_preview(credentials: Option<&Credentials>, article: &Article) -> Node<Msg> {
     div![
         class!["article-preview"],
         div![
             class!["article-meta"],
             a![
-                attrs!{At::Href => route::Route::Profile(Cow::Borrowed(article.author.username())).to_string()},
+                attrs!{At::Href => Route::Profile(Cow::Borrowed(article.author.username())).to_string()},
                 img![
                     attrs!{At::Src => article.author.profile().avatar.src()}
                 ]
@@ -157,7 +157,7 @@ fn view_article_preview(credentials: Option<&Credentials>, article: &article::Ar
         ],
         a![
             class!["preview-link"],
-            attrs!{At::Href => route::Route::Article(article.slug.clone()).to_string()},
+            attrs!{At::Href => Route::Article(article.slug.clone()).to_string()},
             h1![
                 article.title
             ],
@@ -199,9 +199,9 @@ pub fn view_articles(model: &Model) -> Vec<Node<Msg>> {
 #[derive(Clone)]
 pub enum Msg {
     DismissErrorsClicked,
-    FavoriteClicked(article::slug::Slug),
-    UnfavoriteClicked(article::slug::Slug),
-    FavoriteCompleted(Result<article::Article, Vec<String>>),
+    FavoriteClicked(Slug),
+    UnfavoriteClicked(Slug),
+    FavoriteCompleted(Result<Article, Vec<String>>),
 }
 
 pub fn update(

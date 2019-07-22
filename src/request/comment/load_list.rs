@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{Credentials, article};
+use crate::entity::{Credentials, Comment, Slug};
 use crate::{request, coder::decoder, logger};
 use futures::prelude::*;
 use seed::fetch;
@@ -12,7 +12,7 @@ struct RootDecoder {
 }
 
 impl RootDecoder {
-    fn into_comments<'a>(self, credentials: Option<Credentials>) -> VecDeque<article::comment::Comment<'a>> {
+    fn into_comments<'a>(self, credentials: Option<Credentials>) -> VecDeque<Comment<'a>> {
         self.comments.into_iter().filter_map(|comment_decoder| {
             match comment_decoder.try_into_comment(credentials.clone()) {
                 Ok(comment) => Some(comment),
@@ -27,8 +27,8 @@ impl RootDecoder {
 
 pub fn load_list<Ms: 'static>(
     credentials: Option<Credentials>,
-    slug: &article::slug::Slug,
-    f: fn(Result<VecDeque<article::comment::Comment<'static>>, Vec<String>>) -> Ms,
+    slug: &Slug,
+    f: fn(Result<VecDeque<Comment<'static>>, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &format!("articles/{}/comments", slug.as_str()),

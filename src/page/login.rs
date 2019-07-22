@@ -1,32 +1,32 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::entity::{viewer, form::login as form};
-use crate::{session, route, GMsg, request};
+use crate::entity::{Viewer, form::login::{Form, Field, Problem}};
+use crate::{Session, route::{self, Route}, GMsg, request};
 
 // Model
 
 #[derive(Default)]
 pub struct Model {
-    session: session::Session,
-    problems: Vec<form::Problem>,
-    form: form::Form,
+    session: Session,
+    problems: Vec<Problem>,
+    form: Form,
 }
 
 impl Model {
-    pub fn session(&self) -> &session::Session {
+    pub fn session(&self) -> &Session {
         &self.session
     }
 }
 
-impl From<Model> for session::Session {
-    fn from(model: Model) -> session::Session {
+impl From<Model> for Session {
+    fn from(model: Model) -> Session {
         model.session
     }
 }
 
 // Init
 
-pub fn init(session: session::Session) -> Model {
+pub fn init(session: Session) -> Model {
     Model {
         session,
         ..Model::default()
@@ -39,7 +39,7 @@ pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>)
     match g_msg {
         GMsg::SessionChanged(session) => {
             model.session = session;
-            route::go_to(route::Route::Home, orders);
+            route::go_to(Route::Home, orders);
         }
         _ => ()
     }
@@ -49,8 +49,8 @@ pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>)
 
 pub enum Msg {
     FormSubmitted,
-    FieldChanged(form::Field),
-    LoginCompleted(Result<viewer::Viewer, Vec<form::Problem>>),
+    FieldChanged(Field),
+    LoginCompleted(Result<Viewer, Vec<Problem>>),
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
@@ -87,9 +87,9 @@ pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
     ViewPage::new("Login", view_content(model))
 }
 
-fn view_fieldset(field: &form::Field) -> Node<Msg> {
+fn view_fieldset(field: &Field) -> Node<Msg> {
     match field {
-        form::Field::Email(value) => {
+        Field::Email(value) => {
             fieldset![
                 class!["form-group"],
                 input![
@@ -100,12 +100,12 @@ fn view_fieldset(field: &form::Field) -> Node<Msg> {
                         At::Value => value
                     },
                     input_ev(Ev::Input, |new_value| Msg::FieldChanged(
-                        form::Field::Email(new_value)
+                        Field::Email(new_value)
                     )),
                 ]
             ]
         }
-        form::Field::Password(value) => {
+        Field::Password(value) => {
             fieldset![
                 class!["form-group"],
                 input![
@@ -116,7 +116,7 @@ fn view_fieldset(field: &form::Field) -> Node<Msg> {
                         At::Value => value
                     },
                     input_ev(Ev::Input, |new_value| Msg::FieldChanged(
-                        form::Field::Password(new_value)
+                        Field::Password(new_value)
                     )),
                 ]
             ]
@@ -124,7 +124,7 @@ fn view_fieldset(field: &form::Field) -> Node<Msg> {
     }
 }
 
-fn view_form(form: &form::Form) -> Node<Msg> {
+fn view_form(form: &Form) -> Node<Msg> {
     form![
         raw_ev(Ev::Submit, |event| {
             event.prevent_default();
@@ -155,7 +155,7 @@ fn view_content<'a>(model: &Model) -> Node<Msg> {
                     p![
                         class!["text-xs-center"],
                         a![
-                            attrs!{At::Href => route::Route::Register.to_string()},
+                            attrs!{At::Href => Route::Register.to_string()},
                             "Need an account?"
                         ]
                     ],

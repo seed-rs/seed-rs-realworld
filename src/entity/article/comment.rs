@@ -1,12 +1,12 @@
-use crate::entity::{timestamp, author};
+use crate::entity::{Timestamp, Author};
 
 #[derive(Clone)]
 pub struct Comment<'a> {
     pub id: CommentId,
     pub body: String,
-    pub created_at: timestamp::Timestamp,
-    pub updated_at: timestamp::Timestamp,
-    pub author: author::Author<'a>
+    pub created_at: Timestamp,
+    pub updated_at: Timestamp,
+    pub author: Author<'a>
 }
 
 #[derive(Clone, PartialEq, Eq)]

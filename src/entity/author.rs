@@ -1,5 +1,5 @@
-use crate::entity::{username, profile, Credentials};
-use crate::route;
+use crate::entity::{Username, Profile, Credentials};
+use crate::Route;
 use seed::prelude::*;
 use std::borrow::Cow;
 
@@ -7,11 +7,11 @@ use std::borrow::Cow;
 pub enum Author<'a> {
     Following(FollowedAuthor<'a>),
     NotFollowing(UnfollowedAuthor<'a>),
-    IsViewer(Credentials, profile::Profile),
+    IsViewer(Credentials, Profile),
 }
 
 impl<'a> Author<'a> {
-    pub fn username(&'a self) -> &'a username::Username<'a> {
+    pub fn username(&'a self) -> &'a Username<'a> {
         match self {
             Author::Following(FollowedAuthor { username, .. }) => username,
             Author::NotFollowing(UnfollowedAuthor { username, ..}) => username,
@@ -19,7 +19,7 @@ impl<'a> Author<'a> {
         }
     }
 
-    pub fn profile(&self) -> &profile::Profile {
+    pub fn profile(&self) -> &Profile {
         match self {
             Author::Following(FollowedAuthor{ profile, ..}) => profile,
             Author::NotFollowing(UnfollowedAuthor{ profile, ..}) => profile,
@@ -30,25 +30,25 @@ impl<'a> Author<'a> {
 
 #[derive(Clone)]
 pub struct FollowedAuthor<'a> {
-    pub username: username::Username<'a>,
-    pub profile: profile::Profile
+    pub username: Username<'a>,
+    pub profile: Profile
 }
 
 #[derive(Clone)]
 pub struct UnfollowedAuthor<'a> {
-    pub username: username::Username<'a>,
-    pub profile: profile::Profile
+    pub username: Username<'a>,
+    pub profile: Profile
 }
 
-pub fn view<Ms>(username: &username::Username) -> Node<Ms> {
+pub fn view<Ms>(username: &Username) -> Node<Ms> {
     a![
         class!["author"],
-        attrs!{At::Href => route::Route::Profile(Cow::Borrowed(username)).to_string()},
+        attrs!{At::Href => Route::Profile(Cow::Borrowed(username)).to_string()},
         username.to_string()
     ]
 }
 
-pub fn view_follow_button<Ms: Clone>(msg: Ms, username: &username::Username) -> Node<Ms> {
+pub fn view_follow_button<Ms: Clone>(msg: Ms, username: &Username) -> Node<Ms> {
     button![
         class!["btn", "btn-sm", "btn-outline-secondary", "action-btn"],
         i![
@@ -59,7 +59,7 @@ pub fn view_follow_button<Ms: Clone>(msg: Ms, username: &username::Username) -> 
     ]
 }
 
-pub fn view_unfollow_button<Ms: Clone>(msg: Ms, username: &username::Username) -> Node<Ms> {
+pub fn view_unfollow_button<Ms: Clone>(msg: Ms, username: &Username) -> Node<Ms> {
     button![
         class!["btn", "btn-sm", "btn-secondary", "action-btn"],
         i![

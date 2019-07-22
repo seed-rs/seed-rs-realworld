@@ -1,10 +1,10 @@
-use crate::entity::viewer;
+use crate::entity::Viewer;
 use seed::storage;
 use serde_json;
 
 const STORAGE_KEY: &'static str = "conduit";
 
-pub fn load_viewer() -> Option<viewer::Viewer> {
+pub fn load_viewer() -> Option<Viewer> {
     local_storage()
         .get_item(STORAGE_KEY)
         .expect("try to get local storage item failed")
@@ -13,7 +13,7 @@ pub fn load_viewer() -> Option<viewer::Viewer> {
         })
 }
 
-pub fn store_viewer(viewer: &viewer::Viewer) {
+pub fn store_viewer(viewer: &Viewer) {
     storage::store_data(&local_storage(), STORAGE_KEY, viewer);
 }
 

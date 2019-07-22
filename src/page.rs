@@ -1,6 +1,6 @@
 use seed::prelude::*;
-use crate::entity::{viewer, username};
-use crate::route;
+use crate::entity::{Viewer, Username};
+use crate::Route;
 use std::borrow::{Borrow, Cow};
 
 pub mod article;
@@ -33,7 +33,7 @@ impl<'a, Ms> ViewPage<'a, Ms> {
     }
 }
 
-pub fn view<'a, Ms>(page: Page<'a>, view_page: ViewPage<'a, Ms>, viewer: Option<&viewer::Viewer>) -> Vec<Node<Ms>> {
+pub fn view<'a, Ms>(page: Page<'a>, view_page: ViewPage<'a, Ms>, viewer: Option<&Viewer>) -> Vec<Node<Ms>> {
     seed::document().set_title(&view_page.title());
 
     vec![
@@ -49,26 +49,26 @@ pub enum Page<'a> {
     Login,
     Register,
     Settings,
-    Profile(&'a username::Username<'a>),
+    Profile(&'a Username<'a>),
     NewArticle
 }
 
 impl<'a> Page<'a> {
-    fn is_active(&self, route: &route::Route) -> bool {
+    fn is_active(&self, route: &Route) -> bool {
         match (self, route) {
-            (Page::Home, route::Route::Home) => true,
-            (Page::Login, route::Route::Login) => true,
-            (Page::Register, route::Route::Register) => true,
-            (Page::Settings, route::Route::Settings) => true,
-            (Page::Profile(username), route::Route::Profile(route_username)) => {
+            (Page::Home, Route::Home) => true,
+            (Page::Login, Route::Login) => true,
+            (Page::Register, Route::Register) => true,
+            (Page::Settings, Route::Settings) => true,
+            (Page::Profile(username), Route::Profile(route_username)) => {
                 *username == route_username.borrow()
             },
-            (Page::NewArticle, route::Route::NewArticle) => true,
+            (Page::NewArticle, Route::NewArticle) => true,
             _ => false,
         }
     }
 
-    fn view_navbar_link<Ms>(&self, route: &route::Route, link_content: impl UpdateEl<El<Ms>>) -> Node<Ms> {
+    fn view_navbar_link<Ms>(&self, route: &Route, link_content: impl UpdateEl<El<Ms>>) -> Node<Ms> {
         li![
             class!["nav-item"],
             a![
@@ -82,18 +82,18 @@ impl<'a> Page<'a> {
         ]
     }
 
-    fn view_menu<Ms>(&self, viewer: Option<&viewer::Viewer>) -> Vec<Node<Ms>> {
+    fn view_menu<Ms>(&self, viewer: Option<&Viewer>) -> Vec<Node<Ms>> {
         match viewer {
             None => {
                 vec![
-                    self.view_navbar_link(&route::Route::Login, "Sign in"),
-                    self.view_navbar_link(&route::Route::Register, "Sign up"),
+                    self.view_navbar_link(&Route::Login, "Sign in"),
+                    self.view_navbar_link(&Route::Register, "Sign up"),
                 ]
             },
             Some(viewer) => {
                 vec![
                     self.view_navbar_link(
-                        &route::Route::NewArticle,
+                        &Route::NewArticle,
                         vec![
                             i![
                                 class!["ion-compose"]
@@ -102,7 +102,7 @@ impl<'a> Page<'a> {
                         ]
                     ),
                     self.view_navbar_link(
-                        &route::Route::Settings,
+                        &Route::Settings,
                         vec![
                             i![
                                 class!["ion-gear-a"]
@@ -111,7 +111,7 @@ impl<'a> Page<'a> {
                         ]
                     ),
                     self.view_navbar_link(
-                        &route::Route::Profile(Cow::Borrowed(viewer.username())),
+                        &Route::Profile(Cow::Borrowed(viewer.username())),
                         vec![
                             img![
                                 class!["user-pic"],
@@ -120,25 +120,25 @@ impl<'a> Page<'a> {
                             plain!(viewer.username().to_string())
                         ]
                     ),
-                    self.view_navbar_link(&route::Route::Logout, "Sign out"),
+                    self.view_navbar_link(&Route::Logout, "Sign out"),
                 ]
             }
         }
     }
 
-    fn view_header<Ms>(&self, viewer: Option<&viewer::Viewer>) -> Node<Ms> {
+    fn view_header<Ms>(&self, viewer: Option<&Viewer>) -> Node<Ms> {
         nav![
             class!["navbar", "navbar-light"],
             div![
                 class!["container"],
                 a![
                     class!["navbar-brand"],
-                    attrs!{At::Href => route::Route::Home.to_string()},
+                    attrs!{At::Href => Route::Home.to_string()},
                     "conduit"
                 ],
                 ul![
                     class!["nav navbar-nav pull-xs-right"],
-                    self.view_navbar_link(&route::Route::Home, "Home"),
+                    self.view_navbar_link(&Route::Home, "Home"),
                     self.view_menu(viewer),
                 ],
             ]
@@ -151,7 +151,7 @@ impl<'a> Page<'a> {
                 class!["container"],
                 a![
                     class!["logo-font"],
-                    attrs!{At::Href => route::Route::Home.to_string()},
+                    attrs!{At::Href => Route::Home.to_string()},
                     "conduit"
                 ],
                 span![

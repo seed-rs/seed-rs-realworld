@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{form::article_editor as form, Credentials, article};
+use crate::entity::{form::article_editor::{ValidForm, Problem}, Credentials, Article};
 use crate::{request, coder::decoder};
 use futures::prelude::*;
 use seed::fetch;
@@ -12,8 +12,8 @@ struct RootDecoder {
 
 pub fn create<Ms: 'static>(
     credentials: Option<Credentials>,
-    valid_form: &form::ValidForm,
-    f: fn(Result<article::Article, Vec<form::Problem>>) -> Ms
+    valid_form: &ValidForm,
+    f: fn(Result<Article, Vec<Problem>>) -> Ms
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         "articles",
@@ -26,7 +26,7 @@ pub fn create<Ms: 'static>(
                 .map_err(request::fail_reason_into_problems)
                 .and_then(move |root_decoder| {
                     root_decoder.article.try_into_article(credentials)
-                        .map_err(|error| vec![form::Problem::new_server_error(error)])
+                        .map_err(|error| vec![Problem::new_server_error(error)])
                 })
             )
         })

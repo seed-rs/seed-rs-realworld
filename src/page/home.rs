@@ -1,7 +1,7 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::entity::{Credentials, article, paginated_list, page_number};
-use crate::{session, GMsg, loading, request, logger, page};
+use crate::entity::{Credentials, article::{self, Article}, PaginatedList, PageNumber, Tag};
+use crate::{Session, GMsg, loading, request, logger, page};
 use futures::prelude::*;
 
 // Model
@@ -10,7 +10,7 @@ use futures::prelude::*;
 pub enum FeedTab {
     YourFeed(Credentials),
     GlobalFeed,
-    TagFeed(article::tag::Tag)
+    TagFeed(Tag)
 }
 
 impl Default for FeedTab {
@@ -34,26 +34,26 @@ impl<T> Default for Status<T> {
 
 #[derive(Default)]
 pub struct Model {
-    session: session::Session,
+    session: Session,
     feed_tab: FeedTab,
-    feed_page: page_number::PageNumber,
-    tags: Status<Vec<article::tag::Tag>>,
+    feed_page: PageNumber,
+    tags: Status<Vec<Tag>>,
     feed: Status<article::feed::Model>,
 }
 
 impl Model {
-    pub fn session(&self) -> &session::Session {
+    pub fn session(&self) -> &Session {
         &self.session
     }
 }
 
-impl From<Model> for session::Session {
-    fn from(model: Model) -> session::Session{
+impl From<Model> for Session {
+    fn from(model: Model) -> Session{
         model.session
     }
 }
 
-pub fn init(session: session::Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
+pub fn init(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     let credentials = session.viewer().map(|viewer|&viewer.credentials);
     let feed_tab = credentials
         .map(|credentials| FeedTab::YourFeed(credentials.clone()))
@@ -65,7 +65,7 @@ pub fn init(session: session::Session, orders: &mut impl Orders<Msg, GMsg>) -> M
         .perform_cmd(fetch_feed(
             session.credentials().cloned(),
             &feed_tab,
-            page_number::PageNumber::default(),
+            PageNumber::default(),
         ));
 
     Model {
@@ -78,7 +78,7 @@ pub fn init(session: session::Session, orders: &mut impl Orders<Msg, GMsg>) -> M
 fn fetch_feed(
     credentials: Option<Credentials>,
     feed_tab: &FeedTab,
-    page_number: page_number::PageNumber,
+    page_number: PageNumber,
 ) -> impl Future<Item=Msg, Error=Msg> {
     request::feed::load_for_home(
         credentials,
@@ -103,11 +103,11 @@ pub fn sink(g_msg: GMsg, model: &mut Model) {
 
 #[derive(Clone)]
 pub enum Msg {
-    TagClicked(article::tag::Tag),
+    TagClicked(Tag),
     TabClicked(FeedTab),
-    FeedPageClicked(page_number::PageNumber),
-    FeedLoadCompleted(Result<paginated_list::PaginatedList<article::Article>, Vec<String>>),
-    TagsLoadCompleted(Result<Vec<article::tag::Tag>, Vec<String>>),
+    FeedPageClicked(PageNumber),
+    FeedLoadCompleted(Result<PaginatedList<Article>, Vec<String>>),
+    TagsLoadCompleted(Result<Vec<Tag>, Vec<String>>),
     FeedMsg(article::feed::Msg),
     SlowLoadThresholdPassed,
     Unreachable,
@@ -117,7 +117,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
     match msg {
         Msg::TagClicked(tag) => {
             model.feed_tab = FeedTab::TagFeed(tag);
-            model.feed_page = page_number::PageNumber::default();
+            model.feed_page = PageNumber::default();
             orders.perform_cmd(fetch_feed(
                 model.session.credentials().cloned(),
                 &model.feed_tab,
@@ -126,7 +126,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         },
         Msg::TabClicked(feed_tab) => {
             model.feed_tab = feed_tab;
-            model.feed_page = page_number::PageNumber::default();
+            model.feed_page = PageNumber::default();
             orders.perform_cmd(fetch_feed(
                 model.session.credentials().cloned(),
                 &model.feed_tab,
@@ -209,7 +209,7 @@ fn view_tabs(model: &Model) -> Node<Msg> {
         article::feed::Tab::new("Your Feed", Msg::TabClicked(FeedTab::YourFeed(credentials)))
     };
     let global_feed = article::feed::Tab::new("Global Feed", Msg::TabClicked(FeedTab::GlobalFeed));
-    let tag_feed = |tag: article::tag::Tag| { article::feed::Tab::new(
+    let tag_feed = |tag: Tag| { article::feed::Tab::new(
         format!("#{}", tag), Msg::TabClicked(FeedTab::TagFeed(tag))
     )};
 
@@ -255,7 +255,7 @@ fn view_tabs(model: &Model) -> Node<Msg> {
     }
 }
 
-fn view_tag(tag: article::tag::Tag) -> Node<Msg> {
+fn view_tag(tag: Tag) -> Node<Msg> {
     a![
         class!["tag-pill", "tag-default"],
         attrs!{At::Href => ""},

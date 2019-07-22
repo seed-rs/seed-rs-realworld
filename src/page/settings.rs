@@ -1,21 +1,21 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::entity::{viewer, form::settings as form};
-use crate::{session, route, GMsg, request, loading, logger};
+use crate::entity::{Viewer, form::settings::{Field, Form, Problem}};
+use crate::{Session, route::{self, Route}, GMsg, request, loading, logger};
 
 // Model
 
 #[derive(Default)]
 pub struct Model {
-    session: session::Session,
-    problems: Vec<form::Problem>,
+    session: Session,
+    problems: Vec<Problem>,
     status: Status,
 }
 
 enum Status {
     Loading,
     LoadingSlowly,
-    Loaded(form::Form),
+    Loaded(Form),
     Failed
 }
 
@@ -26,20 +26,20 @@ impl Default for Status {
 }
 
 impl Model {
-    pub fn session(&self) -> &session::Session {
+    pub fn session(&self) -> &Session {
         &self.session
     }
 }
 
-impl From<Model> for session::Session {
-    fn from(model: Model) -> session::Session {
+impl From<Model> for Session {
+    fn from(model: Model) -> Session {
         model.session
     }
 }
 
 // Init
 
-pub fn init<'a>(session: session::Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
+pub fn init<'a>(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
         .perform_cmd(request::settings::load(
@@ -57,7 +57,7 @@ pub fn sink<'a>(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GM
     match g_msg {
         GMsg::SessionChanged(session) => {
             model.session = session;
-            route::go_to(route::Route::Home, orders);
+            route::go_to(Route::Home, orders);
         }
         _ => ()
     }
@@ -67,9 +67,9 @@ pub fn sink<'a>(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GM
 
 pub enum Msg {
     FormSubmitted,
-    FieldChanged(form::Field),
-    FormLoadCompleted(Result<form::Form, Vec<form::Problem>>),
-    SaveCompleted(Result<viewer::Viewer, Vec<form::Problem>>),
+    FieldChanged(Field),
+    FormLoadCompleted(Result<Form, Vec<Problem>>),
+    SaveCompleted(Result<Viewer, Vec<Problem>>),
     SlowLoadThresholdPassed,
     Unreachable,
 }
@@ -130,9 +130,9 @@ pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
     ViewPage::new("Settings", view_content(model))
 }
 
-fn view_fieldset(field: &form::Field) -> Node<Msg> {
+fn view_fieldset(field: &Field) -> Node<Msg> {
     match field {
-        form::Field::Avatar(value) => {
+        Field::Avatar(value) => {
             fieldset![
                 class!["form-group"],
                 input![
@@ -143,12 +143,12 @@ fn view_fieldset(field: &form::Field) -> Node<Msg> {
                         At::Value => value
                     },
                     input_ev(Ev::Input, |new_value| Msg::FieldChanged(
-                        form::Field::Avatar(new_value)
+                        Field::Avatar(new_value)
                     )),
                 ]
             ]
         }
-        form::Field::Username(value) => {
+        Field::Username(value) => {
             fieldset![
                 class!["form-group"],
                 input![
@@ -159,12 +159,12 @@ fn view_fieldset(field: &form::Field) -> Node<Msg> {
                         At::Value => value
                     },
                     input_ev(Ev::Input, |new_value| Msg::FieldChanged(
-                        form::Field::Username(new_value)
+                        Field::Username(new_value)
                     )),
                 ]
             ]
         }
-        form::Field::Bio(value) => {
+        Field::Bio(value) => {
             fieldset![
                 class!["form-group"],
                 textarea![
@@ -175,12 +175,12 @@ fn view_fieldset(field: &form::Field) -> Node<Msg> {
                     },
                     value,
                     input_ev(Ev::Input, |new_value| Msg::FieldChanged(
-                        form::Field::Bio(new_value)
+                        Field::Bio(new_value)
                     )),
                 ]
             ]
         }
-        form::Field::Email(value) => {
+        Field::Email(value) => {
             fieldset![
                 class!["form-group"],
                 input![
@@ -191,12 +191,12 @@ fn view_fieldset(field: &form::Field) -> Node<Msg> {
                         At::Value => value
                     },
                     input_ev(Ev::Input, |new_value| Msg::FieldChanged(
-                        form::Field::Email(new_value)
+                        Field::Email(new_value)
                     )),
                 ]
             ]
         }
-        form::Field::Password(value) => {
+        Field::Password(value) => {
             fieldset![
                 class!["form-group"],
                 input![
@@ -207,7 +207,7 @@ fn view_fieldset(field: &form::Field) -> Node<Msg> {
                         At::Value => value
                     },
                     input_ev(Ev::Input, |new_value| Msg::FieldChanged(
-                        form::Field::Password(new_value)
+                        Field::Password(new_value)
                     )),
                 ]
             ]

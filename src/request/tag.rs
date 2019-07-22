@@ -1,9 +1,8 @@
 use serde::Deserialize;
-use crate::entity::article;
+use crate::entity::article::tag::{Tag, IntoTags};
 use crate::request;
 use futures::prelude::*;
 use seed::fetch;
-use article::tag::IntoTags;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -12,7 +11,7 @@ struct RootDecoder {
 }
 
 pub fn load_list<Ms: 'static>(
-    f: fn(Result<Vec<article::tag::Tag>, Vec<String>>) -> Ms,
+    f: fn(Result<Vec<Tag>, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request("tags",None)
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {

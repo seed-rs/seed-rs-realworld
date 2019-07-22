@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{username, Credentials, article, paginated_list, page_number};
+use crate::entity::{Username, Credentials, Article, PaginatedList, PageNumber};
 use crate::{page, logger, request, coder::decoder};
 use futures::prelude::*;
 use seed::fetch;
@@ -18,8 +18,8 @@ struct RootDecoder {
 }
 
 impl RootDecoder {
-    fn into_paginated_list(self, credentials: Option<Credentials>,) -> paginated_list::PaginatedList<article::Article> {
-        paginated_list::PaginatedList {
+    fn into_paginated_list(self, credentials: Option<Credentials>,) -> PaginatedList<Article> {
+        PaginatedList {
             values: self.articles.into_iter().filter_map(|article_dto| {
                 match article_dto.try_into_article(credentials.clone()) {
                     Ok(article) => Some(article),
@@ -36,9 +36,9 @@ impl RootDecoder {
 }
 
 pub fn request_url(
-    username: &username::Username<'static>,
+    username: &Username<'static>,
     feed_tab: &page::profile::FeedTab,
-    page_number: page_number::PageNumber,
+    page_number: PageNumber,
 ) -> String {
     format!(
         "articles?{}={}&limit={}&offset={}",
@@ -54,10 +54,10 @@ pub fn request_url(
 
 pub fn load_for_profile<Ms: 'static>(
     credentials: Option<Credentials>,
-    username: username::Username<'static>,
+    username: Username<'static>,
     feed_tab: &page::profile::FeedTab,
-    page_number: page_number::PageNumber,
-    f: fn(Result<paginated_list::PaginatedList<article::Article>, (username::Username<'static>, Vec<String>)>) -> Ms,
+    page_number: PageNumber,
+    f: fn(Result<PaginatedList<Article>, (Username<'static>, Vec<String>)>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &request_url(&username, &feed_tab, page_number),

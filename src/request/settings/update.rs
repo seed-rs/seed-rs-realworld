@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{viewer, form::settings as form, Credentials};
+use crate::entity::{Viewer, form::settings::{ValidForm, Problem}, Credentials};
 use crate::{request, coder::decoder};
 use futures::prelude::*;
 use seed::fetch;
@@ -12,8 +12,8 @@ struct RootDecoder {
 
 pub fn update<Ms: 'static>(
     credentials: Option<&Credentials>,
-    valid_form: &form::ValidForm,
-    f: fn(Result<viewer::Viewer, Vec<form::Problem>>) -> Ms
+    valid_form: &ValidForm,
+    f: fn(Result<Viewer, Vec<Problem>>) -> Ms
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         "user",

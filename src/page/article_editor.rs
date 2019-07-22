@@ -72,7 +72,7 @@ pub fn init_edit(
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
         .perform_cmd(request::article::load_for_editor(
-            session.credentials().cloned(),
+            session.viewer().cloned(),
             slug.clone(),
             Msg::ArticleLoadCompleted));
     Model {
@@ -126,7 +126,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                         Ok(valid_form) => {
                             orders.perform_cmd(
                                 request::article::update(
-                                    model.session.credentials().cloned(),
+                                    model.session.viewer().cloned(),
                                     &valid_form,
                                     &slug,
                                     Msg::EditCompleted
@@ -144,7 +144,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                         Ok(valid_form) => {
                             orders.perform_cmd(
                                 request::article::create(
-                                    model.session.credentials().cloned(),
+                                    model.session.viewer().cloned(),
                                     &valid_form,
                                     Msg::CreateCompleted
                                 )

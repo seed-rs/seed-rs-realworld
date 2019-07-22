@@ -1,4 +1,4 @@
-use crate::entity::{Username, Credentials, Avatar};
+use crate::entity::{Username, Viewer, Avatar};
 use crate::Route;
 use seed::prelude::*;
 use std::borrow::Cow;
@@ -7,7 +7,7 @@ use std::borrow::Cow;
 pub enum Author<'a> {
     Following(FollowedAuthor<'a>),
     NotFollowing(UnfollowedAuthor<'a>),
-    IsViewer(Credentials, Profile),
+    IsViewer(Viewer, Profile),
 }
 
 impl<'a> Author<'a> {
@@ -15,7 +15,7 @@ impl<'a> Author<'a> {
         match self {
             Author::Following(FollowedAuthor { username, .. }) => username,
             Author::NotFollowing(UnfollowedAuthor { username, ..}) => username,
-            Author::IsViewer(credentials,_) => credentials.username(),
+            Author::IsViewer(viewer,_) => viewer.username(),
         }
     }
 

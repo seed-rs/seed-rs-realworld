@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{Credentials, Article, PaginatedList, PageNumber};
+use crate::entity::{Viewer, Article, PaginatedList, PageNumber};
 use crate::{page, logger, request, coder::decoder};
 use futures::prelude::*;
 use seed::fetch;
@@ -18,10 +18,10 @@ struct RootDecoder {
 }
 
 impl RootDecoder {
-    fn into_paginated_list(self, credentials: Option<Credentials>,) -> PaginatedList<Article> {
+    fn into_paginated_list(self, viewer: Option<Viewer>,) -> PaginatedList<Article> {
         PaginatedList {
             items: self.articles.into_iter().filter_map(|article_decoder| {
-                match article_decoder.try_into_article(credentials.clone()) {
+                match article_decoder.try_into_article(viewer.clone()) {
                     Ok(article) => Some(article),
                     Err(error) => {
                         logger::error(error);
@@ -58,18 +58,18 @@ pub fn request_url(
 }
 
 pub fn load_for_home<Ms: 'static>(
-    credentials: Option<Credentials>,
+    viewer: Option<Viewer>,
     feed_tab: &page::home::FeedTab,
     page_number: PageNumber,
     f: fn(Result<PaginatedList<Article>, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &request_url(feed_tab, page_number),
-        credentials.as_ref()
+        viewer.as_ref()
     )
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {
             f(data_result
-                .map(move |root_decoder| root_decoder.into_paginated_list(credentials))
+                .map(move |root_decoder| root_decoder.into_paginated_list(viewer))
                 .map_err(request::fail_reason_into_errors)
             )
         })

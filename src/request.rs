@@ -3,7 +3,7 @@ use serde_json;
 use indexmap::IndexMap;
 use serde::Deserialize;
 use std::fmt::Debug;
-use crate::entity::{Credentials, form::Problem};
+use crate::entity::{Viewer, form::Problem};
 use crate::logger;
 
 pub mod article;
@@ -25,12 +25,12 @@ pub struct ServerErrorData {
     errors: IndexMap<String, Vec<String>>
 }
 
-pub fn new_api_request(path: &str, credentials: Option<&Credentials>) -> fetch::Request {
+pub fn new_api_request(path: &str, viewer: Option<&Viewer>) -> fetch::Request {
     let mut request = fetch::Request::new(format!("{}/{}", BASE_API_URL, path))
         .timeout(TIMEOUT);
 
-    if let Some(credentials) = credentials {
-        let auth_token = credentials.auth_token.as_str();
+    if let Some(viewer) = viewer {
+        let auth_token = viewer.auth_token.as_str();
         request = request.header("authorization", &format!("Token {}", auth_token));
     }
     request

@@ -56,11 +56,11 @@ pub fn init<'a>(session: Session, slug: &Slug, orders: &mut impl Orders<Msg, GMs
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
         .perform_cmd(request::article::load(
-            session.credentials().cloned(),
+            session.viewer().cloned(),
             slug,
             Msg::LoadArticleCompleted))
         .perform_cmd(request::comment::load_list(
-            session.credentials().cloned(),
+            session.viewer().cloned(),
             slug,
             Msg::LoadCommentsCompleted));
 
@@ -111,7 +111,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::DeleteArticleClicked(slug) => {
             orders
                 .perform_cmd(request::article::delete(
-                    model.session.credentials(),
+                    model.session.viewer(),
                     &slug,
                     Msg::DeleteArticleCompleted
                 ))
@@ -120,7 +120,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::DeleteCommentClicked(slug, comment_id) => {
             orders
                 .perform_cmd(request::comment::delete(
-                    model.session.credentials(),
+                    model.session.viewer(),
                     &slug,
                     comment_id,
                     Msg::DeleteCommentCompleted
@@ -133,7 +133,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::FavoriteClicked(slug) => {
             orders
                 .perform_cmd(request::favorite::unfavorite(
-                    model.session.credentials().cloned(),
+                    model.session.viewer().cloned(),
                     &slug,
                     Msg::FavoriteChangeCompleted
                 ))
@@ -142,7 +142,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::UnfavoriteClicked(slug) => {
             orders
                 .perform_cmd(request::favorite::favorite(
-                    model.session.credentials().cloned(),
+                    model.session.viewer().cloned(),
                     &slug,
                     Msg::FavoriteChangeCompleted
                 ))
@@ -151,7 +151,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::FollowClicked(unfollowed_author) => {
             orders
                 .perform_cmd(request::follow::follow(
-                    model.session.credentials().cloned(),
+                    model.session.viewer().cloned(),
                     &unfollowed_author.username,
                     Msg::FollowChangeCompleted
                 ))
@@ -160,7 +160,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::UnfollowClicked(followed_author) => {
             orders
                 .perform_cmd(request::follow::unfollow(
-                    model.session.credentials().cloned(),
+                    model.session.viewer().cloned(),
                     &followed_author.username,
                     Msg::FollowChangeCompleted
                 ))
@@ -175,7 +175,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 Status::Loaded((CommentText::Editing(text), comments)) => {
                     orders
                         .perform_cmd(request::comment::create(
-                            model.session.credentials().cloned(),
+                            model.session.viewer().cloned(),
                             &slug,
                             text.clone(),
                             Msg::PostCommentCompleted
@@ -335,7 +335,7 @@ fn view_edit_button(slug: Slug) -> Node<Msg> {
 }
 
 fn view_buttons(article: &Article, model: &Model) -> Vec<Node<Msg>> {
-    match model.session.credentials() {
+    match model.session.viewer() {
         None => vec![],
         Some(_) => {
             match &article.author {

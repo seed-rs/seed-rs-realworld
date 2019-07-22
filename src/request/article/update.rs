@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{form::article_editor::{ValidForm, Problem}, Credentials, Article, Slug};
+use crate::entity::{form::article_editor::{ValidForm, Problem}, Viewer, Article, Slug};
 use crate::{request, coder::decoder};
 use futures::prelude::*;
 use seed::fetch;
@@ -11,14 +11,14 @@ struct RootDecoder {
 }
 
 pub fn update<Ms: 'static>(
-    credentials: Option<Credentials>,
+    viewer: Option<Viewer>,
     valid_form: &ValidForm,
     slug: &Slug,
     f: fn(Result<Article, Vec<Problem>>) -> Ms
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &format!("articles/{}", slug.as_str()),
-        credentials.as_ref()
+        viewer.as_ref()
     )
         .method(fetch::Method::Put)
         .send_json(&valid_form.to_encoder())
@@ -26,7 +26,7 @@ pub fn update<Ms: 'static>(
             f(data_result
                 .map_err(request::fail_reason_into_problems)
                 .and_then(move |root_decoder| {
-                    root_decoder.article.try_into_article(credentials)
+                    root_decoder.article.try_into_article(viewer)
                         .map_err(|error| vec![Problem::new_server_error(error)])
                 })
             )

@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{self, Credentials};
+use crate::entity::{self, Viewer};
 use crate::coder::decoder;
 use crate::entity::article::tag::IntoTags;
 use std::convert::TryInto;
@@ -20,7 +20,7 @@ pub struct Article {
 }
 
 impl Article {
-    pub fn try_into_article(self, credentials: Option<Credentials>,) -> Result<entity::Article, String> {
+    pub fn try_into_article(self, viewer: Option<Viewer>,) -> Result<entity::Article, String> {
         let created_at = self.created_at.try_into()?;
         let updated_at = self.updated_at.try_into()?;
 
@@ -32,7 +32,7 @@ impl Article {
             updated_at,
             tag_list: self.tag_list.into_tags(),
             description: self.description,
-            author: self.author.into_author(credentials),
+            author: self.author.into_author(viewer),
             favorited: self.favorited,
             favorites_count: self.favorites_count,
         })

@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{self, Avatar, Credentials};
+use crate::entity::{self, Avatar};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -13,10 +13,8 @@ impl Viewer {
     pub fn into_viewer(self) -> entity::Viewer {
         entity::Viewer {
             avatar: Avatar::new(self.image),
-            credentials: Credentials {
-                username: self.username.into(),
-                auth_token: self.token
-            }
+            username: self.username.into(),
+            auth_token: self.token
         }
     }
 }

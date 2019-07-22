@@ -1,16 +1,17 @@
-use crate::entity::{Avatar, Credentials, Username};
+use crate::entity::{Avatar, Username};
 use crate::storage;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Viewer {
     pub avatar: Avatar,
-    pub credentials: Credentials
+    pub username: Username<'static>,
+    pub auth_token: String
 }
 
 impl Viewer {
     pub fn username(&self) -> &Username {
-        self.credentials.username()
+        &self.username
     }
 
     pub fn avatar(&self) -> &Avatar {

@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{form::settings::{Form, Problem}, Credentials};
+use crate::entity::{form::settings::{Form, Problem}, Viewer};
 use crate::{request, coder::decoder};
 use futures::prelude::*;
 use seed::fetch;
@@ -11,12 +11,12 @@ struct RootDecoder {
 }
 
 pub fn load<Ms: 'static>(
-    credentials: Option<&Credentials>,
+    viewer: Option<&Viewer>,
     f: fn(Result<Form, Vec<Problem>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         "user",
-        credentials
+        viewer
     )
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {
             f(data_result

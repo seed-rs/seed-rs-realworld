@@ -1,4 +1,4 @@
-use crate::entity::{Credentials, Slug};
+use crate::entity::{Viewer, Slug};
 use crate::request;
 use indexmap::IndexMap;
 use futures::prelude::*;
@@ -7,13 +7,13 @@ use seed::fetch;
 type RootDecoder = IndexMap<(), ()>;
 
 pub fn delete<Ms: 'static>(
-    credentials: Option<&Credentials>,
+    viewer: Option<&Viewer>,
     slug: &Slug,
     f: fn(Result<(), Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &format!("articles/{}", slug.as_str()),
-        credentials
+        viewer
     )
         .method(fetch::Method::Delete)
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {

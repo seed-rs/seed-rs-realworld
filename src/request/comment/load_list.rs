@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{Credentials, Comment, Slug};
+use crate::entity::{Viewer, Comment, Slug};
 use crate::{request, coder::decoder, logger};
 use futures::prelude::*;
 use seed::fetch;
@@ -12,9 +12,9 @@ struct RootDecoder {
 }
 
 impl RootDecoder {
-    fn into_comments<'a>(self, credentials: Option<Credentials>) -> VecDeque<Comment<'a>> {
+    fn into_comments<'a>(self, viewer: Option<Viewer>) -> VecDeque<Comment<'a>> {
         self.comments.into_iter().filter_map(|comment_decoder| {
-            match comment_decoder.try_into_comment(credentials.clone()) {
+            match comment_decoder.try_into_comment(viewer.clone()) {
                 Ok(comment) => Some(comment),
                 Err(error) => {
                     logger::error(error);
@@ -26,17 +26,17 @@ impl RootDecoder {
 }
 
 pub fn load_list<Ms: 'static>(
-    credentials: Option<Credentials>,
+    viewer: Option<Viewer>,
     slug: &Slug,
     f: fn(Result<VecDeque<Comment<'static>>, Vec<String>>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &format!("articles/{}/comments", slug.as_str()),
-        credentials.as_ref()
+        viewer.as_ref()
     )
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {
             f(data_result
-                .map(move |root_decoder| root_decoder.into_comments(credentials))
+                .map(move |root_decoder| root_decoder.into_comments(viewer))
                 .map_err(request::fail_reason_into_errors)
             )
         })

@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::entity::{Credentials, article::{self, Article}, PaginatedList, PageNumber, Tag};
+use crate::entity::{article::{self, Article}, PaginatedList, PageNumber, Tag, Viewer};
 use crate::{Session, GMsg, loading, request, logger, page};
 use futures::prelude::*;
 
@@ -8,7 +8,7 @@ use futures::prelude::*;
 
 #[derive(Clone)]
 pub enum FeedTab {
-    YourFeed(Credentials),
+    YourFeed(Viewer),
     GlobalFeed,
     TagFeed(Tag)
 }
@@ -54,16 +54,15 @@ impl From<Model> for Session {
 }
 
 pub fn init(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
-    let credentials = session.viewer().map(|viewer|&viewer.credentials);
-    let feed_tab = credentials
-        .map(|credentials| FeedTab::YourFeed(credentials.clone()))
+    let feed_tab = session.viewer()
+        .map(|viewer| FeedTab::YourFeed(viewer.clone()))
         .unwrap_or_else(|| FeedTab::GlobalFeed);
 
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
         .perform_cmd(request::tag::load_list(Msg::TagsLoadCompleted))
         .perform_cmd(fetch_feed(
-            session.credentials().cloned(),
+            session.viewer().cloned(),
             &feed_tab,
             PageNumber::default(),
         ));
@@ -76,12 +75,12 @@ pub fn init(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
 }
 
 fn fetch_feed(
-    credentials: Option<Credentials>,
+    viewer: Option<Viewer>,
     feed_tab: &FeedTab,
     page_number: PageNumber,
 ) -> impl Future<Item=Msg, Error=Msg> {
     request::feed::load_for_home(
-        credentials,
+        viewer,
         feed_tab,
         page_number,
         Msg::FeedLoadCompleted,
@@ -119,7 +118,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             model.feed_tab = FeedTab::TagFeed(tag);
             model.feed_page = PageNumber::default();
             orders.perform_cmd(fetch_feed(
-                model.session.credentials().cloned(),
+                model.session.viewer().cloned(),
                 &model.feed_tab,
                 model.feed_page,
             ));
@@ -128,7 +127,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             model.feed_tab = feed_tab;
             model.feed_page = PageNumber::default();
             orders.perform_cmd(fetch_feed(
-                model.session.credentials().cloned(),
+                model.session.viewer().cloned(),
                 &model.feed_tab,
                 model.feed_page,
             ));
@@ -136,7 +135,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::FeedPageClicked(page_number) => {
             model.feed_page = page_number;
             orders.perform_cmd(fetch_feed(
-                model.session.credentials().cloned(),
+                model.session.viewer().cloned(),
                 &model.feed_tab,
                 model.feed_page,
             ));
@@ -203,10 +202,10 @@ fn view_banner() -> Node<Msg> {
 }
 
 fn view_tabs(model: &Model) -> Node<Msg> {
-    let credentials = model.session.credentials();
+    let viewer = model.session.viewer();
 
-    let your_feed = |credentials: Credentials| {
-        article::feed::Tab::new("Your Feed", Msg::TabClicked(FeedTab::YourFeed(credentials)))
+    let your_feed = |viewer: Viewer| {
+        article::feed::Tab::new("Your Feed", Msg::TabClicked(FeedTab::YourFeed(viewer)))
     };
     let global_feed = article::feed::Tab::new("Global Feed", Msg::TabClicked(FeedTab::GlobalFeed));
     let tag_feed = |tag: Tag| { article::feed::Tab::new(
@@ -214,17 +213,17 @@ fn view_tabs(model: &Model) -> Node<Msg> {
     )};
 
     match &model.feed_tab {
-        FeedTab::YourFeed(credentials) => {
+        FeedTab::YourFeed(viewer) => {
             article::feed::view_tabs(vec![
-                your_feed(credentials.clone()).activate(),
+                your_feed(viewer.clone()).activate(),
                 global_feed
             ])
         },
         FeedTab::GlobalFeed => {
-            match credentials {
-                Some(credentials) => {
+            match viewer {
+                Some(viewer) => {
                     article::feed::view_tabs(vec![
-                        your_feed(credentials.clone()),
+                        your_feed(viewer.clone()),
                         global_feed.activate()
                     ])
                 }
@@ -236,10 +235,10 @@ fn view_tabs(model: &Model) -> Node<Msg> {
             }
         },
         FeedTab::TagFeed(tag) => {
-            match credentials {
-                Some(credentials) => {
+            match viewer {
+                Some(viewer) => {
                     article::feed::view_tabs(vec![
-                        your_feed(credentials.clone()),
+                        your_feed(viewer.clone()),
                         global_feed,
                         tag_feed(tag.clone()).activate()
                     ])

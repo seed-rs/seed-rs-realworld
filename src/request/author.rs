@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{Username, Credentials, Author};
+use crate::entity::{Username, Viewer, Author};
 use crate::{request, coder::decoder};
 use futures::prelude::*;
 use seed::fetch;
@@ -11,17 +11,17 @@ struct RootDecoder {
 }
 
 pub fn load<Ms: 'static>(
-    credentials: Option<Credentials>,
+    viewer: Option<Viewer>,
     username: Username<'static>,
     f: fn(Result<Author<'static>, (Username<'static>, Vec<String>)>) -> Ms,
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &format!("profiles/{}", username.as_str()),
-        credentials.as_ref()
+        viewer.as_ref()
     )
         .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {
             f(data_result
-                .map(move |root_decoder| root_decoder.profile.into_author(credentials))
+                .map(move |root_decoder| root_decoder.profile.into_author(viewer))
                 .map_err(request::fail_reason_into_errors)
                 .map_err(move |errors| (username, errors))
             )

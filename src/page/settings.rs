@@ -43,7 +43,7 @@ pub fn init<'a>(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model 
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
         .perform_cmd(request::settings::load(
-            session.credentials(),
+            session.viewer(),
             Msg::FormLoadCompleted));
     Model {
         session,
@@ -84,7 +84,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                         orders
                             .perform_cmd(
                                 request::settings::update(
-                                    model.session.credentials(),
+                                    model.session.viewer(),
                                     &valid_form,
                                     Msg::SaveCompleted
                                 )

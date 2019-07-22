@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{self, Credentials};
+use crate::entity::{self, Viewer};
 use crate::coder::decoder;
 use std::convert::TryInto;
 
@@ -14,7 +14,7 @@ pub struct Comment {
 }
 
 impl Comment {
-    pub fn try_into_comment<'a>(self, credentials: Option<Credentials>,) -> Result<entity::Comment<'a>, String> {
+    pub fn try_into_comment<'a>(self, viewer: Option<Viewer>,) -> Result<entity::Comment<'a>, String> {
         let created_at = self.created_at.try_into()?;
         let updated_at = self.updated_at.try_into()?;
 
@@ -23,7 +23,7 @@ impl Comment {
             body: self.body,
             created_at,
             updated_at,
-            author: self.author.into_author(credentials),
+            author: self.author.into_author(viewer),
         })
     }
 }

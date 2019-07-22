@@ -1,4 +1,4 @@
-use crate::entity::{PaginatedList, Article, Credentials, author, timestamp, PageNumber, Slug, Tag};
+use crate::entity::{PaginatedList, Article, Viewer, author, timestamp, PageNumber, Slug, Tag};
 use crate::{Session, GMsg, Route, request, page, logger};
 use seed::prelude::*;
 use std::borrow::Cow;
@@ -103,8 +103,8 @@ pub fn view_pagination<Ms: Clone>(
     }
 }
 
-fn view_favorite_button(credentials: Option<&Credentials>, article: &Article) -> Node<Msg> {
-    match credentials {
+fn view_favorite_button(viewer: Option<&Viewer>, article: &Article) -> Node<Msg> {
+    match viewer {
         None => empty![],
         Some(_) => {
             if article.favorited {
@@ -137,7 +137,7 @@ fn view_tag(tag: Tag) -> Node<Msg> {
     ]
 }
 
-fn view_article_preview(credentials: Option<&Credentials>, article: &Article) -> Node<Msg> {
+fn view_article_preview(viewer: Option<&Viewer>, article: &Article) -> Node<Msg> {
     div![
         class!["article-preview"],
         div![
@@ -153,7 +153,7 @@ fn view_article_preview(credentials: Option<&Credentials>, article: &Article) ->
                 author::view(article.author.username()),
                 timestamp::view(&article.created_at)
             ],
-            view_favorite_button(credentials, article)
+            view_favorite_button(viewer, article)
         ],
         a![
             class!["preview-link"],
@@ -176,8 +176,6 @@ fn view_article_preview(credentials: Option<&Credentials>, article: &Article) ->
 }
 
 pub fn view_articles(model: &Model) -> Vec<Node<Msg>> {
-    let credentials = model.session.viewer().map(|viewer|&viewer.credentials);
-
     vec![page::view_errors(Msg::DismissErrorsClicked, model.errors.clone())]
         .into_iter()
         .chain(
@@ -189,7 +187,9 @@ pub fn view_articles(model: &Model) -> Vec<Node<Msg>> {
                     ]
                 ]
             } else {
-                model.articles.items.iter().map(|article| view_article_preview(credentials, article)).collect()
+                model.articles.items.iter().map(|article| {
+                    view_article_preview(model.session.viewer(), article)
+                }).collect()
             }
         ).collect()
 }
@@ -215,14 +215,14 @@ pub fn update(
         },
         Msg::FavoriteClicked(slug) => {
             orders.perform_cmd(request::favorite::unfavorite(
-                model.session.credentials().cloned(),
+                model.session.viewer().cloned(),
                 &slug,
                 Msg::FavoriteCompleted
             )).skip();
         },
         Msg::UnfavoriteClicked(slug) => {
             orders.perform_cmd(request::favorite::favorite(
-                model.session.credentials().cloned(),
+                model.session.viewer().cloned(),
                 &slug,
                 Msg::FavoriteCompleted
             )).skip();

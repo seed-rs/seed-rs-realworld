@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use crate::entity::{Credentials, Comment, Slug};
+use crate::entity::{Viewer, Comment, Slug};
 use crate::{request, coder::{decoder, encoder}};
 use futures::prelude::*;
 use seed::fetch;
@@ -11,14 +11,14 @@ struct RootDecoder {
 }
 
 pub fn create<Ms: 'static>(
-    credentials: Option<Credentials>,
+    viewer: Option<Viewer>,
     slug: &Slug,
     text: String,
     f: fn(Result<Comment<'static>, Vec<String>>) -> Ms
 ) -> impl Future<Item=Ms, Error=Ms>  {
     request::new_api_request(
         &format!("articles/{}/comments", slug.as_str()),
-        credentials.as_ref()
+        viewer.as_ref()
     )
         .method(fetch::Method::Post)
         .send_json(&encoder::Comment::new(text))
@@ -26,7 +26,7 @@ pub fn create<Ms: 'static>(
             f(data_result
                 .map_err(request::fail_reason_into_errors)
                 .and_then(move |root_decoder| {
-                    root_decoder.comment.try_into_comment(credentials)
+                    root_decoder.comment.try_into_comment(viewer)
                         .map_err(|error| vec![error])
                 })
             )

@@ -1,6 +1,6 @@
 use seed::prelude::*;
 use super::ViewPage;
-use crate::entity::{Username, article::{self, Article}, author::{self, Author}, Credentials, PaginatedList, PageNumber};
+use crate::entity::{Username, article::{self, Article}, author::{self, Author}, Viewer, PaginatedList, PageNumber};
 use crate::{Session, GMsg, route::{self, Route}, loading, request, helper::take, logger, page};
 use std::borrow::Cow;
 use futures::prelude::*;
@@ -73,11 +73,11 @@ pub fn init<'a>(session: Session, username: Username<'static>, orders: &mut impl
     orders
         .perform_cmd(loading::slow_threshold(Msg::SlowLoadThresholdPassed, Msg::Unreachable))
         .perform_cmd(request::author::load(
-            session.credentials().cloned(),
+            session.viewer().cloned(),
             username.clone(),
             Msg::AuthorLoadCompleted))
         .perform_cmd(fetch_feed(
-            session.credentials().cloned(),
+            session.viewer().cloned(),
             username.clone(),
             &FeedTab::default(),
             PageNumber::default(),
@@ -92,13 +92,13 @@ pub fn init<'a>(session: Session, username: Username<'static>, orders: &mut impl
 }
 
 fn fetch_feed(
-    credentials: Option<Credentials>,
+    viewer: Option<Viewer>,
     username: Username<'static>,
     feed_tab: &FeedTab,
     page_number: PageNumber,
 ) -> impl Future<Item=Msg, Error=Msg> {
     request::feed::load_for_profile(
-        credentials,
+        viewer,
         username,
         feed_tab,
         page_number,
@@ -146,7 +146,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::FollowClicked => {
             orders.perform_cmd(
                 request::follow::follow(
-                    model.session.credentials().cloned(),
+                    model.session.viewer().cloned(),
                     &model.author.username(),
                     Msg::FollowChangeCompleted
                 )
@@ -155,7 +155,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         Msg::UnfollowClicked => {
             orders.perform_cmd(
                 request::follow::unfollow(
-                    model.session.credentials().cloned(),
+                    model.session.viewer().cloned(),
                     &model.author.username(),
                     Msg::FollowChangeCompleted
                 )
@@ -166,7 +166,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             model.feed_page = PageNumber::default();
             orders
                 .perform_cmd(fetch_feed(
-                    model.session.credentials().cloned(),
+                    model.session.viewer().cloned(),
                     model.author.username().to_static(),
                     &feed_tab,
                     model.feed_page,
@@ -176,7 +176,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             model.feed_page = page_number;
             orders
                 .perform_cmd(fetch_feed(
-                    model.session.credentials().cloned(),
+                    model.session.viewer().cloned(),
                     model.author.username().to_static(),
                     &model.feed_tab,
                     model.feed_page,
@@ -233,9 +233,9 @@ fn title_for_other(username: &Username) -> String {
     format!("Profile - {}", username.as_str())
 }
 
-fn title_for_me(credentials: Option<&Credentials>, username: &Username) -> &'static str {
-    if let Some(credentials) = credentials {
-        if username == &credentials.username {
+fn title_for_me(viewer: Option<&Viewer>, username: &Username) -> &'static str {
+    if let Some(viewer) = viewer {
+        if username == &viewer.username {
             return MY_PROFILE_TITLE
         }
     }
@@ -251,13 +251,13 @@ fn title<'a>(model: &Model) -> Cow<'a, str> {
             title_for_other(author.username()).into()
         },
         Status::Loading(username) => {
-            title_for_me(model.session.credentials(), username).into()
+            title_for_me(model.session.viewer(), username).into()
         },
         Status::LoadingSlowly(username) => {
-            title_for_me(model.session.credentials(), username).into()
+            title_for_me(model.session.viewer(), username).into()
         },
         Status::Failed(username) => {
-            title_for_me(model.session.credentials(), username).into()
+            title_for_me(model.session.viewer(), username).into()
         },
     }
 }
@@ -309,7 +309,7 @@ fn view_feed(model: &Model) -> Node<Msg> {
 }
 
 fn view_follow_button(author: &Author, model: &Model) -> Node<Msg> {
-    match model.session.credentials() {
+    match model.session.viewer() {
         None => empty![],
         Some(_) => {
             match author {

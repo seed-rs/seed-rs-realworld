@@ -10,9 +10,6 @@ pub use author::{Author, UnfollowedAuthor, FollowedAuthor, Profile};
 pub mod avatar;
 pub use avatar::Avatar;
 
-pub mod credentials;
-pub use credentials::Credentials;
-
 pub mod form;
 
 pub mod markdown;

@@ -276,8 +276,18 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
 
 // View
 
-pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
-    ViewPage::new("Conduit",view_content(model))
+fn title(article: &Status<Article>) -> impl Into<Cow<str>> {
+    match &article {
+        Status::Loaded(article) => &article.title,
+        _ => "Article",
+    }
+}
+
+pub fn view<'a>(model: &'a Model) -> ViewPage<'a, Msg> {
+    ViewPage::new(
+        title(&model.article),
+        view_content(model)
+    )
 }
 
 fn view_favorite_button(article: &Article) -> Node<Msg> {

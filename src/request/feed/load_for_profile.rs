@@ -1,5 +1,5 @@
 use crate::entity::{Article, PageNumber, PaginatedList, Username, Viewer};
-use crate::{coder::decoder, logger, page, request};
+use crate::{coder::decoder, logger, page::profile::SelectedFeed, request};
 use futures::prelude::*;
 use lazy_static::lazy_static;
 use seed::fetch;
@@ -42,14 +42,14 @@ impl RootDecoder {
 
 pub fn request_url(
     username: &Username<'static>,
-    feed_tab: &page::profile::FeedTab,
+    selected_feed: &SelectedFeed,
     page_number: PageNumber,
 ) -> String {
     format!(
         "articles?{}={}&limit={}&offset={}",
-        match feed_tab {
-            page::profile::FeedTab::MyArticles => "author",
-            page::profile::FeedTab::FavoritedArticles => "favorited",
+        match selected_feed {
+            SelectedFeed::MyArticles => "author",
+            SelectedFeed::FavoritedArticles => "favorited",
         },
         username.as_str(),
         *ARTICLES_PER_PAGE,
@@ -60,12 +60,12 @@ pub fn request_url(
 pub fn load_for_profile<Ms: 'static>(
     viewer: Option<Viewer>,
     username: Username<'static>,
-    feed_tab: &page::profile::FeedTab,
+    selected_feed: &SelectedFeed,
     page_number: PageNumber,
     f: fn(Result<PaginatedList<Article>, (Username<'static>, Vec<String>)>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
     request::new(
-        &request_url(&username, &feed_tab, page_number),
+        &request_url(&username, &selected_feed, page_number),
         viewer.as_ref(),
     )
     .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {

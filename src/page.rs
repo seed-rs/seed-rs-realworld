@@ -13,6 +13,7 @@ pub mod profile;
 pub mod register;
 pub mod settings;
 
+#[allow(clippy::module_name_repetitions)]
 pub struct ViewPage<'a, Ms: 'static> {
     title_prefix: Cow<'a, str>,
     content: Node<Ms>,

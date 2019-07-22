@@ -1,5 +1,5 @@
 use crate::entity::{Article, PageNumber, PaginatedList, Viewer};
-use crate::{coder::decoder, logger, page, request};
+use crate::{coder::decoder, logger, page::home::SelectedFeed, request};
 use futures::prelude::*;
 use lazy_static::lazy_static;
 use seed::fetch;
@@ -40,13 +40,11 @@ impl RootDecoder {
     }
 }
 
-pub fn request_url(feed_tab: &page::home::FeedTab, page_number: PageNumber) -> String {
-    use page::home::FeedTab::*;
-
-    let (path, tag_param) = match feed_tab {
-        YourFeed(_) => (Some("/feed"), None),
-        GlobalFeed => (None, None),
-        TagFeed(tag) => (None, Some(format!("tag={}", tag))),
+pub fn request_url(selected_feed: &SelectedFeed, page_number: PageNumber) -> String {
+    let (path, tag_param) = match selected_feed {
+        SelectedFeed::Your(_) => (Some("/feed"), None),
+        SelectedFeed::Global => (None, None),
+        SelectedFeed::Tag(tag) => (None, Some(format!("tag={}", tag))),
     };
 
     let mut parameters = vec![
@@ -68,11 +66,11 @@ pub fn request_url(feed_tab: &page::home::FeedTab, page_number: PageNumber) -> S
 
 pub fn load_for_home<Ms: 'static>(
     viewer: Option<Viewer>,
-    feed_tab: &page::home::FeedTab,
+    selected_feed: &SelectedFeed,
     page_number: PageNumber,
     f: fn(Result<PaginatedList<Article>, Vec<String>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
-    request::new(&request_url(feed_tab, page_number), viewer.as_ref()).fetch_json_data(
+    request::new(&request_url(selected_feed, page_number), viewer.as_ref()).fetch_json_data(
         move |data_result: fetch::ResponseDataResult<RootDecoder>| {
             f(data_result
                 .map(move |root_decoder| root_decoder.into_paginated_list(viewer))

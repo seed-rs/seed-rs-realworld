@@ -10,15 +10,15 @@ use seed::prelude::*;
 // Model
 
 #[derive(Clone)]
-pub enum FeedTab {
-    YourFeed(Viewer),
-    GlobalFeed,
-    TagFeed(Tag),
+pub enum SelectedFeed {
+    Your(Viewer),
+    Global,
+    Tag(Tag),
 }
 
-impl<'a> Default for FeedTab {
+impl<'a> Default for SelectedFeed {
     fn default() -> Self {
-        FeedTab::GlobalFeed
+        SelectedFeed::Global
     }
 }
 
@@ -38,7 +38,7 @@ impl<T> Default for Status<T> {
 #[derive(Default)]
 pub struct Model {
     session: Session,
-    feed_tab: FeedTab,
+    selected_feed: SelectedFeed,
     feed_page: PageNumber,
     tags: Status<Vec<Tag>>,
     feed: Status<article::feed::Model>,
@@ -57,10 +57,10 @@ impl From<Model> for Session {
 }
 
 pub fn init(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
-    let feed_tab = session
+    let selected_feed = session
         .viewer()
-        .map(|viewer| FeedTab::YourFeed(viewer.clone()))
-        .unwrap_or_else(|| FeedTab::GlobalFeed);
+        .map(|viewer| SelectedFeed::Your(viewer.clone()))
+        .unwrap_or_else(|| SelectedFeed::Global);
 
     orders
         .perform_cmd(loading::slow_threshold(
@@ -70,23 +70,23 @@ pub fn init(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
         .perform_cmd(request::tag::load_list(Msg::TagsLoadCompleted))
         .perform_cmd(fetch_feed(
             session.viewer().cloned(),
-            &feed_tab,
+            &selected_feed,
             PageNumber::default(),
         ));
 
     Model {
         session,
-        feed_tab,
+        selected_feed,
         ..Model::default()
     }
 }
 
 fn fetch_feed(
     viewer: Option<Viewer>,
-    feed_tab: &FeedTab,
+    selected_feed: &SelectedFeed,
     page_number: PageNumber,
 ) -> impl Future<Item = Msg, Error = Msg> {
-    request::feed::load_for_home(viewer, feed_tab, page_number, Msg::FeedLoadCompleted)
+    request::feed::load_for_home(viewer, selected_feed, page_number, Msg::FeedLoadCompleted)
 }
 
 // Sink
@@ -103,9 +103,10 @@ pub fn sink(g_msg: GMsg, model: &mut Model) {
 // Update
 
 #[derive(Clone)]
+#[allow(clippy::pub_enum_variant_names)]
 pub enum Msg {
     TagClicked(Tag),
-    TabClicked(FeedTab),
+    TabClicked(SelectedFeed),
     FeedPageClicked(PageNumber),
     FeedLoadCompleted(Result<PaginatedList<Article>, Vec<String>>),
     TagsLoadCompleted(Result<Vec<Tag>, Vec<String>>),
@@ -117,20 +118,20 @@ pub enum Msg {
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match msg {
         Msg::TagClicked(tag) => {
-            model.feed_tab = FeedTab::TagFeed(tag);
+            model.selected_feed = SelectedFeed::Tag(tag);
             model.feed_page = PageNumber::default();
             orders.perform_cmd(fetch_feed(
                 model.session.viewer().cloned(),
-                &model.feed_tab,
+                &model.selected_feed,
                 model.feed_page,
             ));
         }
-        Msg::TabClicked(feed_tab) => {
-            model.feed_tab = feed_tab;
+        Msg::TabClicked(selected_feed) => {
+            model.selected_feed = selected_feed;
             model.feed_page = PageNumber::default();
             orders.perform_cmd(fetch_feed(
                 model.session.viewer().cloned(),
-                &model.feed_tab,
+                &model.selected_feed,
                 model.feed_page,
             ));
         }
@@ -138,7 +139,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             model.feed_page = page_number;
             orders.perform_cmd(fetch_feed(
                 model.session.viewer().cloned(),
-                &model.feed_tab,
+                &model.selected_feed,
                 model.feed_page,
             ));
             page::scroll_to_top()
@@ -196,24 +197,24 @@ fn view_tabs(model: &Model) -> Node<Msg> {
     let viewer = model.session.viewer();
 
     let your_feed = |viewer: Viewer| {
-        article::feed::Tab::new("Your Feed", Msg::TabClicked(FeedTab::YourFeed(viewer)))
+        article::feed::Tab::new("Your Feed", Msg::TabClicked(SelectedFeed::Your(viewer)))
     };
-    let global_feed = article::feed::Tab::new("Global Feed", Msg::TabClicked(FeedTab::GlobalFeed));
+    let global_feed = article::feed::Tab::new("Global Feed", Msg::TabClicked(SelectedFeed::Global));
     let tag_feed = |tag: Tag| {
-        article::feed::Tab::new(format!("#{}", tag), Msg::TabClicked(FeedTab::TagFeed(tag)))
+        article::feed::Tab::new(format!("#{}", tag), Msg::TabClicked(SelectedFeed::Tag(tag)))
     };
 
-    match &model.feed_tab {
-        FeedTab::YourFeed(viewer) => {
+    match &model.selected_feed {
+        SelectedFeed::Your(viewer) => {
             article::feed::view_tabs(vec![your_feed(viewer.clone()).activate(), global_feed])
         }
-        FeedTab::GlobalFeed => match viewer {
+        SelectedFeed::Global => match viewer {
             Some(viewer) => {
                 article::feed::view_tabs(vec![your_feed(viewer.clone()), global_feed.activate()])
             }
             None => article::feed::view_tabs(vec![global_feed.activate()]),
         },
-        FeedTab::TagFeed(tag) => match viewer {
+        SelectedFeed::Tag(tag) => match viewer {
             Some(viewer) => article::feed::view_tabs(vec![
                 your_feed(viewer.clone()),
                 global_feed,

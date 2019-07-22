@@ -23,7 +23,7 @@ static DEFAULT_PROFILE: &'static str = "Profile";
 pub struct Model<'a> {
     session: Session,
     errors: Vec<String>,
-    feed_tab: FeedTab,
+    selected_feed: SelectedFeed,
     feed_page: PageNumber,
     author: Status<'a, Author>,
     feed: Status<'a, article::feed::Model>,
@@ -41,14 +41,14 @@ impl<'a> Status<'a, Author> {
 }
 
 #[derive(Copy, Clone)]
-pub enum FeedTab {
+pub enum SelectedFeed {
     MyArticles,
     FavoritedArticles,
 }
 
-impl Default for FeedTab {
+impl Default for SelectedFeed {
     fn default() -> Self {
-        FeedTab::MyArticles
+        SelectedFeed::MyArticles
     }
 }
 
@@ -95,7 +95,7 @@ pub fn init<'a>(
         .perform_cmd(fetch_feed(
             session.viewer().cloned(),
             username.clone(),
-            &FeedTab::default(),
+            &SelectedFeed::default(),
             PageNumber::default(),
         ));
 
@@ -110,13 +110,13 @@ pub fn init<'a>(
 fn fetch_feed(
     viewer: Option<Viewer>,
     username: Username<'static>,
-    feed_tab: &FeedTab,
+    selected_feed: &SelectedFeed,
     page_number: PageNumber,
 ) -> impl Future<Item = Msg, Error = Msg> {
     request::feed::load_for_profile(
         viewer,
         username,
-        feed_tab,
+        selected_feed,
         page_number,
         Msg::FeedLoadCompleted,
     )
@@ -137,11 +137,12 @@ pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>)
 // Update
 
 #[derive(Clone)]
+#[allow(clippy::pub_enum_variant_names)]
 pub enum Msg {
     DismissErrorsClicked,
     FollowClicked,
     UnfollowClicked,
-    TabClicked(FeedTab),
+    TabClicked(SelectedFeed),
     FeedPageClicked(PageNumber),
     FollowChangeCompleted(Result<Author, Vec<String>>),
     AuthorLoadCompleted(Result<Author, (Username<'static>, Vec<String>)>),
@@ -174,13 +175,13 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 ))
                 .skip();
         }
-        Msg::TabClicked(feed_tab) => {
-            model.feed_tab = feed_tab;
+        Msg::TabClicked(selected_feed) => {
+            model.selected_feed = selected_feed;
             model.feed_page = PageNumber::default();
             orders.perform_cmd(fetch_feed(
                 model.session.viewer().cloned(),
                 model.author.username().to_static(),
-                &feed_tab,
+                &selected_feed,
                 model.feed_page,
             ));
         }
@@ -189,7 +190,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             orders.perform_cmd(fetch_feed(
                 model.session.viewer().cloned(),
                 model.author.username().to_static(),
-                &model.feed_tab,
+                &model.selected_feed,
                 model.feed_page,
             ));
             page::scroll_to_top();
@@ -257,18 +258,19 @@ pub fn view<'a>(model: &'a Model) -> ViewPage<'a, Msg> {
     ViewPage::new(title(model), view_content(model))
 }
 
-fn view_tabs(feed_tab: FeedTab) -> Node<Msg> {
-    let my_articles = article::feed::Tab::new("My Articles", Msg::TabClicked(FeedTab::MyArticles));
+fn view_tabs(selected_feed: SelectedFeed) -> Node<Msg> {
+    let my_articles =
+        article::feed::Tab::new("My Articles", Msg::TabClicked(SelectedFeed::MyArticles));
     let favorited_articles = article::feed::Tab::new(
         "Favorited Articles",
-        Msg::TabClicked(FeedTab::FavoritedArticles),
+        Msg::TabClicked(SelectedFeed::FavoritedArticles),
     );
 
-    match feed_tab {
-        FeedTab::MyArticles => {
+    match selected_feed {
+        SelectedFeed::MyArticles => {
             article::feed::view_tabs(vec![my_articles.activate(), favorited_articles])
         }
-        FeedTab::FavoritedArticles => {
+        SelectedFeed::FavoritedArticles => {
             article::feed::view_tabs(vec![my_articles, favorited_articles.activate()])
         }
     }
@@ -287,7 +289,7 @@ fn view_feed(model: &Model) -> Node<Msg> {
                     class!["col-xs-12", "col-md-10", "offset-md-1"],
                     div![
                         class!["articles-toggle"],
-                        view_tabs(model.feed_tab),
+                        view_tabs(model.selected_feed),
                         article::feed::view_articles(feed_model)
                             .els()
                             .map_message(Msg::FeedMsg),

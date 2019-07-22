@@ -4,8 +4,8 @@ use std::fmt;
 pub struct Tag(String);
 
 impl Tag {
-    pub fn new(tag: String) -> Self {
-        Tag(tag)
+    pub const fn new(tag: String) -> Self {
+        Self(tag)
     }
 }
 

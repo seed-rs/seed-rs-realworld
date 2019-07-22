@@ -20,13 +20,13 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn session(&self) -> &Session {
+    pub const fn session(&self) -> &Session {
         &self.session
     }
 }
 
 impl From<Model> for Session {
-    fn from(model: Model) -> Session {
+    fn from(model: Model) -> Self {
         model.session
     }
 }
@@ -137,7 +137,7 @@ fn view_form(form: &Form) -> Node<Msg> {
     ]
 }
 
-fn view_content<'a>(model: &Model) -> Node<Msg> {
+fn view_content(model: &Model) -> Node<Msg> {
     div![
         class!["auth-page"],
         div![

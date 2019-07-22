@@ -33,35 +33,33 @@ pub enum Field {
 
 impl FormField for Field {
     fn value(&self) -> &str {
+        use Field::*;
         match self {
-            Field::Title(value) => value,
-            Field::Description(value) => value,
-            Field::Body(value) => value,
-            Field::Tags(value) => value,
+            Title(value) | Description(value) | Body(value) | Tags(value) => value,
         }
     }
 
     fn value_mut(&mut self) -> &mut String {
+        use Field::*;
         match self {
-            Field::Title(value) => value,
-            Field::Description(value) => value,
-            Field::Body(value) => value,
-            Field::Tags(value) => value,
+            Title(value) | Description(value) | Body(value) | Tags(value) => value,
         }
     }
 
     fn key(&self) -> &'static str {
+        use Field::*;
         match self {
-            Field::Title(_) => "title",
-            Field::Description(_) => "description",
-            Field::Body(_) => "body",
-            Field::Tags(_) => "tags",
+            Title(_) => "title",
+            Description(_) => "description",
+            Body(_) => "body",
+            Tags(_) => "tags",
         }
     }
 
     fn validate(&self) -> Option<form::Problem> {
+        use Field::*;
         match self {
-            Field::Title(value) => {
+            Title(value) => {
                 if value.is_empty() {
                     Some(form::Problem::new_invalid_field(
                         self.key(),
@@ -71,8 +69,7 @@ impl FormField for Field {
                     None
                 }
             }
-            Field::Description(_) => None,
-            Field::Body(value) => {
+            Body(value) => {
                 if value.is_empty() {
                     Some(form::Problem::new_invalid_field(
                         self.key(),
@@ -82,7 +79,7 @@ impl FormField for Field {
                     None
                 }
             }
-            Field::Tags(_) => None,
+            Tags(_) | Description(_) => None,
         }
     }
 }

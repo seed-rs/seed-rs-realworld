@@ -2,13 +2,14 @@ pub struct Image(String);
 
 impl Image {
     pub fn new(filename: &str) -> Self {
-        Image(format!("/assets/images/{}", filename))
+        Self(format!("/assets/images/{}", filename))
     }
 
     pub fn url(&self) -> &str {
         &self.0
     }
 
+    #[allow(clippy::missing_const_for_fn)]
     pub fn into_url(self) -> String {
         self.0
     }

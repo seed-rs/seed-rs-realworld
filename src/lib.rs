@@ -1,3 +1,6 @@
+#![allow(clippy::single_match, clippy::large_enum_variant)]
+#![allow(clippy::default_trait_access)] // because of problem with `strum_macros::EnumIter`
+
 #[macro_use]
 extern crate seed;
 use entity::{article, username};
@@ -40,17 +43,17 @@ impl<'a> Default for Model<'a> {
 }
 
 impl<'a> From<Model<'a>> for Session {
-    fn from(model: Model<'a>) -> Session {
+    fn from(model: Model<'a>) -> Self {
+        use Model::*;
         match model {
-            Model::Redirect(session) => session,
-            Model::NotFound(session) => session,
-            Model::Home(model) => model.into(),
-            Model::Settings(model) => model.into(),
-            Model::Login(model) => model.into(),
-            Model::Register(model) => model.into(),
-            Model::Profile(model, _) => model.into(),
-            Model::Article(model) => model.into(),
-            Model::ArticleEditor(model, _) => model.into(),
+            Redirect(session) | NotFound(session) => session,
+            Home(model) => model.into(),
+            Settings(model) => model.into(),
+            Login(model) => model.into(),
+            Register(model) => model.into(),
+            Profile(model, _) => model.into(),
+            Article(model) => model.into(),
+            ArticleEditor(model, _) => model.into(),
         }
     }
 }
@@ -233,58 +236,57 @@ fn change_model_by_route<'a>(
 
 // View
 
-fn view<'a>(model: &Model) -> impl View<Msg<'static>> {
+fn view(model: &Model) -> impl View<Msg<'static>> {
+    use page::Page;
     match model {
-        Model::Redirect(session) => {
-            page::view(page::Page::Other, page::blank::view(), session.viewer())
-        }
+        Model::Redirect(session) => page::view(&Page::Other, page::blank::view(), session.viewer()),
         Model::NotFound(session) => {
-            page::view(page::Page::Other, page::not_found::view(), session.viewer())
+            page::view(&Page::Other, page::not_found::view(), session.viewer())
         }
         Model::Settings(model) => page::view(
-            page::Page::Settings,
+            &Page::Settings,
             page::settings::view(model),
             model.session().viewer(),
         )
         .map_message(Msg::SettingsMsg),
         Model::Home(model) => page::view(
-            page::Page::Home,
+            &Page::Home,
             page::home::view(model),
             model.session().viewer(),
         )
         .map_message(Msg::HomeMsg),
         Model::Login(model) => page::view(
-            page::Page::Login,
+            &Page::Login,
             page::login::view(model),
             model.session().viewer(),
         )
         .map_message(Msg::LoginMsg),
         Model::Register(model) => page::view(
-            page::Page::Register,
+            &Page::Register,
             page::register::view(model),
             model.session().viewer(),
         )
         .map_message(Msg::RegisterMsg),
         Model::Profile(model, username) => page::view(
-            page::Page::Profile(username),
+            &Page::Profile(username),
             page::profile::view(model),
             model.session().viewer(),
         )
         .map_message(Msg::ProfileMsg),
         Model::Article(model) => page::view(
-            page::Page::Other,
+            &Page::Other,
             page::article::view(model),
             model.session().viewer(),
         )
         .map_message(Msg::ArticleMsg),
         Model::ArticleEditor(model, None) => page::view(
-            page::Page::NewArticle,
+            &Page::NewArticle,
             page::article_editor::view(model),
             model.session().viewer(),
         )
         .map_message(Msg::ArticleEditorMsg),
         Model::ArticleEditor(model, Some(_)) => page::view(
-            page::Page::Other,
+            &Page::Other,
             page::article_editor::view(model),
             model.session().viewer(),
         )

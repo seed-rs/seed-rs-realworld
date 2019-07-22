@@ -55,7 +55,7 @@ pub fn fail_reason_into_errors<T: Debug>(fail_reason: fetch::FailReason<T>) -> V
         fetch::FailReason::Status(_, fetch_object) => {
             let response = fetch_object.result.unwrap();
             match response.data {
-                Err(fetch::DataError::SerdeError(_, json)) => decode_server_errors(json)
+                Err(fetch::DataError::SerdeError(_, json)) => decode_server_errors(&json)
                     .unwrap_or_else(|serde_error| {
                         logger::error(serde_error);
                         vec!["Data error".into()]
@@ -69,8 +69,8 @@ pub fn fail_reason_into_errors<T: Debug>(fail_reason: fetch::FailReason<T>) -> V
     }
 }
 
-fn decode_server_errors(json: String) -> Result<Vec<String>, serde_json::Error> {
-    let server_error_data = serde_json::from_str::<ServerErrorData>(json.as_str())?;
+fn decode_server_errors(json: &str) -> Result<Vec<String>, serde_json::Error> {
+    let server_error_data = serde_json::from_str::<ServerErrorData>(json)?;
     Ok(server_error_data
         .errors
         .into_iter()

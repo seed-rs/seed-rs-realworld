@@ -13,27 +13,29 @@ pub enum Author {
 impl Author {
     pub fn username(&self) -> &Username {
         match self {
-            Author::Following(FollowedAuthor { profile }) => &profile.username,
-            Author::NotFollowing(UnfollowedAuthor { profile }) => &profile.username,
+            Author::Following(FollowedAuthor { profile })
+            | Author::NotFollowing(UnfollowedAuthor { profile }) => &profile.username,
             Author::IsViewer(viewer) => viewer.username(),
         }
     }
 
     pub fn profile(&self) -> &Profile {
         match self {
-            Author::Following(FollowedAuthor { profile, .. }) => profile,
-            Author::NotFollowing(UnfollowedAuthor { profile, .. }) => profile,
+            Author::Following(FollowedAuthor { profile, .. })
+            | Author::NotFollowing(UnfollowedAuthor { profile, .. }) => profile,
             Author::IsViewer(viewer) => viewer.profile(),
         }
     }
 }
 
 #[derive(Clone)]
+#[allow(clippy::module_name_repetitions)]
 pub struct FollowedAuthor {
     pub profile: Profile,
 }
 
 #[derive(Clone)]
+#[allow(clippy::module_name_repetitions)]
 pub struct UnfollowedAuthor {
     pub profile: Profile,
 }

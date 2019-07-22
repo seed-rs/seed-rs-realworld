@@ -21,17 +21,17 @@ pub enum Route<'a> {
 
 impl<'a> Route<'a> {
     pub fn path(&self) -> Path {
+        use Route::*;
         match self {
-            Route::Home => vec![],
-            Route::Root => vec![],
-            Route::Login => vec!["login"],
-            Route::Logout => vec!["logout"],
-            Route::Register => vec!["register"],
-            Route::Settings => vec!["settings"],
-            Route::Article(slug) => vec!["article", slug.as_str()],
-            Route::Profile(username) => vec!["profile", username.as_str()],
-            Route::NewArticle => vec!["editor"],
-            Route::EditArticle(slug) => vec!["editor", slug.as_str()],
+            Home | Root => vec![],
+            Login => vec!["login"],
+            Logout => vec!["logout"],
+            Register => vec!["register"],
+            Settings => vec!["settings"],
+            Article(slug) => vec!["article", slug.as_str()],
+            Profile(username) => vec!["profile", username.as_str()],
+            NewArticle => vec!["editor"],
+            EditArticle(slug) => vec!["editor", slug.as_str()],
         }
     }
 }

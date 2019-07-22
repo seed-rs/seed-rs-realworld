@@ -13,6 +13,7 @@ const MAX_INVALID_PASSWORD_LENGTH: usize = MIN_PASSWORD_LENGTH - 1;
 
 type FieldKey = &'static str;
 
+#[allow(clippy::module_name_repetitions)]
 pub trait FormField: Clone {
     fn value(&self) -> &str;
     fn value_mut(&mut self) -> &mut String;
@@ -49,9 +50,9 @@ impl Problem {
         }
     }
     pub fn message(&self) -> &str {
+        use Problem::*;
         match self {
-            Problem::InvalidField { message, .. } => message,
-            Problem::ServerError { message } => message,
+            InvalidField { message, .. } | ServerError { message } => message,
         }
     }
 }
@@ -95,6 +96,7 @@ impl<T: FormField> Form<T> {
 
 // ----- TrimmedForm -----
 
+#[allow(clippy::module_name_repetitions)]
 pub struct TrimmedForm<T: FormField>(IndexMap<FieldKey, T>);
 
 impl<T: FormField> TrimmedForm<T> {
@@ -115,6 +117,7 @@ impl<T: FormField> TrimmedForm<T> {
 
 // ----- ValidForm -----
 
+#[allow(clippy::module_name_repetitions)]
 pub struct ValidForm<T: FormField>(IndexMap<FieldKey, T>);
 
 impl<T: FormField> ValidForm<T> {

@@ -45,13 +45,13 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn session(&self) -> &Session {
+    pub const fn session(&self) -> &Session {
         &self.session
     }
 }
 
 impl From<Model> for Session {
-    fn from(model: Model) -> Session {
+    fn from(model: Model) -> Self {
         model.session
     }
 }
@@ -59,8 +59,8 @@ impl From<Model> for Session {
 pub fn init(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     let selected_feed = session
         .viewer()
-        .map(|viewer| SelectedFeed::Your(viewer.clone()))
-        .unwrap_or_else(|| SelectedFeed::Global);
+        .cloned()
+        .map_or_else(SelectedFeed::default, SelectedFeed::Your);
 
     orders
         .perform_cmd(loading::slow_threshold(
@@ -149,14 +149,14 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         }
         Msg::FeedLoadCompleted(Err(errors)) => {
             model.feed = Status::Failed;
-            logger::errors(errors.clone());
+            logger::errors(errors);
         }
         Msg::TagsLoadCompleted(Ok(tags)) => {
             model.tags = Status::Loaded(tags);
         }
         Msg::TagsLoadCompleted(Err(errors)) => {
             model.tags = Status::Failed;
-            logger::errors(errors.clone());
+            logger::errors(errors);
         }
         Msg::FeedMsg(feed_msg) => match &mut model.feed {
             Status::Loaded(feed_model) => {

@@ -38,7 +38,7 @@ impl<Ms> Tab<Ms> {
             active: false,
         }
     }
-    pub fn activate(mut self) -> Self {
+    pub const fn activate(mut self) -> Self {
         self.active = true;
         self
     }
@@ -117,7 +117,7 @@ fn view_favorite_button(viewer: Option<&Viewer>, article: &Article) -> Node<Msg>
     }
 }
 
-fn view_tag(tag: Tag) -> Node<Msg> {
+fn view_tag(tag: &Tag) -> Node<Msg> {
     li![
         class!["tag-default", "tag-pill", "tag-outline"],
         tag.to_string()
@@ -146,10 +146,7 @@ fn view_article_preview(viewer: Option<&Viewer>, article: &Article) -> Node<Msg>
             h1![article.title],
             p![article.description],
             span!["Read more..."],
-            ul![
-                class!["tag-list"],
-                article.tag_list.clone().into_iter().map(view_tag)
-            ]
+            ul![class!["tag-list"], article.tag_list.iter().map(view_tag)]
         ]
     ]
 }
@@ -186,6 +183,7 @@ pub enum Msg {
     FavoriteCompleted(Result<Article, Vec<String>>),
 }
 
+#[allow(clippy::option_map_unit_fn)]
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match msg {
         Msg::DismissErrorsClicked => {

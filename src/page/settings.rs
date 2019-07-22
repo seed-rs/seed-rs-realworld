@@ -33,20 +33,20 @@ impl Default for Status {
 }
 
 impl Model {
-    pub fn session(&self) -> &Session {
+    pub const fn session(&self) -> &Session {
         &self.session
     }
 }
 
 impl From<Model> for Session {
-    fn from(model: Model) -> Session {
+    fn from(model: Model) -> Self {
         model.session
     }
 }
 
 // Init
 
-pub fn init<'a>(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
+pub fn init(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     orders
         .perform_cmd(loading::slow_threshold(
             Msg::SlowLoadThresholdPassed,
@@ -64,7 +64,7 @@ pub fn init<'a>(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model 
 
 // Sink
 
-pub fn sink<'a>(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
+pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match g_msg {
         GMsg::SessionChanged(session) => {
             model.session = session;
@@ -213,7 +213,7 @@ fn view_fieldset(field: &Field) -> Node<Msg> {
     }
 }
 
-fn view_form<'a>(model: &Model) -> Node<Msg> {
+fn view_form(model: &Model) -> Node<Msg> {
     match &model.status {
         Status::Loading => empty![],
         Status::LoadingSlowly => loading::icon(),
@@ -232,7 +232,7 @@ fn view_form<'a>(model: &Model) -> Node<Msg> {
     }
 }
 
-fn view_content<'a>(model: &Model) -> Node<Msg> {
+fn view_content(model: &Model) -> Node<Msg> {
     div![
         class!["auth-page"],
         div![

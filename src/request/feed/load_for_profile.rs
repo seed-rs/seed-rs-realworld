@@ -19,13 +19,13 @@ struct RootDecoder {
 }
 
 impl RootDecoder {
-    fn into_paginated_list(self, viewer: Option<Viewer>) -> PaginatedList<Article> {
+    fn into_paginated_list(self, viewer: Option<&Viewer>) -> PaginatedList<Article> {
         PaginatedList {
             items: self
                 .articles
                 .into_iter()
                 .filter_map(|article_decoder| {
-                    match article_decoder.try_into_article(viewer.as_ref().map(Cow::Borrowed)) {
+                    match article_decoder.try_into_article(viewer.map(Cow::Borrowed)) {
                         Ok(article) => Some(article),
                         Err(error) => {
                             logger::error(error);
@@ -42,7 +42,7 @@ impl RootDecoder {
 
 pub fn request_url(
     username: &Username<'static>,
-    selected_feed: &SelectedFeed,
+    selected_feed: SelectedFeed,
     page_number: PageNumber,
 ) -> String {
     format!(
@@ -60,17 +60,17 @@ pub fn request_url(
 pub fn load_for_profile<Ms: 'static>(
     viewer: Option<Viewer>,
     username: Username<'static>,
-    selected_feed: &SelectedFeed,
+    selected_feed: SelectedFeed,
     page_number: PageNumber,
     f: fn(Result<PaginatedList<Article>, (Username<'static>, Vec<String>)>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
     request::new(
-        &request_url(&username, &selected_feed, page_number),
+        &request_url(&username, selected_feed, page_number),
         viewer.as_ref(),
     )
     .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {
         f(data_result
-            .map(move |root_decoder| root_decoder.into_paginated_list(viewer))
+            .map(move |root_decoder| root_decoder.into_paginated_list(viewer.as_ref()))
             .map_err(request::fail_reason_into_errors)
             .map_err(|errors| (username, errors)))
     })

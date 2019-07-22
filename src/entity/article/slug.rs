@@ -13,7 +13,7 @@ impl<T> From<T> for Slug
 where
     T: Into<Cow<'static, str>>,
 {
-    fn from(value: T) -> Slug {
-        Slug(value.into())
+    fn from(value: T) -> Self {
+        Self(value.into())
     }
 }

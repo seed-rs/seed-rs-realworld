@@ -22,10 +22,10 @@ impl<'a> Session {
 }
 
 impl From<Option<Viewer>> for Session {
-    fn from(viewer: Option<Viewer>) -> Session {
+    fn from(viewer: Option<Viewer>) -> Self {
         match viewer {
             Some(viewer) => Session::LoggedIn(viewer),
-            None => Session::default(),
+            None => Self::default(),
         }
     }
 }

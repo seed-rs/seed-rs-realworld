@@ -4,20 +4,20 @@ use std::fmt;
 pub struct PageNumber(usize);
 
 impl PageNumber {
-    pub fn new(page_number: usize) -> Self {
-        PageNumber(page_number)
+    pub const fn new(page_number: usize) -> Self {
+        Self(page_number)
     }
 }
 
 impl PageNumber {
-    pub fn to_usize(&self) -> usize {
+    pub const fn to_usize(self) -> usize {
         self.0
     }
 }
 
 impl Default for PageNumber {
     fn default() -> Self {
-        PageNumber(1)
+        Self(1)
     }
 }
 

@@ -48,13 +48,13 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn session(&self) -> &Session {
+    pub const fn session(&self) -> &Session {
         &self.session
     }
 }
 
 impl From<Model> for Session {
-    fn from(model: Model) -> Session {
+    fn from(model: Model) -> Self {
         model.session
     }
 }
@@ -118,6 +118,7 @@ pub enum Msg {
     Unreachable,
 }
 
+#[allow(clippy::match_same_arms)]
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match msg {
         Msg::DeleteArticleClicked(slug) => {
@@ -291,7 +292,7 @@ fn title(article: &Status<Article>) -> impl Into<Cow<str>> {
     }
 }
 
-pub fn view<'a>(model: &'a Model) -> ViewPage<'a, Msg> {
+pub fn view(model: &Model) -> ViewPage<Msg> {
     ViewPage::new(title(&model.article), view_content(model))
 }
 

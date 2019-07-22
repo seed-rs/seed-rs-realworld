@@ -31,29 +31,31 @@ pub enum Field {
 
 impl FormField for Field {
     fn value(&self) -> &str {
+        use Field::*;
         match self {
-            Field::Email(value) => value,
-            Field::Password(value) => value,
+            Email(value) | Password(value) => value,
         }
     }
 
     fn value_mut(&mut self) -> &mut String {
+        use Field::*;
         match self {
-            Field::Email(value) => value,
-            Field::Password(value) => value,
+            Email(value) | Password(value) => value,
         }
     }
 
     fn key(&self) -> &'static str {
+        use Field::*;
         match self {
-            Field::Email(_) => "email",
-            Field::Password(_) => "password",
+            Email(_) => "email",
+            Password(_) => "password",
         }
     }
 
     fn validate(&self) -> Option<form::Problem> {
+        use Field::*;
         match self {
-            Field::Email(value) => {
+            Email(value) => {
                 if value.is_empty() {
                     Some(form::Problem::new_invalid_field(
                         self.key(),
@@ -63,7 +65,7 @@ impl FormField for Field {
                     None
                 }
             }
-            Field::Password(value) => {
+            Password(value) => {
                 if value.is_empty() {
                     Some(form::Problem::new_invalid_field(
                         self.key(),

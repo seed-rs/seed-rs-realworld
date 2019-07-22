@@ -35,39 +35,35 @@ pub enum Field {
 
 impl FormField for Field {
     fn value(&self) -> &str {
+        use Field::*;
         match self {
-            Field::Avatar(value) => value,
-            Field::Username(value) => value,
-            Field::Bio(value) => value,
-            Field::Email(value) => value,
-            Field::Password(value) => value,
+            Avatar(value) | Username(value) | Bio(value) | Email(value) | Password(value) => value,
         }
     }
 
     fn value_mut(&mut self) -> &mut String {
+        use Field::*;
         match self {
-            Field::Avatar(value) => value,
-            Field::Username(value) => value,
-            Field::Bio(value) => value,
-            Field::Email(value) => value,
-            Field::Password(value) => value,
+            Avatar(value) | Username(value) | Bio(value) | Email(value) | Password(value) => value,
         }
     }
 
     fn key(&self) -> &'static str {
+        use Field::*;
         match self {
-            Field::Avatar(_) => "image",
-            Field::Username(_) => "username",
-            Field::Bio(_) => "bio",
-            Field::Email(_) => "email",
-            Field::Password(_) => "password",
+            Avatar(_) => "image",
+            Username(_) => "username",
+            Bio(_) => "bio",
+            Email(_) => "email",
+            Password(_) => "password",
         }
     }
 
     fn validate(&self) -> Option<form::Problem> {
+        use Field::*;
         match self {
-            Field::Avatar(_) => None,
-            Field::Username(value) => {
+            Avatar(_) | Bio(_) => None,
+            Username(value) => {
                 if value.is_empty() {
                     Some(form::Problem::new_invalid_field(
                         self.key(),
@@ -77,8 +73,7 @@ impl FormField for Field {
                     None
                 }
             }
-            Field::Bio(_) => None,
-            Field::Email(value) => {
+            Email(value) => {
                 if value.is_empty() {
                     Some(form::Problem::new_invalid_field(
                         self.key(),
@@ -88,7 +83,7 @@ impl FormField for Field {
                     None
                 }
             }
-            Field::Password(value) => match value.graphemes(true).count() {
+            Password(value) => match value.graphemes(true).count() {
                 1...form::MAX_INVALID_PASSWORD_LENGTH => Some(form::Problem::new_invalid_field(
                     self.key(),
                     format!(

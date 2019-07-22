@@ -19,7 +19,7 @@ struct RootDecoder {
 }
 
 impl RootDecoder {
-    fn into_paginated_list(self, viewer: Option<Viewer>) -> PaginatedList<Article> {
+    fn into_paginated_list(self, viewer: &Option<Viewer>) -> PaginatedList<Article> {
         PaginatedList {
             items: self
                 .articles
@@ -73,7 +73,7 @@ pub fn load_for_home<Ms: 'static>(
     request::new(&request_url(selected_feed, page_number), viewer.as_ref()).fetch_json_data(
         move |data_result: fetch::ResponseDataResult<RootDecoder>| {
             f(data_result
-                .map(move |root_decoder| root_decoder.into_paginated_list(viewer))
+                .map(move |root_decoder| root_decoder.into_paginated_list(&viewer))
                 .map_err(request::fail_reason_into_errors))
         },
     )

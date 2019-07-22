@@ -29,13 +29,14 @@ impl<'a, Ms> ViewPage<'a, Ms> {
     pub fn title(&self) -> String {
         format!("{} - Conduit", self.title_prefix)
     }
+    #[allow(clippy::missing_const_for_fn)]
     pub fn into_content(self) -> Node<Ms> {
         self.content
     }
 }
 
 pub fn view<'a, Ms>(
-    page: Page<'a>,
+    page: &Page<'a>,
     view_page: ViewPage<'a, Ms>,
     viewer: Option<&Viewer>,
 ) -> Vec<Node<Ms>> {
@@ -61,14 +62,14 @@ pub enum Page<'a> {
 impl<'a> Page<'a> {
     fn is_active(&self, route: &Route) -> bool {
         match (self, route) {
-            (Page::Home, Route::Home) => true,
-            (Page::Login, Route::Login) => true,
-            (Page::Register, Route::Register) => true,
-            (Page::Settings, Route::Settings) => true,
+            (Page::Home, Route::Home)
+            | (Page::Login, Route::Login)
+            | (Page::Register, Route::Register)
+            | (Page::Settings, Route::Settings)
+            | (Page::NewArticle, Route::NewArticle) => true,
             (Page::Profile(username), Route::Profile(route_username)) => {
                 *username == route_username.borrow()
             }
-            (Page::NewArticle, Route::NewArticle) => true,
             _ => false,
         }
     }

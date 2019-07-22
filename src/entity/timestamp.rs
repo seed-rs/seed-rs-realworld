@@ -22,7 +22,7 @@ impl TryFrom<String> for Timestamp {
 
     fn try_from(string: String) -> Result<Self, Self::Error> {
         DateTime::parse_from_rfc3339(string.as_str())
-            .map(|date_time| Timestamp(date_time.into()))
+            .map(|date_time| Self(date_time.into()))
             .map_err(|parse_error| parse_error.to_string())
     }
 }

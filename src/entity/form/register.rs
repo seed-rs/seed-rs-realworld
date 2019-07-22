@@ -33,32 +33,32 @@ pub enum Field {
 
 impl FormField for Field {
     fn value(&self) -> &str {
+        use Field::*;
         match self {
-            Field::Username(value) => value,
-            Field::Email(value) => value,
-            Field::Password(value) => value,
+            Username(value) | Email(value) | Password(value) => value,
         }
     }
 
     fn value_mut(&mut self) -> &mut String {
+        use Field::*;
         match self {
-            Field::Username(value) => value,
-            Field::Email(value) => value,
-            Field::Password(value) => value,
+            Username(value) | Email(value) | Password(value) => value,
         }
     }
 
     fn key(&self) -> &'static str {
+        use Field::*;
         match self {
-            Field::Username(_) => "username",
-            Field::Email(_) => "email",
-            Field::Password(_) => "password",
+            Username(_) => "username",
+            Email(_) => "email",
+            Password(_) => "password",
         }
     }
 
     fn validate(&self) -> Option<form::Problem> {
+        use Field::*;
         match self {
-            Field::Username(value) => {
+            Username(value) => {
                 if value.is_empty() {
                     Some(form::Problem::new_invalid_field(
                         self.key(),
@@ -68,7 +68,7 @@ impl FormField for Field {
                     None
                 }
             }
-            Field::Email(value) => {
+            Email(value) => {
                 if value.is_empty() {
                     Some(form::Problem::new_invalid_field(
                         self.key(),
@@ -78,7 +78,7 @@ impl FormField for Field {
                     None
                 }
             }
-            Field::Password(value) => match value.graphemes(true).count() {
+            Password(value) => match value.graphemes(true).count() {
                 0 => Some(form::Problem::new_invalid_field(
                     self.key(),
                     "password can't be blank",

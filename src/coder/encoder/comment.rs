@@ -13,7 +13,7 @@ struct CommentBody {
 }
 
 impl Comment {
-    pub fn new(text: String) -> Self {
+    pub const fn new(text: String) -> Self {
         Self {
             comment: CommentBody { body: text },
         }

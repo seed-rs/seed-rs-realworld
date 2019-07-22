@@ -9,15 +9,15 @@ pub struct Viewer {
 }
 
 impl Viewer {
-    pub fn username(&self) -> &Username {
+    pub const fn username(&self) -> &Username {
         &self.profile.username
     }
 
-    pub fn avatar(&self) -> &Avatar {
+    pub const fn avatar(&self) -> &Avatar {
         &self.profile.avatar
     }
 
-    pub fn profile(&self) -> &Profile {
+    pub const fn profile(&self) -> &Profile {
         &self.profile
     }
 

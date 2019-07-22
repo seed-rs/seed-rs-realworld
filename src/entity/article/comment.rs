@@ -10,6 +10,7 @@ pub struct Comment {
 }
 
 #[derive(Clone, PartialEq, Eq)]
+#[allow(clippy::module_name_repetitions)]
 pub struct CommentId(String);
 
 impl CommentId {
@@ -19,7 +20,7 @@ impl CommentId {
 }
 
 impl From<String> for CommentId {
-    fn from(id: String) -> CommentId {
-        CommentId(id)
+    fn from(id: String) -> Self {
+        Self(id)
     }
 }

@@ -32,10 +32,10 @@ pub struct Model<'a> {
 impl<'a> Status<'a, Author> {
     pub fn username(&'a self) -> &Username<'a> {
         match self {
-            Status::Loading(username) => username,
-            Status::LoadingSlowly(username) => username,
+            Status::Loading(username)
+            | Status::LoadingSlowly(username)
+            | Status::Failed(username) => username,
             Status::Loaded(author) => author.username(),
-            Status::Failed(username) => username,
         }
     }
 }
@@ -66,13 +66,13 @@ impl<'a, T> Default for Status<'a, T> {
 }
 
 impl<'a> Model<'a> {
-    pub fn session(&self) -> &Session {
+    pub const fn session(&self) -> &Session {
         &self.session
     }
 }
 
 impl<'a> From<Model<'a>> for Session {
-    fn from(model: Model) -> Session {
+    fn from(model: Model) -> Self {
         model.session
     }
 }
@@ -95,7 +95,7 @@ pub fn init<'a>(
         .perform_cmd(fetch_feed(
             session.viewer().cloned(),
             username.clone(),
-            &SelectedFeed::default(),
+            SelectedFeed::default(),
             PageNumber::default(),
         ));
 
@@ -110,7 +110,7 @@ pub fn init<'a>(
 fn fetch_feed(
     viewer: Option<Viewer>,
     username: Username<'static>,
-    selected_feed: &SelectedFeed,
+    selected_feed: SelectedFeed,
     page_number: PageNumber,
 ) -> impl Future<Item = Msg, Error = Msg> {
     request::feed::load_for_profile(
@@ -152,6 +152,7 @@ pub enum Msg {
     Unreachable,
 }
 
+#[allow(clippy::match_same_arms)]
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match msg {
         Msg::DismissErrorsClicked => {
@@ -161,7 +162,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             orders
                 .perform_cmd(request::follow::follow(
                     model.session.viewer().cloned(),
-                    &model.author.username(),
+                    model.author.username(),
                     Msg::FollowChangeCompleted,
                 ))
                 .skip();
@@ -170,7 +171,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             orders
                 .perform_cmd(request::follow::unfollow(
                     model.session.viewer().cloned(),
-                    &model.author.username(),
+                    model.author.username(),
                     Msg::FollowChangeCompleted,
                 ))
                 .skip();
@@ -181,7 +182,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             orders.perform_cmd(fetch_feed(
                 model.session.viewer().cloned(),
                 model.author.username().to_static(),
-                &selected_feed,
+                selected_feed,
                 model.feed_page,
             ));
         }
@@ -190,7 +191,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             orders.perform_cmd(fetch_feed(
                 model.session.viewer().cloned(),
                 model.author.username().to_static(),
-                &model.selected_feed,
+                model.selected_feed,
                 model.feed_page,
             ));
             page::scroll_to_top();
@@ -246,11 +247,11 @@ fn title_for_me(viewer: Option<&Viewer>, username: &Username) -> &'static str {
 
 fn title<'a>(model: &Model) -> Cow<'a, str> {
     match &model.author {
+        Status::Loading(username) | Status::LoadingSlowly(username) | Status::Failed(username) => {
+            title_for_me(model.session.viewer(), username).into()
+        }
         Status::Loaded(Author::IsViewer(..)) => MY_PROFILE_TITLE.into(),
         Status::Loaded(author) => title_for_other(author.username()).into(),
-        Status::Loading(username) => title_for_me(model.session.viewer(), username).into(),
-        Status::LoadingSlowly(username) => title_for_me(model.session.viewer(), username).into(),
-        Status::Failed(username) => title_for_me(model.session.viewer(), username).into(),
     }
 }
 

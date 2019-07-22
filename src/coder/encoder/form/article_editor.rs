@@ -24,7 +24,7 @@ impl<'a> ValidForm<'a> {
                 .iter()
                 .map(|(key, field)| match field {
                     Field::Tags(tags) => {
-                        ("tagList", ValidFormValue::Vector(tags.split(" ").collect()))
+                        ("tagList", ValidFormValue::Vector(tags.split(' ').collect()))
                     }
                     _ => (*key, ValidFormValue::Text(field.value())),
                 })

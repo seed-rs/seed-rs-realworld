@@ -7,7 +7,7 @@ pub struct Avatar(Option<Cow<'static, str>>);
 
 impl Avatar {
     pub fn new(url: Option<impl Into<Cow<'static, str>>>) -> Self {
-        Avatar(url.map(Into::into))
+        Self(url.map(Into::into))
     }
 
     pub fn src(&self) -> String {

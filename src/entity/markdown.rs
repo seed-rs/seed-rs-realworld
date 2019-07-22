@@ -10,8 +10,8 @@ impl Markdown {
 }
 
 impl From<String> for Markdown {
-    fn from(id: String) -> Markdown {
-        Markdown(id)
+    fn from(id: String) -> Self {
+        Self(id)
     }
 }
 

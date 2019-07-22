@@ -34,13 +34,14 @@ enum Status {
 
 impl Status {
     fn slug(&self) -> Option<&Slug> {
+        use Status::*;
         match self {
-            Status::Loading(slug) => Some(slug),
-            Status::LoadingSlowly(slug) => Some(slug),
-            Status::LoadingFailed(slug, ..) => Some(slug),
-            Status::Saving(slug, ..) => Some(slug),
-            Status::Editing(slug, ..) => Some(slug),
-            Status::EditingNew(..) | Status::Creating(..) => None,
+            Loading(slug)
+            | LoadingSlowly(slug)
+            | LoadingFailed(slug, ..)
+            | Saving(slug, ..)
+            | Editing(slug, ..) => Some(slug),
+            EditingNew(..) | Status::Creating(..) => None,
         }
     }
 }
@@ -52,13 +53,13 @@ impl Default for Status {
 }
 
 impl Model {
-    pub fn session(&self) -> &Session {
+    pub const fn session(&self) -> &Session {
         &self.session
     }
 }
 
 impl From<Model> for Session {
-    fn from(model: Model) -> Session {
+    fn from(model: Model) -> Self {
         model.session
     }
 }
@@ -114,13 +115,11 @@ pub enum Msg {
     Unreachable,
 }
 
+#[allow(clippy::match_same_arms)]
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match msg {
         Msg::FieldChanged(field) => match &mut model.status {
-            Status::Editing(_, _, form) => {
-                form.upsert_field(field);
-            }
-            Status::EditingNew(_, form) => {
+            Status::Editing(_, _, form) | Status::EditingNew(_, form) => {
                 form.upsert_field(field);
             }
             _ => logger::error("Can't edit the form, status has to be Editing or EditingNew!"),
@@ -131,7 +130,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                     orders.perform_cmd(request::article::update(
                         model.session.viewer().cloned(),
                         &valid_form,
-                        &slug,
+                        slug,
                         Msg::EditCompleted,
                     ));
                     model.status = Status::Saving(take(slug), take(form));
@@ -265,6 +264,7 @@ fn view_form(form: &Form, save_button: Node<Msg>) -> Node<Msg> {
     ]
 }
 
+#[derive(Copy, Clone)]
 enum SaveButton {
     CreateArticle,
     UpdateArticle,

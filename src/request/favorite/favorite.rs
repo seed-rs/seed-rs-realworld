@@ -3,6 +3,7 @@ use crate::entity::{Viewer, Article, Slug};
 use crate::{request, coder::decoder};
 use futures::prelude::*;
 use seed::fetch;
+use std::borrow::Cow;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -24,7 +25,7 @@ pub fn favorite<Ms: 'static>(
             f(data_result
                 .map_err(request::fail_reason_into_errors)
                 .and_then(move |root_decoder| {
-                    root_decoder.article.try_into_article(viewer)
+                    root_decoder.article.try_into_article(viewer.map(Cow::Owned))
                         .map_err(|error| vec![error])
                 })
             )

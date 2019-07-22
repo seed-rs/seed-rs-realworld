@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use crate::entity::{self, Avatar, Profile, FollowedAuthor, UnfollowedAuthor, Viewer};
+use std::borrow::Cow;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -11,12 +12,12 @@ pub struct Author {
 }
 
 impl Author {
-    pub fn into_author(self, viewer: Option<Viewer>) -> entity::Author {
+    pub fn into_author(self, viewer: Option<Cow<Viewer>>) -> entity::Author {
         let username = self.username.into();
 
         if let Some(viewer) = viewer {
             if &username == viewer.username() {
-                return entity::Author::IsViewer(viewer)
+                return entity::Author::IsViewer(viewer.into_owned())
             }
         }
 

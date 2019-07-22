@@ -5,6 +5,7 @@ use futures::prelude::*;
 use seed::fetch;
 use std::num::NonZeroUsize;
 use lazy_static::lazy_static;
+use std::borrow::Cow;
 
 lazy_static! {
     static ref ARTICLES_PER_PAGE: NonZeroUsize = NonZeroUsize::new(5).unwrap();
@@ -21,7 +22,7 @@ impl RootDecoder {
     fn into_paginated_list(self, viewer: Option<Viewer>,) -> PaginatedList<Article> {
         PaginatedList {
             items: self.articles.into_iter().filter_map(|article_decoder| {
-                match article_decoder.try_into_article(viewer.clone()) {
+                match article_decoder.try_into_article(viewer.as_ref().map(Cow::Borrowed)) {
                     Ok(article) => Some(article),
                     Err(error) => {
                         logger::error(error);

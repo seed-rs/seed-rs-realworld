@@ -3,6 +3,7 @@ use crate::entity::{Viewer, Comment, Slug};
 use crate::{request, coder::{decoder, encoder}};
 use futures::prelude::*;
 use seed::fetch;
+use std::borrow::Cow;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -26,7 +27,7 @@ pub fn create<Ms: 'static>(
             f(data_result
                 .map_err(request::fail_reason_into_errors)
                 .and_then(move |root_decoder| {
-                    root_decoder.comment.try_into_comment(viewer)
+                    root_decoder.comment.try_into_comment(viewer.map(Cow::Owned))
                         .map_err(|error| vec![error])
                 })
             )

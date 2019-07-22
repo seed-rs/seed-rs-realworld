@@ -4,6 +4,7 @@ use crate::{request, coder::decoder, logger};
 use futures::prelude::*;
 use seed::fetch;
 use std::collections::VecDeque;
+use std::borrow::Cow;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -14,7 +15,7 @@ struct RootDecoder {
 impl RootDecoder {
     fn into_comments(self, viewer: Option<Viewer>) -> VecDeque<Comment> {
         self.comments.into_iter().filter_map(|comment_decoder| {
-            match comment_decoder.try_into_comment(viewer.clone()) {
+            match comment_decoder.try_into_comment(viewer.as_ref().map(Cow::Borrowed)) {
                 Ok(comment) => Some(comment),
                 Err(error) => {
                     logger::error(error);

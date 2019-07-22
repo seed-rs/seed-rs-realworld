@@ -3,6 +3,18 @@
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = "true"
 PORT = "8000"
 
+# ---- GENERAL ----
+
+[tasks.verify]
+description = "Format, lint with Clippy, build, run tests"
+workspace = false
+dependencies = ["fmt", "clippy", "build", "test_h_firefox"]
+
+[tasks.verify_only]
+description = "Like `verify`, but fails if the code isn't formatted. Builds in release mode. Primarily for CI."
+workspace = false
+dependencies = ["fmt_check", "clippy", "build_release", "test_h_firefox"]
+
 # ---- BUILD & CREATE WASMS ----
 [tasks.build]
 description = "Build"
@@ -71,6 +83,11 @@ description = "Run headless tests. Ex: 'cargo make test_h firefox'. Test envs: [
 extend = "test"
 args = ["test", "--headless", "--${@}"]
 
+[tasks.test_h_firefox]
+description = "Run headless tests with Firefox."
+extend = "test"
+args = ["test", "--headless", "--firefox"]
+
 [tasks.test_h_release]
 extend = "test_h"
 description = "Run headless tests in release mode. Ex: 'cargo make test_h firefox'. Test envs: [chrome, firefox, safari]"
@@ -83,3 +100,27 @@ workspace = false
 install_crate = { crate_name = "wasm-pack", binary = "wasm-pack", test_arg = "-V" }
 command = "wasm-pack"
 args = ["test", "--firefox", "--headless", "--", "--lib", "${@}"]
+
+# ---- LINT ----
+
+[tasks.fmt]
+description = "Format with rustfmt"
+workspace = false
+install_crate = { crate_name = "rustfmt-nightly", rustup_component_name = "rustfmt", binary = "rustfmt", test_arg = "--help" }
+command = "cargo"
+args = ["fmt", "--all"]
+
+[tasks.fmt_check]
+extend = "fmt"
+description = "Check format with rustfmt"
+args = ["fmt", "--all", "--", "--check"]
+
+[tasks.clippy]
+description = "Lint only Seed with Clippy"
+clear = true
+workspace = false
+install_crate = { rustup_component_name = "clippy", binary = "cargo-clippy", test_arg = "--help" }
+command = "cargo"
+args = ["clippy", "--all-features", "--", "--deny", "warnings", "--deny", "clippy::pedantic", "--deny", "clippy::nursery"]
+
+

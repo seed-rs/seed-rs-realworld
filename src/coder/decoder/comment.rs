@@ -20,7 +20,7 @@ impl Comment {
         let updated_at = self.updated_at.try_into()?;
 
         Ok(entity::Comment {
-            id: self.id.to_string().into(),
+            id: self.id.into(),
             body: self.body,
             created_at,
             updated_at,

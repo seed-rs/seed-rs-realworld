@@ -36,12 +36,12 @@ impl Status {
     fn slug(&self) -> Option<&Slug> {
         use Status::*;
         match self {
+            EditingNew(..) | Status::Creating(..) => None,
             Loading(slug)
             | LoadingSlowly(slug)
             | LoadingFailed(slug, ..)
             | Saving(slug, ..)
             | Editing(slug, ..) => Some(slug),
-            EditingNew(..) | Status::Creating(..) => None,
         }
     }
 }
@@ -259,7 +259,7 @@ fn view_form(form: &Form, save_button: Node<Msg>) -> Node<Msg> {
             event.prevent_default();
             Msg::FormSubmitted
         }),
-        form.iter().map(view_fieldset),
+        form.iter_fields().map(view_fieldset),
         save_button,
     ]
 }

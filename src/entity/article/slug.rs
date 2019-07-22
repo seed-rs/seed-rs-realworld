@@ -1,19 +1,14 @@
-use std::borrow::{Borrow, Cow};
-
 #[derive(Clone, Default, PartialEq, Eq)]
-pub struct Slug(Cow<'static, str>);
+pub struct Slug(String);
 
 impl Slug {
     pub fn as_str(&self) -> &str {
-        self.0.borrow()
+        &self.0
     }
 }
 
-impl<T> From<T> for Slug
-where
-    T: Into<Cow<'static, str>>,
-{
-    fn from(value: T) -> Self {
-        Self(value.into())
+impl From<String> for Slug {
+    fn from(slug: String) -> Self {
+        Self(slug)
     }
 }

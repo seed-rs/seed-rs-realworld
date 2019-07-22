@@ -14,7 +14,7 @@ impl<'a> ValidForm<'a> {
     pub fn new(form: &'a EntityValidForm) -> Self {
         ValidForm {
             user: form
-                .iter()
+                .iter_keys_and_fields()
                 .filter_map(|(key, field)| match field {
                     Field::Password(password) if password.is_empty() => None,
                     _ => Some((*key, field.value())),

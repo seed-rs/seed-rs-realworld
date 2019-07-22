@@ -12,13 +12,12 @@ pub struct Settings {
 
 impl Settings {
     pub fn into_form(self) -> Form {
-        let fields: Vec<Field> = vec![
+        Form::new(vec![
             Field::Avatar(self.image.unwrap_or_default()),
             Field::Username(self.username),
             Field::Bio(self.bio.unwrap_or_default()),
             Field::Email(self.email),
             Field::Password(String::default()),
-        ];
-        Form::new(fields)
+        ])
     }
 }

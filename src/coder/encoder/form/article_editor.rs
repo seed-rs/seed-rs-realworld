@@ -14,18 +14,19 @@ pub struct ValidForm<'a> {
 #[serde(untagged)]
 enum ValidFormValue<'a> {
     Text(&'a str),
-    Vector(Vec<&'a str>),
+    TextList(Vec<&'a str>),
 }
 
 impl<'a> ValidForm<'a> {
     pub fn new(form: &'a EntityValidForm) -> Self {
         ValidForm {
             article: form
-                .iter()
+                .iter_keys_and_fields()
                 .map(|(key, field)| match field {
-                    Field::Tags(tags) => {
-                        ("tagList", ValidFormValue::Vector(tags.split(' ').collect()))
-                    }
+                    Field::Tags(tags) => (
+                        "tagList",
+                        ValidFormValue::TextList(tags.split(' ').collect()),
+                    ),
                     _ => (*key, ValidFormValue::Text(field.value())),
                 })
                 .collect(),

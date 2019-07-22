@@ -11,7 +11,7 @@ impl<'a> ValidForm<'a> {
     pub fn new(form: &'a EntityValidForm) -> Self {
         ValidForm {
             user: form
-                .iter()
+                .iter_keys_and_fields()
                 .map(|(key, field)| (*key, field.value()))
                 .collect(),
         }

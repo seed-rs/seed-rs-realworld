@@ -1,4 +1,5 @@
-use crate::{article, username, GMsg};
+use crate::entity::{Slug, Username};
+use crate::GMsg;
 use seed::prelude::*;
 use std::{borrow::Cow, convert::TryFrom, fmt};
 use tool::non_empty;
@@ -13,10 +14,10 @@ pub enum Route<'a> {
     Logout,
     Register,
     Settings,
-    Article(article::slug::Slug),
-    Profile(Cow<'a, username::Username<'a>>),
+    Article(Slug),
+    Profile(Cow<'a, Username<'a>>),
     NewArticle,
-    EditArticle(article::slug::Slug),
+    EditArticle(Slug),
 }
 
 impl<'a> Route<'a> {
@@ -62,19 +63,19 @@ impl<'a> TryFrom<seed::Url> for Route<'a> {
             Some("profile") => path
                 .next()
                 .filter(non_empty)
-                .map(username::Username::from)
+                .map(Username::from)
                 .map(Cow::Owned)
                 .map(Route::Profile),
             Some("register") => Some(Route::Register),
             Some("article") => path
                 .next()
                 .filter(non_empty)
-                .map(article::slug::Slug::from)
+                .map(Slug::from)
                 .map(Route::Article),
             Some("editor") => path
                 .next()
                 .filter(non_empty)
-                .map(article::slug::Slug::from)
+                .map(Slug::from)
                 .map(Route::EditArticle)
                 .or_else(|| Some(Route::NewArticle)),
             _ => None,

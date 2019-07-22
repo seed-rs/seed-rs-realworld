@@ -129,7 +129,7 @@ fn view_form(form: &Form) -> Node<Msg> {
             event.prevent_default();
             Msg::FormSubmitted
         }),
-        form.iter().map(view_fieldset),
+        form.iter_fields().map(view_fieldset),
         button![
             class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
             "Sign in"

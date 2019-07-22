@@ -16,7 +16,7 @@ impl Author {
         let username = self.username.into();
 
         if let Some(viewer) = viewer {
-            if &username == viewer.username() {
+            if viewer.username() == &username {
                 return entity::Author::IsViewer(viewer.into_owned());
             }
         }

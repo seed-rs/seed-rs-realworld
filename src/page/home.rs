@@ -7,33 +7,19 @@ use crate::{loading, logger, page, request, GMsg, Session};
 use futures::prelude::*;
 use seed::prelude::*;
 
-// Model
-
-#[derive(Clone)]
-pub enum SelectedFeed {
-    Your(Viewer),
-    Global,
-    Tag(Tag),
+fn fetch_feed(
+    viewer: Option<Viewer>,
+    selected_feed: &SelectedFeed,
+    page_number: PageNumber,
+) -> impl Future<Item = Msg, Error = Msg> {
+    request::feed::load_for_home(viewer, selected_feed, page_number, Msg::FeedLoadCompleted)
 }
 
-impl<'a> Default for SelectedFeed {
-    fn default() -> Self {
-        SelectedFeed::Global
-    }
-}
+// ------ ------
+//     Model
+// ------ ------
 
-enum Status<T> {
-    Loading,
-    LoadingSlowly,
-    Loaded(T),
-    Failed,
-}
-
-impl<T> Default for Status<T> {
-    fn default() -> Self {
-        Status::Loading
-    }
-}
+// ------ Model ------
 
 #[derive(Default)]
 pub struct Model {
@@ -55,6 +41,40 @@ impl From<Model> for Session {
         model.session
     }
 }
+
+// ------ Status ------
+
+enum Status<T> {
+    Loading,
+    LoadingSlowly,
+    Loaded(T),
+    Failed,
+}
+
+impl<T> Default for Status<T> {
+    fn default() -> Self {
+        Status::Loading
+    }
+}
+
+// ------ SelectedFeed ------
+
+#[derive(Clone)]
+pub enum SelectedFeed {
+    Your(Viewer),
+    Global,
+    Tag(Tag),
+}
+
+impl<'a> Default for SelectedFeed {
+    fn default() -> Self {
+        SelectedFeed::Global
+    }
+}
+
+// ------ ------
+//     Init
+// ------ ------
 
 pub fn init(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     let selected_feed = session
@@ -81,15 +101,9 @@ pub fn init(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     }
 }
 
-fn fetch_feed(
-    viewer: Option<Viewer>,
-    selected_feed: &SelectedFeed,
-    page_number: PageNumber,
-) -> impl Future<Item = Msg, Error = Msg> {
-    request::feed::load_for_home(viewer, selected_feed, page_number, Msg::FeedLoadCompleted)
-}
-
-// Sink
+// ------ ------
+//     Sink
+// ------ ------
 
 pub fn sink(g_msg: GMsg, model: &mut Model) {
     match g_msg {
@@ -100,7 +114,9 @@ pub fn sink(g_msg: GMsg, model: &mut Model) {
     }
 }
 
-// Update
+// ------ ------
+//    Update
+// ------ ------
 
 #[derive(Clone)]
 #[allow(clippy::pub_enum_variant_names)]
@@ -176,10 +192,18 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
     }
 }
 
-// View
+// ------ ------
+//     View
+// ------ ------
 
 pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
     ViewPage::new("Conduit", view_content(model))
+}
+
+// ====== PRIVATE ======
+
+fn view_content(model: &Model) -> Node<Msg> {
+    div![class!["home-page"], view_banner(), view_feed(model),]
 }
 
 fn view_banner() -> Node<Msg> {
@@ -193,59 +217,7 @@ fn view_banner() -> Node<Msg> {
     ]
 }
 
-fn view_tabs(model: &Model) -> Node<Msg> {
-    let viewer = model.session.viewer();
-
-    let your_feed = |viewer: Viewer| {
-        article::feed::Tab::new("Your Feed", Msg::TabClicked(SelectedFeed::Your(viewer)))
-    };
-    let global_feed = article::feed::Tab::new("Global Feed", Msg::TabClicked(SelectedFeed::Global));
-    let tag_feed = |tag: Tag| {
-        article::feed::Tab::new(format!("#{}", tag), Msg::TabClicked(SelectedFeed::Tag(tag)))
-    };
-
-    match &model.selected_feed {
-        SelectedFeed::Your(viewer) => {
-            article::feed::view_tabs(vec![your_feed(viewer.clone()).activate(), global_feed])
-        }
-        SelectedFeed::Global => match viewer {
-            Some(viewer) => {
-                article::feed::view_tabs(vec![your_feed(viewer.clone()), global_feed.activate()])
-            }
-            None => article::feed::view_tabs(vec![global_feed.activate()]),
-        },
-        SelectedFeed::Tag(tag) => match viewer {
-            Some(viewer) => article::feed::view_tabs(vec![
-                your_feed(viewer.clone()),
-                global_feed,
-                tag_feed(tag.clone()).activate(),
-            ]),
-            None => article::feed::view_tabs(vec![global_feed, tag_feed(tag.clone()).activate()]),
-        },
-    }
-}
-
-fn view_tag(tag: Tag) -> Node<Msg> {
-    a![
-        class!["tag-pill", "tag-default"],
-        attrs! {At::Href => ""},
-        tag.to_string(),
-        simple_ev(Ev::Click, Msg::TagClicked(tag))
-    ]
-}
-
-fn view_tags(model: &Model) -> Node<Msg> {
-    match &model.tags {
-        Status::Loading => empty![],
-        Status::LoadingSlowly => loading::view_icon(),
-        Status::Failed => loading::view_error("tags"),
-        Status::Loaded(tags) => div![
-            class!["sidebar"],
-            p!["Popular Tags"],
-            div![class!["tag-list"], tags.clone().into_iter().map(view_tag)]
-        ],
-    }
-}
+// ------ view feed ------
 
 fn view_feed(model: &Model) -> Node<Msg> {
     match &model.feed {
@@ -277,6 +249,60 @@ fn view_feed(model: &Model) -> Node<Msg> {
     }
 }
 
-fn view_content(model: &Model) -> Node<Msg> {
-    div![class!["home-page"], view_banner(), view_feed(model),]
+fn view_tabs(model: &Model) -> Node<Msg> {
+    use crate::entity::article::feed::{view_tabs, Tab};
+
+    let viewer = model.session.viewer();
+
+    // -- Tabs --
+
+    let your_feed =
+        |viewer: Viewer| Tab::new("Your Feed", Msg::TabClicked(SelectedFeed::Your(viewer)));
+
+    let global_feed = Tab::new("Global Feed", Msg::TabClicked(SelectedFeed::Global));
+
+    let tag_feed =
+        |tag: Tag| Tab::new(format!("#{}", tag), Msg::TabClicked(SelectedFeed::Tag(tag)));
+
+    // -- View --
+
+    match &model.selected_feed {
+        SelectedFeed::Your(viewer) => {
+            view_tabs(vec![your_feed(viewer.clone()).activate(), global_feed])
+        }
+        SelectedFeed::Global => match viewer {
+            Some(viewer) => view_tabs(vec![your_feed(viewer.clone()), global_feed.activate()]),
+            None => view_tabs(vec![global_feed.activate()]),
+        },
+        SelectedFeed::Tag(tag) => match viewer {
+            Some(viewer) => view_tabs(vec![
+                your_feed(viewer.clone()),
+                global_feed,
+                tag_feed(tag.clone()).activate(),
+            ]),
+            None => view_tabs(vec![global_feed, tag_feed(tag.clone()).activate()]),
+        },
+    }
+}
+
+fn view_tags(model: &Model) -> Node<Msg> {
+    match &model.tags {
+        Status::Loading => empty![],
+        Status::LoadingSlowly => loading::view_icon(),
+        Status::Failed => loading::view_error("tags"),
+        Status::Loaded(tags) => div![
+            class!["sidebar"],
+            p!["Popular Tags"],
+            div![class!["tag-list"], tags.clone().into_iter().map(view_tag)]
+        ],
+    }
+}
+
+fn view_tag(tag: Tag) -> Node<Msg> {
+    a![
+        class!["tag-pill", "tag-default"],
+        attrs! {At::Href => ""},
+        tag.to_string(),
+        simple_ev(Ev::Click, Msg::TagClicked(tag))
+    ]
 }

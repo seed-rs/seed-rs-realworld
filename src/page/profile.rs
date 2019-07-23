@@ -14,10 +14,29 @@ use futures::prelude::*;
 use seed::prelude::*;
 use std::borrow::Cow;
 
-static MY_PROFILE_TITLE: &'static str = "My Profile";
-static DEFAULT_PROFILE: &'static str = "Profile";
+static DEFAULT_TITLE_PREFIX: &str = "Profile";
+static TITLE_PREFIX_FOR_ME: &str = "My Profile";
 
-// Model
+fn fetch_feed(
+    viewer: Option<Viewer>,
+    username: Username<'static>,
+    selected_feed: SelectedFeed,
+    page_number: PageNumber,
+) -> impl Future<Item = Msg, Error = Msg> {
+    request::feed::load_for_profile(
+        viewer,
+        username,
+        selected_feed,
+        page_number,
+        Msg::FeedLoadCompleted,
+    )
+}
+
+// ------ ------
+//     Model
+// ------ ------
+
+// ------ Model ------
 
 #[derive(Default)]
 pub struct Model<'a> {
@@ -29,28 +48,19 @@ pub struct Model<'a> {
     feed: Status<'a, article::feed::Model>,
 }
 
-impl<'a> Status<'a, Author> {
-    pub fn username(&'a self) -> &Username<'a> {
-        match self {
-            Status::Loading(username)
-            | Status::LoadingSlowly(username)
-            | Status::Failed(username) => username,
-            Status::Loaded(author) => author.username(),
-        }
+impl<'a> Model<'a> {
+    pub const fn session(&self) -> &Session {
+        &self.session
     }
 }
 
-#[derive(Copy, Clone)]
-pub enum SelectedFeed {
-    MyArticles,
-    FavoritedArticles,
-}
-
-impl Default for SelectedFeed {
-    fn default() -> Self {
-        SelectedFeed::MyArticles
+impl<'a> From<Model<'a>> for Session {
+    fn from(model: Model) -> Self {
+        model.session
     }
 }
+
+// ------ Status ------
 
 enum Status<'a, T> {
     Loading(Username<'a>),
@@ -65,17 +75,34 @@ impl<'a, T> Default for Status<'a, T> {
     }
 }
 
-impl<'a> Model<'a> {
-    pub const fn session(&self) -> &Session {
-        &self.session
+impl<'a> Status<'a, Author> {
+    pub fn username(&'a self) -> &Username<'a> {
+        match self {
+            Status::Loading(username)
+            | Status::LoadingSlowly(username)
+            | Status::Failed(username) => username,
+            Status::Loaded(author) => author.username(),
+        }
     }
 }
 
-impl<'a> From<Model<'a>> for Session {
-    fn from(model: Model) -> Self {
-        model.session
+// ------ SelectedFeed ------
+
+#[derive(Copy, Clone)]
+pub enum SelectedFeed {
+    MyArticles,
+    FavoritedArticles,
+}
+
+impl Default for SelectedFeed {
+    fn default() -> Self {
+        SelectedFeed::MyArticles
     }
 }
+
+// ------ ------
+//     Init
+// ------ ------
 
 pub fn init<'a>(
     session: Session,
@@ -107,22 +134,9 @@ pub fn init<'a>(
     }
 }
 
-fn fetch_feed(
-    viewer: Option<Viewer>,
-    username: Username<'static>,
-    selected_feed: SelectedFeed,
-    page_number: PageNumber,
-) -> impl Future<Item = Msg, Error = Msg> {
-    request::feed::load_for_profile(
-        viewer,
-        username,
-        selected_feed,
-        page_number,
-        Msg::FeedLoadCompleted,
-    )
-}
-
-// Sink
+// ------ ------
+//     Sink
+// ------ ------
 
 pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match g_msg {
@@ -134,7 +148,9 @@ pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>)
     }
 }
 
-// Update
+// ------ ------
+//    Update
+// ------ ------
 
 #[derive(Clone)]
 #[allow(clippy::pub_enum_variant_names)]
@@ -230,96 +246,42 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
     }
 }
 
-// View
+// ------ ------
+//     View
+// ------ ------
 
-fn title_for_other(username: &Username) -> String {
+pub fn view<'a>(model: &'a Model) -> ViewPage<'a, Msg> {
+    ViewPage::new(title_prefix(model), view_content(model))
+}
+
+// ====== PRIVATE ======
+
+// ------ title prefix ------
+
+fn title_prefix<'a>(model: &Model) -> Cow<'a, str> {
+    match &model.author {
+        Status::Loading(username) | Status::LoadingSlowly(username) | Status::Failed(username) => {
+            title_prefix_for_me(model.session.viewer(), username).into()
+        }
+        Status::Loaded(Author::IsViewer(..)) => TITLE_PREFIX_FOR_ME.into(),
+        Status::Loaded(author) => title_prefix_for_other(author.username()).into(),
+    }
+}
+
+fn title_prefix_for_other(username: &Username) -> String {
     format!("Profile - {}", username.as_str())
 }
 
-fn title_for_me(viewer: Option<&Viewer>, username: &Username) -> &'static str {
+fn title_prefix_for_me(viewer: Option<&Viewer>, username: &Username) -> &'static str {
     if let Some(viewer) = viewer {
         if username == viewer.username() {
-            return MY_PROFILE_TITLE;
+            return TITLE_PREFIX_FOR_ME;
         }
     }
-    DEFAULT_PROFILE
+    DEFAULT_TITLE_PREFIX
 }
 
-fn title<'a>(model: &Model) -> Cow<'a, str> {
-    match &model.author {
-        Status::Loading(username) | Status::LoadingSlowly(username) | Status::Failed(username) => {
-            title_for_me(model.session.viewer(), username).into()
-        }
-        Status::Loaded(Author::IsViewer(..)) => MY_PROFILE_TITLE.into(),
-        Status::Loaded(author) => title_for_other(author.username()).into(),
-    }
-}
-
-pub fn view<'a>(model: &'a Model) -> ViewPage<'a, Msg> {
-    ViewPage::new(title(model), view_content(model))
-}
-
-fn view_tabs(selected_feed: SelectedFeed) -> Node<Msg> {
-    let my_articles =
-        article::feed::Tab::new("My Articles", Msg::TabClicked(SelectedFeed::MyArticles));
-    let favorited_articles = article::feed::Tab::new(
-        "Favorited Articles",
-        Msg::TabClicked(SelectedFeed::FavoritedArticles),
-    );
-
-    match selected_feed {
-        SelectedFeed::MyArticles => {
-            article::feed::view_tabs(vec![my_articles.activate(), favorited_articles])
-        }
-        SelectedFeed::FavoritedArticles => {
-            article::feed::view_tabs(vec![my_articles, favorited_articles.activate()])
-        }
-    }
-}
-
-fn view_feed(model: &Model) -> Node<Msg> {
-    match &model.feed {
-        Status::Loading(_) => empty![],
-        Status::LoadingSlowly(_) => loading::view_icon(),
-        Status::Failed(_) => loading::view_error("feed"),
-        Status::Loaded(feed_model) => div![
-            class!["container"],
-            div![
-                class!["row"],
-                div![
-                    class!["col-xs-12", "col-md-10", "offset-md-1"],
-                    div![
-                        class!["articles-toggle"],
-                        view_tabs(model.selected_feed),
-                        article::feed::view_articles(feed_model)
-                            .els()
-                            .map_message(Msg::FeedMsg),
-                        article::feed::view_pagination(
-                            feed_model,
-                            model.feed_page,
-                            Msg::FeedPageClicked
-                        )
-                    ],
-                ]
-            ]
-        ],
-    }
-}
-
-fn view_follow_button(author: &Author, model: &Model) -> Node<Msg> {
-    match model.session.viewer() {
-        None => empty![],
-        Some(_) => match author {
-            Author::IsViewer(..) => empty![],
-            Author::Following(_) => {
-                author::view_unfollow_button(Msg::UnfollowClicked, author.username())
-            }
-            Author::NotFollowing(_) => {
-                author::view_follow_button(Msg::FollowClicked, author.username())
-            }
-        },
-    }
-}
+// ------ view functions ------
 
 fn view_content(model: &Model) -> Node<Msg> {
     match &model.author {
@@ -350,5 +312,73 @@ fn view_content(model: &Model) -> Node<Msg> {
             ],
             view_feed(model)
         ],
+    }
+}
+
+fn view_follow_button(author: &Author, model: &Model) -> Node<Msg> {
+    match model.session.viewer() {
+        None => empty![],
+        Some(_) => match author {
+            Author::IsViewer(..) => empty![],
+            Author::Following(_) => {
+                author::view_unfollow_button(Msg::UnfollowClicked, author.username())
+            }
+            Author::NotFollowing(_) => {
+                author::view_follow_button(Msg::FollowClicked, author.username())
+            }
+        },
+    }
+}
+
+// ------ view feed ------
+
+fn view_feed(model: &Model) -> Node<Msg> {
+    match &model.feed {
+        Status::Loading(_) => empty![],
+        Status::LoadingSlowly(_) => loading::view_icon(),
+        Status::Failed(_) => loading::view_error("feed"),
+        Status::Loaded(feed_model) => div![
+            class!["container"],
+            div![
+                class!["row"],
+                div![
+                    class!["col-xs-12", "col-md-10", "offset-md-1"],
+                    div![
+                        class!["articles-toggle"],
+                        view_tabs(model.selected_feed),
+                        article::feed::view_articles(feed_model)
+                            .els()
+                            .map_message(Msg::FeedMsg),
+                        article::feed::view_pagination(
+                            feed_model,
+                            model.feed_page,
+                            Msg::FeedPageClicked
+                        )
+                    ],
+                ]
+            ]
+        ],
+    }
+}
+
+fn view_tabs(selected_feed: SelectedFeed) -> Node<Msg> {
+    use crate::entity::article::feed::{view_tabs, Tab};
+
+    // -- Tabs --
+
+    let my_articles = Tab::new("My Articles", Msg::TabClicked(SelectedFeed::MyArticles));
+
+    let favorited_articles = Tab::new(
+        "Favorited Articles",
+        Msg::TabClicked(SelectedFeed::FavoritedArticles),
+    );
+
+    // -- View --
+
+    match selected_feed {
+        SelectedFeed::MyArticles => view_tabs(vec![my_articles.activate(), favorited_articles]),
+        SelectedFeed::FavoritedArticles => {
+            view_tabs(vec![my_articles, favorited_articles.activate()])
+        }
     }
 }

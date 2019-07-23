@@ -10,7 +10,9 @@ use crate::{
 };
 use seed::prelude::*;
 
-// Model
+// ------ ------
+//     Model
+// ------ ------
 
 #[derive(Default)]
 pub struct Model {
@@ -31,7 +33,9 @@ impl From<Model> for Session {
     }
 }
 
-// Init
+// ------ ------
+//     Init
+// ------ ------
 
 pub fn init(session: Session) -> Model {
     Model {
@@ -40,7 +44,9 @@ pub fn init(session: Session) -> Model {
     }
 }
 
-// Sink
+// ------ ------
+//     Sink
+// ------ ------
 
 pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match g_msg {
@@ -52,7 +58,9 @@ pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>)
     }
 }
 
-// Update
+// ------ ------
+//    Update
+// ------ ------
 
 pub enum Msg {
     FormSubmitted,
@@ -87,10 +95,58 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
     }
 }
 
-// View
+// ------ ------
+//     View
+// ------ ------
 
 pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
     ViewPage::new("Register", view_content(model))
+}
+
+// ====== PRIVATE ======
+
+fn view_content(model: &Model) -> Node<Msg> {
+    div![
+        class!["auth-page"],
+        div![
+            class!["container", "page"],
+            div![
+                class!["row"],
+                div![
+                    class!["col-md-6", "offset-md-3", "col-x32-12"],
+                    h1![class!["text-xs-center"], "Sign up"],
+                    p![
+                        class!["text-xs-center"],
+                        a![
+                            attrs! {At::Href => Route::Login.to_string()},
+                            "Have an account?"
+                        ]
+                    ],
+                    ul![
+                        class!["error-messages"],
+                        model.problems.iter().map(|problem| li![problem.message()])
+                    ],
+                    view_form(&model.form)
+                ]
+            ]
+        ]
+    ]
+}
+
+// ------ view form ------
+
+fn view_form(form: &Form) -> Node<Msg> {
+    form![
+        raw_ev(Ev::Submit, |event| {
+            event.prevent_default();
+            Msg::FormSubmitted
+        }),
+        form.iter_fields().map(view_fieldset),
+        button![
+            class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
+            "Sign up"
+        ]
+    ]
 }
 
 fn view_fieldset(field: &Field) -> Node<Msg> {
@@ -138,46 +194,4 @@ fn view_fieldset(field: &Field) -> Node<Msg> {
             ]
         ],
     }
-}
-
-fn view_form(form: &Form) -> Node<Msg> {
-    form![
-        raw_ev(Ev::Submit, |event| {
-            event.prevent_default();
-            Msg::FormSubmitted
-        }),
-        form.iter_fields().map(view_fieldset),
-        button![
-            class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
-            "Sign up"
-        ]
-    ]
-}
-
-fn view_content(model: &Model) -> Node<Msg> {
-    div![
-        class!["auth-page"],
-        div![
-            class!["container", "page"],
-            div![
-                class!["row"],
-                div![
-                    class!["col-md-6", "offset-md-3", "col-x32-12"],
-                    h1![class!["text-xs-center"], "Sign up"],
-                    p![
-                        class!["text-xs-center"],
-                        a![
-                            attrs! {At::Href => Route::Login.to_string()},
-                            "Have an account?"
-                        ]
-                    ],
-                    ul![
-                        class!["error-messages"],
-                        model.problems.iter().map(|problem| li![problem.message()])
-                    ],
-                    view_form(&model.form)
-                ]
-            ]
-        ]
-    ]
 }

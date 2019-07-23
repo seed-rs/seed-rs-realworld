@@ -12,13 +12,31 @@ use crate::{
 use seed::prelude::*;
 use std::borrow::Cow;
 
-// Model
+// ------ ------
+//     Model
+// ------ ------
+
+// ------ Model ------
 
 #[derive(Default)]
 pub struct Model {
     session: Session,
     status: Status,
 }
+
+impl Model {
+    pub const fn session(&self) -> &Session {
+        &self.session
+    }
+}
+
+impl From<Model> for Session {
+    fn from(model: Model) -> Self {
+        model.session
+    }
+}
+
+// ------ Status ------
 
 enum Status {
     // -- edit article --
@@ -52,19 +70,9 @@ impl Default for Status {
     }
 }
 
-impl Model {
-    pub const fn session(&self) -> &Session {
-        &self.session
-    }
-}
-
-impl From<Model> for Session {
-    fn from(model: Model) -> Self {
-        model.session
-    }
-}
-
-// Init
+// ------ ------
+//     Init
+// ------ ------
 
 pub fn init_new(session: Session) -> Model {
     Model {
@@ -90,7 +98,9 @@ pub fn init_edit(session: Session, slug: Slug, orders: &mut impl Orders<Msg, GMs
     }
 }
 
-// Sink
+// ------ ------
+//     Sink
+// ------ ------
 
 pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match g_msg {
@@ -102,7 +112,9 @@ pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>)
     }
 }
 
-// Update
+// ------ ------
+//    Update
+// ------ ------
 
 #[derive(Clone)]
 pub enum Msg {
@@ -181,14 +193,105 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
     }
 }
 
-// View
+// ------ ------
+//     View
+// ------ ------
 
-pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
-    let title: Cow<str> = match model.status.slug() {
-        Some(slug) => format!("Edit Article - {}", slug.as_str()).into(),
+pub fn view(model: &Model) -> ViewPage<Msg> {
+    ViewPage::new(title_prefix(model.status.slug()), view_content(model))
+}
+
+// ====== PRIVATE ======
+
+fn title_prefix(slug: Option<&Slug>) -> impl Into<Cow<str>> {
+    match slug {
+        Some(slug) => format!("Edit Article - {}", slug.as_str()),
         None => "New Article".into(),
-    };
-    ViewPage::new(title, view_content(model))
+    }
+}
+
+#[derive(Copy, Clone)]
+enum SaveButton {
+    CreateArticle,
+    UpdateArticle,
+}
+
+fn view_content(model: &Model) -> Node<Msg> {
+    div![
+        class!["auth-page"],
+        div![
+            class!["container", "page"],
+            div![
+                class!["row"],
+                div![
+                    class!["col-md-6", "offset-md-3", "col-x32-12"],
+                    if model.session.viewer().is_some() {
+                        view_authenticated(model)
+                    } else {
+                        vec![div!["Sign in to edit this article."]]
+                    }
+                ]
+            ]
+        ]
+    ]
+}
+
+fn view_authenticated(model: &Model) -> Vec<Node<Msg>> {
+    match &model.status {
+        Status::Loading(_) => vec![],
+        Status::LoadingSlowly(_) => vec![loading::view_icon()],
+        Status::LoadingFailed(_, problems) => {
+            vec![view_problems(problems), loading::view_error("article")]
+        }
+        Status::Saving(_, form) => vec![view_form(
+            form,
+            view_save_button(SaveButton::UpdateArticle, true),
+        )],
+        Status::Editing(_, problems, form) => vec![
+            view_problems(problems),
+            view_form(form, view_save_button(SaveButton::UpdateArticle, false)),
+        ],
+        Status::EditingNew(problems, form) => vec![
+            view_problems(problems),
+            view_form(form, view_save_button(SaveButton::CreateArticle, false)),
+        ],
+        Status::Creating(form) => vec![view_form(
+            form,
+            view_save_button(SaveButton::CreateArticle, true),
+        )],
+    }
+}
+
+fn view_save_button(type_: SaveButton, disabled: bool) -> Node<Msg> {
+    button![
+        class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
+        simple_ev(Ev::Click, Msg::FormSubmitted),
+        attrs! {At::Type => "button", At::Disabled => disabled.as_at_value()},
+        match type_ {
+            SaveButton::CreateArticle => "Publish Article",
+            SaveButton::UpdateArticle => "Update Article",
+        }
+    ]
+}
+
+// ------ view form ------
+
+fn view_form(form: &Form, save_button: Node<Msg>) -> Node<Msg> {
+    form![
+        raw_ev(Ev::Submit, |event| {
+            event.prevent_default();
+            Msg::FormSubmitted
+        }),
+        form.iter_fields().map(view_fieldset),
+        save_button,
+    ]
+}
+
+fn view_problems(problems: &[Problem]) -> Node<Msg> {
+    ul![
+        class!["error-messages"],
+        problems.iter().map(|problem| li![problem.message()])
+    ]
 }
 
 fn view_fieldset(field: &Field) -> Node<Msg> {
@@ -251,86 +354,4 @@ fn view_fieldset(field: &Field) -> Node<Msg> {
             div![class!["tag-list"]]
         ],
     }
-}
-
-fn view_form(form: &Form, save_button: Node<Msg>) -> Node<Msg> {
-    form![
-        raw_ev(Ev::Submit, |event| {
-            event.prevent_default();
-            Msg::FormSubmitted
-        }),
-        form.iter_fields().map(view_fieldset),
-        save_button,
-    ]
-}
-
-#[derive(Copy, Clone)]
-enum SaveButton {
-    CreateArticle,
-    UpdateArticle,
-}
-
-fn view_save_button(type_: SaveButton, disabled: bool) -> Node<Msg> {
-    button![
-        class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
-        simple_ev(Ev::Click, Msg::FormSubmitted),
-        attrs! {At::Type => "button", At::Disabled => disabled.as_at_value()},
-        match type_ {
-            SaveButton::CreateArticle => "Publish Article",
-            SaveButton::UpdateArticle => "Update Article",
-        }
-    ]
-}
-
-fn view_content(model: &Model) -> Node<Msg> {
-    div![
-        class!["auth-page"],
-        div![
-            class!["container", "page"],
-            div![
-                class!["row"],
-                div![
-                    class!["col-md-6", "offset-md-3", "col-x32-12"],
-                    if model.session.viewer().is_some() {
-                        view_authenticated(model)
-                    } else {
-                        vec![div!["Sign in to edit this article."]]
-                    }
-                ]
-            ]
-        ]
-    ]
-}
-
-fn view_authenticated(model: &Model) -> Vec<Node<Msg>> {
-    match &model.status {
-        Status::Loading(_) => vec![],
-        Status::LoadingSlowly(_) => vec![loading::view_icon()],
-        Status::LoadingFailed(_, problems) => {
-            vec![view_problems(problems), loading::view_error("article")]
-        }
-        Status::Saving(_, form) => vec![view_form(
-            form,
-            view_save_button(SaveButton::UpdateArticle, true),
-        )],
-        Status::Editing(_, problems, form) => vec![
-            view_problems(problems),
-            view_form(form, view_save_button(SaveButton::UpdateArticle, false)),
-        ],
-        Status::EditingNew(problems, form) => vec![
-            view_problems(problems),
-            view_form(form, view_save_button(SaveButton::CreateArticle, false)),
-        ],
-        Status::Creating(form) => vec![view_form(
-            form,
-            view_save_button(SaveButton::CreateArticle, true),
-        )],
-    }
-}
-
-fn view_problems(problems: &[Problem]) -> Node<Msg> {
-    ul![
-        class!["error-messages"],
-        problems.iter().map(|problem| li![problem.message()])
-    ]
 }

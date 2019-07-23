@@ -13,31 +13,11 @@ use seed::prelude::*;
 use std::borrow::Cow;
 use std::collections::VecDeque;
 
-// Model
+// ------ ------
+//     Model
+// ------ ------
 
-enum Status<T> {
-    Loading,
-    LoadingSlowly,
-    Loaded(T),
-    Failed,
-}
-
-impl<T> Default for Status<T> {
-    fn default() -> Self {
-        Status::Loading
-    }
-}
-
-enum CommentText {
-    Editing(String),
-    Sending(String),
-}
-
-impl Default for CommentText {
-    fn default() -> Self {
-        CommentText::Editing("".into())
-    }
-}
+// ------ Model ------
 
 #[derive(Default)]
 pub struct Model {
@@ -58,6 +38,38 @@ impl From<Model> for Session {
         model.session
     }
 }
+
+// ------ Status ------
+
+enum Status<T> {
+    Loading,
+    LoadingSlowly,
+    Loaded(T),
+    Failed,
+}
+
+impl<T> Default for Status<T> {
+    fn default() -> Self {
+        Status::Loading
+    }
+}
+
+// ------ CommentText ------
+
+enum CommentText {
+    Editing(String),
+    Sending(String),
+}
+
+impl Default for CommentText {
+    fn default() -> Self {
+        CommentText::Editing("".into())
+    }
+}
+
+// ------ ------
+//     Init
+// ------ ------
 
 pub fn init(session: Session, slug: &Slug, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     orders
@@ -82,7 +94,9 @@ pub fn init(session: Session, slug: &Slug, orders: &mut impl Orders<Msg, GMsg>) 
     }
 }
 
-// Sink
+// ------ ------
+//     Sink
+// ------ ------
 
 pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match g_msg {
@@ -94,7 +108,9 @@ pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>)
     }
 }
 
-// Update
+// ------ ------
+//    Update
+// ------ ------
 
 #[derive(Clone)]
 pub enum Msg {
@@ -283,83 +299,61 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
     }
 }
 
-// View
+// ------ ------
+//     View
+// ------ ------
 
-fn title(article: &Status<Article>) -> impl Into<Cow<str>> {
+pub fn view(model: &Model) -> ViewPage<Msg> {
+    ViewPage::new(title_prefix(&model.article), view_content(model))
+}
+
+// ====== PRIVATE ======
+
+fn title_prefix(article: &Status<Article>) -> impl Into<Cow<str>> {
     match &article {
         Status::Loaded(article) => &article.title,
         _ => "Article",
     }
 }
 
-pub fn view(model: &Model) -> ViewPage<Msg> {
-    ViewPage::new(title(&model.article), view_content(model))
-}
-
-fn view_favorite_button(article: &Article) -> Node<Msg> {
-    if article.favorited {
-        button![
-            class!["btn", "btn-primary", "btn-sm"],
-            simple_ev(Ev::Click, Msg::FavoriteClicked(article.slug.clone())),
-            i![
-                class!["ion-heart"],
-                format!(" Favorite Article ({})", article.favorites_count),
+fn view_content(model: &Model) -> Node<Msg> {
+    match &model.article {
+        Status::Loading => empty![],
+        Status::LoadingSlowly => loading::view_icon(),
+        Status::Failed => loading::view_error("article"),
+        Status::Loaded(article) => div![
+            class!["article-page"],
+            view_banner(article, model),
+            div![
+                class!["container", "page"],
+                div![
+                    class!["row", "article-content"],
+                    div![class!["col-md-12"], md!(article.body.as_str())]
+                ],
+                hr![],
+                div![class!["article-actions"], view_article_meta(article, model)],
+                div![
+                    class!["row"],
+                    div![
+                        class!["col-xs-12", "col-md-8", "offset-md-2"],
+                        view_form_and_comments(&article.slug, model)
+                    ]
+                ],
             ]
-        ]
-    } else {
-        button![
-            class!["btn", "btn-outline-primary", "btn-sm"],
-            simple_ev(Ev::Click, Msg::UnfavoriteClicked(article.slug.clone())),
-            i![
-                class!["ion-heart"],
-                format!(" Favorite Article ({})", article.favorites_count),
-            ]
-        ]
+        ],
     }
 }
 
-fn view_delete_button(slug: Slug) -> Node<Msg> {
-    button![
-        class!["btn", "btn-outline-danger", "btn-sm"],
-        simple_ev(Ev::Click, Msg::DeleteArticleClicked(slug)),
-        i![class!["ion-trash-a"]],
-        " Delete Article",
+fn view_banner(article: &Article, model: &Model) -> Node<Msg> {
+    div![
+        class!["banner"],
+        div![
+            class!["container"],
+            h1![article.title],
+            view_article_meta(article, model),
+            page::view_errors(Msg::DismissErrorsClicked, &model.errors),
+        ]
     ]
-}
-
-fn view_edit_button(slug: Slug) -> Node<Msg> {
-    a![
-        class!["btn", "btn-outline-secondary", "btn-sm"],
-        attrs! {At::Href => Route::EditArticle(slug).to_string()},
-        i![class!["ion-edit"],],
-        " Edit Article",
-    ]
-}
-
-fn view_buttons(article: &Article, model: &Model) -> Vec<Node<Msg>> {
-    match model.session.viewer() {
-        None => vec![],
-        Some(_) => match &article.author {
-            Author::IsViewer(..) => vec![
-                view_edit_button(article.slug.clone()),
-                plain![" "],
-                view_delete_button(article.slug.clone()),
-            ],
-            author @ Author::Following(_) => vec![
-                author::view_unfollow_button(
-                    Msg::UnfollowClicked(author.clone()),
-                    author.username(),
-                ),
-                plain![" "],
-                view_favorite_button(article),
-            ],
-            author @ Author::NotFollowing(_) => vec![
-                author::view_follow_button(Msg::FollowClicked(author.clone()), author.username()),
-                plain![" "],
-                view_favorite_button(article),
-            ],
-        },
-    }
 }
 
 fn view_article_meta(article: &Article, model: &Model) -> Node<Msg> {
@@ -378,16 +372,20 @@ fn view_article_meta(article: &Article, model: &Model) -> Node<Msg> {
     ]
 }
 
-fn view_banner(article: &Article, model: &Model) -> Node<Msg> {
-    div![
-        class!["banner"],
-        div![
-            class!["container"],
-            h1![article.title],
-            view_article_meta(article, model),
-            page::view_errors(Msg::DismissErrorsClicked, &model.errors),
-        ]
-    ]
+// ------ view form and comments
+
+fn view_form_and_comments(slug: &Slug, model: &Model) -> Vec<Node<Msg>> {
+    match &model.comments {
+        Status::Loading => vec![],
+        Status::LoadingSlowly => vec![loading::view_icon()],
+        Status::Failed => vec![loading::view_error("comments")],
+        Status::Loaded((comment_text, comments)) => {
+            vec![view_comment_form(slug.clone(), comment_text, model)]
+                .into_iter()
+                .chain(view_comments(slug, comments))
+                .collect()
+        }
+    }
 }
 
 fn view_comment_form(slug: Slug, comment_text: &CommentText, model: &Model) -> Node<Msg> {
@@ -439,20 +437,11 @@ fn view_comment_form(slug: Slug, comment_text: &CommentText, model: &Model) -> N
     }
 }
 
-fn view_delete_comment_button(slug: &Slug, comment: &Comment) -> Node<Msg> {
-    match comment.author {
-        Author::IsViewer(..) => span![
-            class!["mod-options"],
-            i![
-                class!["ion-trash-a"],
-                simple_ev(
-                    Ev::Click,
-                    Msg::DeleteCommentClicked(slug.clone(), comment.id.clone())
-                )
-            ]
-        ],
-        _ => empty![],
-    }
+fn view_comments(slug: &Slug, comments: &VecDeque<Comment>) -> Vec<Node<Msg>> {
+    comments
+        .iter()
+        .map(|comment| view_comment(slug, comment))
+        .collect()
 }
 
 fn view_comment(slug: &Slug, comment: &Comment) -> Node<Msg> {
@@ -481,51 +470,85 @@ fn view_comment(slug: &Slug, comment: &Comment) -> Node<Msg> {
     ]
 }
 
-fn view_comments(slug: &Slug, comments: &VecDeque<Comment>) -> Vec<Node<Msg>> {
-    comments
-        .iter()
-        .map(|comment| view_comment(slug, comment))
-        .collect()
-}
+// ------ view buttons ------
 
-fn view_form_and_comments(slug: &Slug, model: &Model) -> Vec<Node<Msg>> {
-    match &model.comments {
-        Status::Loading => vec![],
-        Status::LoadingSlowly => vec![loading::view_icon()],
-        Status::Failed => vec![loading::view_error("comments")],
-        Status::Loaded((comment_text, comments)) => {
-            vec![view_comment_form(slug.clone(), comment_text, model)]
-                .into_iter()
-                .chain(view_comments(slug, comments))
-                .collect()
-        }
+fn view_buttons(article: &Article, model: &Model) -> Vec<Node<Msg>> {
+    match model.session.viewer() {
+        None => vec![],
+        Some(_) => match &article.author {
+            Author::IsViewer(..) => vec![
+                view_edit_button(article.slug.clone()),
+                plain![" "],
+                view_delete_button(article.slug.clone()),
+            ],
+            author @ Author::Following(_) => vec![
+                author::view_unfollow_button(
+                    Msg::UnfollowClicked(author.clone()),
+                    author.username(),
+                ),
+                plain![" "],
+                view_favorite_button(article),
+            ],
+            author @ Author::NotFollowing(_) => vec![
+                author::view_follow_button(Msg::FollowClicked(author.clone()), author.username()),
+                plain![" "],
+                view_favorite_button(article),
+            ],
+        },
+    }
+}
+fn view_favorite_button(article: &Article) -> Node<Msg> {
+    if article.favorited {
+        button![
+            class!["btn", "btn-primary", "btn-sm"],
+            simple_ev(Ev::Click, Msg::FavoriteClicked(article.slug.clone())),
+            i![
+                class!["ion-heart"],
+                format!(" Favorite Article ({})", article.favorites_count),
+            ]
+        ]
+    } else {
+        button![
+            class!["btn", "btn-outline-primary", "btn-sm"],
+            simple_ev(Ev::Click, Msg::UnfavoriteClicked(article.slug.clone())),
+            i![
+                class!["ion-heart"],
+                format!(" Favorite Article ({})", article.favorites_count),
+            ]
+        ]
     }
 }
 
-fn view_content(model: &Model) -> Node<Msg> {
-    match &model.article {
-        Status::Loading => empty![],
-        Status::LoadingSlowly => loading::view_icon(),
-        Status::Failed => loading::view_error("article"),
-        Status::Loaded(article) => div![
-            class!["article-page"],
-            view_banner(article, model),
-            div![
-                class!["container", "page"],
-                div![
-                    class!["row", "article-content"],
-                    div![class!["col-md-12"], md!(article.body.as_str())]
-                ],
-                hr![],
-                div![class!["article-actions"], view_article_meta(article, model)],
-                div![
-                    class!["row"],
-                    div![
-                        class!["col-xs-12", "col-md-8", "offset-md-2"],
-                        view_form_and_comments(&article.slug, model)
-                    ]
-                ],
+fn view_delete_comment_button(slug: &Slug, comment: &Comment) -> Node<Msg> {
+    match comment.author {
+        Author::IsViewer(..) => span![
+            class!["mod-options"],
+            i![
+                class!["ion-trash-a"],
+                simple_ev(
+                    Ev::Click,
+                    Msg::DeleteCommentClicked(slug.clone(), comment.id.clone())
+                )
             ]
         ],
+        _ => empty![],
     }
+}
+
+fn view_edit_button(slug: Slug) -> Node<Msg> {
+    a![
+        class!["btn", "btn-outline-secondary", "btn-sm"],
+        attrs! {At::Href => Route::EditArticle(slug).to_string()},
+        i![class!["ion-edit"],],
+        " Edit Article",
+    ]
+}
+
+fn view_delete_button(slug: Slug) -> Node<Msg> {
+    button![
+        class!["btn", "btn-outline-danger", "btn-sm"],
+        simple_ev(Ev::Click, Msg::DeleteArticleClicked(slug)),
+        i![class!["ion-trash-a"]],
+        " Delete Article",
+    ]
 }

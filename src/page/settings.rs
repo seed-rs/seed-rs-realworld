@@ -10,26 +10,17 @@ use crate::{
 };
 use seed::prelude::*;
 
-// Model
+// ------ ------
+//     Model
+// ------ ------
+
+// ------ Model ------
 
 #[derive(Default)]
 pub struct Model {
     session: Session,
     problems: Vec<Problem>,
     status: Status,
-}
-
-enum Status {
-    Loading,
-    LoadingSlowly,
-    Loaded(Form),
-    Failed,
-}
-
-impl Default for Status {
-    fn default() -> Self {
-        Status::Loading
-    }
 }
 
 impl Model {
@@ -44,7 +35,24 @@ impl From<Model> for Session {
     }
 }
 
-// Init
+// ------ Status ------
+
+enum Status {
+    Loading,
+    LoadingSlowly,
+    Loaded(Form),
+    Failed,
+}
+
+impl Default for Status {
+    fn default() -> Self {
+        Status::Loading
+    }
+}
+
+// ------ ------
+//     Init
+// ------ ------
 
 pub fn init(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     orders
@@ -62,7 +70,9 @@ pub fn init(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     }
 }
 
-// Sink
+// ------ ------
+//     Sink
+// ------ ------
 
 pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match g_msg {
@@ -74,7 +84,9 @@ pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>)
     }
 }
 
-// Update
+// ------ ------
+//    Update
+// ------ ------
 
 pub enum Msg {
     FormSubmitted,
@@ -132,10 +144,62 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
     }
 }
 
-// View
+// ------ ------
+//     View
+// ------ ------
 
 pub fn view<'a>(model: &Model) -> ViewPage<'a, Msg> {
     ViewPage::new("Settings", view_content(model))
+}
+
+// ====== PRIVATE ======
+
+fn view_content(model: &Model) -> Node<Msg> {
+    div![
+        class!["auth-page"],
+        div![
+            class!["container", "page"],
+            div![
+                class!["row"],
+                div![
+                    class!["col-md-6", "offset-md-3", "col-x32-12"],
+                    h1![class!["text-xs-center"], "Your Settings"],
+                    if model.session.viewer().is_some() {
+                        vec![
+                            ul![
+                                class!["error-messages"],
+                                model.problems.iter().map(|problem| li![problem.message()])
+                            ],
+                            view_form(model),
+                        ]
+                    } else {
+                        vec![div!["Sign in to view your settings."]]
+                    }
+                ]
+            ]
+        ]
+    ]
+}
+
+// ------ view form ------
+
+fn view_form(model: &Model) -> Node<Msg> {
+    match &model.status {
+        Status::Loading => empty![],
+        Status::LoadingSlowly => loading::view_icon(),
+        Status::Loaded(form) => form![
+            raw_ev(Ev::Submit, |event| {
+                event.prevent_default();
+                Msg::FormSubmitted
+            }),
+            form.iter_fields().map(view_fieldset),
+            button![
+                class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
+                "Update Settings"
+            ]
+        ],
+        Status::Failed => loading::view_error("page"),
+    }
 }
 
 fn view_fieldset(field: &Field) -> Node<Msg> {
@@ -211,50 +275,4 @@ fn view_fieldset(field: &Field) -> Node<Msg> {
             ]
         ],
     }
-}
-
-fn view_form(model: &Model) -> Node<Msg> {
-    match &model.status {
-        Status::Loading => empty![],
-        Status::LoadingSlowly => loading::view_icon(),
-        Status::Loaded(form) => form![
-            raw_ev(Ev::Submit, |event| {
-                event.prevent_default();
-                Msg::FormSubmitted
-            }),
-            form.iter_fields().map(view_fieldset),
-            button![
-                class!["btn", "btn-lg", "btn-primary", "pull-xs-right"],
-                "Update Settings"
-            ]
-        ],
-        Status::Failed => loading::view_error("page"),
-    }
-}
-
-fn view_content(model: &Model) -> Node<Msg> {
-    div![
-        class!["auth-page"],
-        div![
-            class!["container", "page"],
-            div![
-                class!["row"],
-                div![
-                    class!["col-md-6", "offset-md-3", "col-x32-12"],
-                    h1![class!["text-xs-center"], "Your Settings"],
-                    if model.session.viewer().is_some() {
-                        vec![
-                            ul![
-                                class!["error-messages"],
-                                model.problems.iter().map(|problem| li![problem.message()])
-                            ],
-                            view_form(model),
-                        ]
-                    } else {
-                        vec![div!["Sign in to view your settings."]]
-                    }
-                ]
-            ]
-        ]
-    ]
 }

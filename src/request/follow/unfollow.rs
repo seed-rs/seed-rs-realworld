@@ -1,4 +1,4 @@
-use crate::entity::{Author, Username, Viewer};
+use crate::entity::{Author, ErrorMessage, Username, Viewer};
 use crate::{coder::decoder, request};
 use futures::prelude::*;
 use seed::fetch;
@@ -14,7 +14,7 @@ struct RootDecoder {
 pub fn unfollow<Ms: 'static>(
     viewer: Option<Viewer>,
     username: &Username,
-    f: fn(Result<Author, Vec<String>>) -> Ms,
+    f: fn(Result<Author, Vec<ErrorMessage>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
     request::new(
         &format!("profiles/{}/follow", username.as_str()),

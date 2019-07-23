@@ -1,7 +1,7 @@
 use super::ViewPage;
 use crate::entity::{
     author::{self, Author, FollowedAuthor, UnfollowedAuthor},
-    timestamp, Article, Comment, CommentId, Slug,
+    timestamp, Article, Comment, CommentId, ErrorMessage, Slug,
 };
 use crate::{
     helper::take,
@@ -42,7 +42,7 @@ impl Default for CommentText {
 #[derive(Default)]
 pub struct Model {
     session: Session,
-    errors: Vec<String>,
+    errors: Vec<ErrorMessage>,
     comments: Status<(CommentText, VecDeque<Comment>)>,
     article: Status<Article>,
 }
@@ -107,13 +107,13 @@ pub enum Msg {
     UnfollowClicked(FollowedAuthor),
     PostCommentClicked(Slug),
     CommentTextEntered(String),
-    LoadArticleCompleted(Result<Article, Vec<String>>),
-    LoadCommentsCompleted(Result<VecDeque<Comment>, Vec<String>>),
-    DeleteArticleCompleted(Result<(), Vec<String>>),
-    DeleteCommentCompleted(Result<CommentId, Vec<String>>),
-    FavoriteChangeCompleted(Result<Article, Vec<String>>),
-    FollowChangeCompleted(Result<Author, Vec<String>>),
-    PostCommentCompleted(Result<Comment, Vec<String>>),
+    LoadArticleCompleted(Result<Article, Vec<ErrorMessage>>),
+    LoadCommentsCompleted(Result<VecDeque<Comment>, Vec<ErrorMessage>>),
+    DeleteArticleCompleted(Result<(), Vec<ErrorMessage>>),
+    DeleteCommentCompleted(Result<CommentId, Vec<ErrorMessage>>),
+    FavoriteChangeCompleted(Result<Article, Vec<ErrorMessage>>),
+    FollowChangeCompleted(Result<Author, Vec<ErrorMessage>>),
+    PostCommentCompleted(Result<Comment, Vec<ErrorMessage>>),
     SlowLoadThresholdPassed,
     Unreachable,
 }
@@ -223,7 +223,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             route::go_to(Route::Home, orders);
         }
         Msg::DeleteArticleCompleted(Err(errors)) => {
-            logger::errors(errors.clone());
+            logger::errors(&errors);
             model.errors = errors
         }
 
@@ -233,7 +233,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             }
         }
         Msg::DeleteCommentCompleted(Err(errors)) => {
-            logger::errors(errors.clone());
+            logger::errors(&errors);
             model.errors = errors
         }
 
@@ -241,7 +241,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             model.article = Status::Loaded(article);
         }
         Msg::FavoriteChangeCompleted(Err(errors)) => {
-            logger::errors(errors.clone());
+            logger::errors(&errors);
             model.errors = errors
         }
 
@@ -251,7 +251,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
             }
         }
         Msg::FollowChangeCompleted(Err(errors)) => {
-            logger::errors(errors.clone());
+            logger::errors(&errors);
             model.errors = errors
         }
 
@@ -267,7 +267,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                     *comment_text = CommentText::Editing(take(text))
                 }
             }
-            logger::errors(errors.clone());
+            logger::errors(&errors);
             model.errors = errors
         }
 

@@ -1,6 +1,6 @@
 use crate::coder::decoder;
 use crate::entity::article::tag::IntoTags;
-use crate::entity::{self, Viewer};
+use crate::entity::{self, ErrorMessage, Viewer};
 use serde::Deserialize;
 use std::borrow::Cow;
 use std::convert::TryInto;
@@ -21,7 +21,10 @@ pub struct Article {
 }
 
 impl Article {
-    pub fn try_into_article(self, viewer: Option<Cow<Viewer>>) -> Result<entity::Article, String> {
+    pub fn try_into_article(
+        self,
+        viewer: Option<Cow<Viewer>>,
+    ) -> Result<entity::Article, ErrorMessage> {
         let created_at = self.created_at.try_into()?;
         let updated_at = self.updated_at.try_into()?;
 

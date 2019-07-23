@@ -1,4 +1,4 @@
-use crate::entity::{CommentId, Slug, Viewer};
+use crate::entity::{CommentId, ErrorMessage, Slug, Viewer};
 use crate::request;
 use futures::prelude::*;
 use indexmap::IndexMap;
@@ -10,7 +10,7 @@ pub fn delete<Ms: 'static>(
     viewer: Option<&Viewer>,
     slug: &Slug,
     comment_id: CommentId,
-    f: fn(Result<CommentId, Vec<String>>) -> Ms,
+    f: fn(Result<CommentId, Vec<ErrorMessage>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
     request::new(
         &format!(

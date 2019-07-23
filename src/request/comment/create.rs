@@ -1,4 +1,4 @@
-use crate::entity::{Comment, Slug, Viewer};
+use crate::entity::{Comment, ErrorMessage, Slug, Viewer};
 use crate::{
     coder::{decoder, encoder},
     request,
@@ -18,7 +18,7 @@ pub fn create<Ms: 'static>(
     viewer: Option<Viewer>,
     slug: &Slug,
     text: String,
-    f: fn(Result<Comment, Vec<String>>) -> Ms,
+    f: fn(Result<Comment, Vec<ErrorMessage>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
     request::new(
         &format!("articles/{}/comments", slug.as_str()),

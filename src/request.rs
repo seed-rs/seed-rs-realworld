@@ -1,4 +1,4 @@
-use crate::entity::{form::Problem, Viewer};
+use crate::entity::{form::Problem, ErrorMessage, Viewer};
 use crate::logger;
 use indexmap::IndexMap;
 use seed::fetch;
@@ -38,11 +38,11 @@ pub fn new(path: &str, viewer: Option<&Viewer>) -> fetch::Request {
 pub fn fail_reason_into_problems<T: Debug>(fail_reason: fetch::FailReason<T>) -> Vec<Problem> {
     fail_reason_into_errors(fail_reason)
         .into_iter()
-        .map(Problem::new_server_error)
+        .map(|error| Problem::new_server_error(error.into_inner()))
         .collect()
 }
 
-pub fn fail_reason_into_errors<T: Debug>(fail_reason: fetch::FailReason<T>) -> Vec<String> {
+pub fn fail_reason_into_errors<T: Debug>(fail_reason: fetch::FailReason<T>) -> Vec<ErrorMessage> {
     match fail_reason {
         fetch::FailReason::RequestError(request_error, _) => {
             logger::error(request_error);
@@ -69,11 +69,11 @@ pub fn fail_reason_into_errors<T: Debug>(fail_reason: fetch::FailReason<T>) -> V
     }
 }
 
-fn decode_server_errors(json: &str) -> Result<Vec<String>, serde_json::Error> {
+fn decode_server_errors(json: &str) -> Result<Vec<ErrorMessage>, serde_json::Error> {
     let server_error_data = serde_json::from_str::<ServerErrorData>(json)?;
     Ok(server_error_data
         .errors
         .into_iter()
-        .map(|(field, errors)| format!("{} {}", field, errors.join(", ")))
+        .map(|(field, errors)| format!("{} {}", field, errors.join(", ")).into())
         .collect())
 }

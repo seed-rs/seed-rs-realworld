@@ -2,7 +2,7 @@ use super::ViewPage;
 use crate::entity::{
     article::{self, Article},
     author::{self, Author},
-    PageNumber, PaginatedList, Username, Viewer,
+    ErrorMessage, PageNumber, PaginatedList, Username, Viewer,
 };
 use crate::{
     helper::take,
@@ -22,7 +22,7 @@ static DEFAULT_PROFILE: &'static str = "Profile";
 #[derive(Default)]
 pub struct Model<'a> {
     session: Session,
-    errors: Vec<String>,
+    errors: Vec<ErrorMessage>,
     selected_feed: SelectedFeed,
     feed_page: PageNumber,
     author: Status<'a, Author>,
@@ -144,9 +144,9 @@ pub enum Msg {
     UnfollowClicked,
     TabClicked(SelectedFeed),
     FeedPageClicked(PageNumber),
-    FollowChangeCompleted(Result<Author, Vec<String>>),
-    AuthorLoadCompleted(Result<Author, (Username<'static>, Vec<String>)>),
-    FeedLoadCompleted(Result<PaginatedList<Article>, (Username<'static>, Vec<String>)>),
+    FollowChangeCompleted(Result<Author, Vec<ErrorMessage>>),
+    AuthorLoadCompleted(Result<Author, (Username<'static>, Vec<ErrorMessage>)>),
+    FeedLoadCompleted(Result<PaginatedList<Article>, (Username<'static>, Vec<ErrorMessage>)>),
     FeedMsg(article::feed::Msg),
     SlowLoadThresholdPassed,
     Unreachable,
@@ -198,13 +198,13 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         }
         Msg::FollowChangeCompleted(Ok(author)) => model.author = Status::Loaded(author),
         Msg::FollowChangeCompleted(Err(errors)) => {
-            logger::errors(errors.clone());
+            logger::errors(&errors);
             model.errors = errors;
         }
         Msg::AuthorLoadCompleted(Ok(author)) => model.author = Status::Loaded(author),
         Msg::AuthorLoadCompleted(Err((username, errors))) => {
             model.author = Status::Failed(username);
-            logger::errors(errors.clone());
+            logger::errors(&errors);
             model.errors = errors;
         }
         Msg::FeedLoadCompleted(Ok(paginated_list)) => {
@@ -212,7 +212,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         }
         Msg::FeedLoadCompleted(Err((username, errors))) => {
             model.feed = Status::Failed(username);
-            logger::errors(errors.clone());
+            logger::errors(&errors);
             model.errors = errors;
         }
         Msg::FeedMsg(feed_msg) => match &mut model.feed {

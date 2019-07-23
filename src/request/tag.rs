@@ -1,4 +1,7 @@
-use crate::entity::article::tag::{IntoTags, Tag};
+use crate::entity::{
+    article::tag::{IntoTags, Tag},
+    ErrorMessage,
+};
 use crate::request;
 use futures::prelude::*;
 use seed::fetch;
@@ -11,7 +14,7 @@ struct RootDecoder {
 }
 
 pub fn load_list<Ms: 'static>(
-    f: fn(Result<Vec<Tag>, Vec<String>>) -> Ms,
+    f: fn(Result<Vec<Tag>, Vec<ErrorMessage>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
     request::new("tags", None).fetch_json_data(
         move |data_result: fetch::ResponseDataResult<RootDecoder>| {

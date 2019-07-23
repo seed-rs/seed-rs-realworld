@@ -1,5 +1,5 @@
 use crate::coder::decoder;
-use crate::entity::{self, Viewer};
+use crate::entity::{self, ErrorMessage, Viewer};
 use serde::Deserialize;
 use std::borrow::Cow;
 use std::convert::TryInto;
@@ -15,7 +15,10 @@ pub struct Comment {
 }
 
 impl Comment {
-    pub fn try_into_comment(self, viewer: Option<Cow<Viewer>>) -> Result<entity::Comment, String> {
+    pub fn try_into_comment(
+        self,
+        viewer: Option<Cow<Viewer>>,
+    ) -> Result<entity::Comment, ErrorMessage> {
         let created_at = self.created_at.try_into()?;
         let updated_at = self.updated_at.try_into()?;
 

@@ -15,6 +15,9 @@ pub use author::{Author, FollowedAuthor, UnfollowedAuthor};
 pub mod avatar;
 pub use avatar::Avatar;
 
+pub mod error_message;
+pub use error_message::ErrorMessage;
+
 pub mod form;
 
 pub mod markdown;

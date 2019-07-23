@@ -1,4 +1,4 @@
-use crate::entity::{Comment, Slug, Viewer};
+use crate::entity::{Comment, ErrorMessage, Slug, Viewer};
 use crate::{coder::decoder, logger, request};
 use futures::prelude::*;
 use seed::fetch;
@@ -32,7 +32,7 @@ impl RootDecoder {
 pub fn load_list<Ms: 'static>(
     viewer: Option<Viewer>,
     slug: &Slug,
-    f: fn(Result<VecDeque<Comment>, Vec<String>>) -> Ms,
+    f: fn(Result<VecDeque<Comment>, Vec<ErrorMessage>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
     request::new(
         &format!("articles/{}/comments", slug.as_str()),

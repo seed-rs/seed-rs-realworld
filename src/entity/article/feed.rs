@@ -1,4 +1,6 @@
-use crate::entity::{author, timestamp, Article, PageNumber, PaginatedList, Slug, Tag, Viewer};
+use crate::entity::{
+    author, timestamp, Article, ErrorMessage, PageNumber, PaginatedList, Slug, Tag, Viewer,
+};
 use crate::{logger, page, request, GMsg, Route, Session};
 use seed::prelude::*;
 use std::borrow::Cow;
@@ -10,7 +12,7 @@ use std::borrow::Cow;
 #[derive(Default)]
 pub struct Model {
     session: Session,
-    errors: Vec<String>,
+    errors: Vec<ErrorMessage>,
     articles: PaginatedList<Article>,
 }
 
@@ -35,7 +37,7 @@ pub enum Msg {
     DismissErrorsClicked,
     FavoriteClicked(Slug),
     UnfavoriteClicked(Slug),
-    FavoriteCompleted(Result<Article, Vec<String>>),
+    FavoriteCompleted(Result<Article, Vec<ErrorMessage>>),
 }
 
 #[allow(clippy::option_map_unit_fn)]
@@ -71,7 +73,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 .map(|old_article| *old_article = article);
         }
         Msg::FavoriteCompleted(Err(errors)) => {
-            logger::errors(errors.clone());
+            logger::errors(&errors);
             model.errors = errors;
         }
     }

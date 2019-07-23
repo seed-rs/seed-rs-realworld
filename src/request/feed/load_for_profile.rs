@@ -1,4 +1,4 @@
-use crate::entity::{Article, PageNumber, PaginatedList, Username, Viewer};
+use crate::entity::{Article, ErrorMessage, PageNumber, PaginatedList, Username, Viewer};
 use crate::{coder::decoder, logger, page::profile::SelectedFeed, request};
 use futures::prelude::*;
 use lazy_static::lazy_static;
@@ -63,7 +63,7 @@ pub fn load_for_profile<Ms: 'static>(
     username: Username<'static>,
     selected_feed: SelectedFeed,
     page_number: PageNumber,
-    f: fn(Result<PaginatedList<Article>, (Username<'static>, Vec<String>)>) -> Ms,
+    f: fn(Result<PaginatedList<Article>, (Username<'static>, Vec<ErrorMessage>)>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
     request::new(
         &request_url(&username, selected_feed, page_number),

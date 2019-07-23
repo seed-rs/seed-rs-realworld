@@ -1,4 +1,4 @@
-use crate::entity::{Article, Slug, Viewer};
+use crate::entity::{Article, ErrorMessage, Slug, Viewer};
 use crate::{coder::decoder, request};
 use futures::prelude::*;
 use seed::fetch;
@@ -14,7 +14,7 @@ struct RootDecoder {
 pub fn favorite<Ms: 'static>(
     viewer: Option<Viewer>,
     slug: &Slug,
-    f: fn(Result<Article, Vec<String>>) -> Ms,
+    f: fn(Result<Article, Vec<ErrorMessage>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
     request::new(
         &format!("articles/{}/favorite", slug.as_str()),

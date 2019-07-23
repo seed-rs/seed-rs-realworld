@@ -1,4 +1,4 @@
-use crate::entity::{Article, PageNumber, PaginatedList, Viewer};
+use crate::entity::{Article, ErrorMessage, PageNumber, PaginatedList, Viewer};
 use crate::{coder::decoder, logger, page::home::SelectedFeed, request};
 use futures::prelude::*;
 use lazy_static::lazy_static;
@@ -68,7 +68,7 @@ pub fn load_for_home<Ms: 'static>(
     viewer: Option<Viewer>,
     selected_feed: &SelectedFeed,
     page_number: PageNumber,
-    f: fn(Result<PaginatedList<Article>, Vec<String>>) -> Ms,
+    f: fn(Result<PaginatedList<Article>, Vec<ErrorMessage>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
     request::new(&request_url(selected_feed, page_number), viewer.as_ref()).fetch_json_data(
         move |data_result: fetch::ResponseDataResult<RootDecoder>| {

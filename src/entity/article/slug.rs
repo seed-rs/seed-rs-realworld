@@ -1,10 +1,4 @@
-use shrinkwraprs::Shrinkwrap;
+use newtype::NewType;
 
-#[derive(Shrinkwrap, Clone, Default, PartialEq, Eq)]
+#[derive(NewType, Clone, Default, PartialEq, Eq)]
 pub struct Slug(String);
-
-impl From<String> for Slug {
-    fn from(slug: String) -> Self {
-        Self(slug)
-    }
-}

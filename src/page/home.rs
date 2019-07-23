@@ -1,7 +1,7 @@
 use super::ViewPage;
 use crate::entity::{
     article::{self, Article},
-    PageNumber, PaginatedList, Tag, Viewer,
+    ErrorMessage, PageNumber, PaginatedList, Tag, Viewer,
 };
 use crate::{loading, logger, page, request, GMsg, Session};
 use futures::prelude::*;
@@ -108,8 +108,8 @@ pub enum Msg {
     TagClicked(Tag),
     TabClicked(SelectedFeed),
     FeedPageClicked(PageNumber),
-    FeedLoadCompleted(Result<PaginatedList<Article>, Vec<String>>),
-    TagsLoadCompleted(Result<Vec<Tag>, Vec<String>>),
+    FeedLoadCompleted(Result<PaginatedList<Article>, Vec<ErrorMessage>>),
+    TagsLoadCompleted(Result<Vec<Tag>, Vec<ErrorMessage>>),
     FeedMsg(article::feed::Msg),
     SlowLoadThresholdPassed,
     Unreachable,

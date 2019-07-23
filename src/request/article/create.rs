@@ -29,7 +29,7 @@ pub fn create<Ms: 'static>(
                     root_decoder
                         .article
                         .try_into_article(viewer.map(Cow::Owned))
-                        .map_err(|error| vec![Problem::new_server_error(error)])
+                        .map_err(|error| vec![Problem::new_server_error(error.into_inner())])
                 }))
         })
 }

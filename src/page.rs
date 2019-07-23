@@ -1,4 +1,4 @@
-use crate::entity::{Username, Viewer};
+use crate::entity::{ErrorMessage, Username, Viewer};
 use crate::Route;
 use seed::prelude::*;
 use std::borrow::{Borrow, Cow};
@@ -155,7 +155,7 @@ impl<'a> Page<'a> {
     }
 }
 
-pub fn view_errors<Ms: Clone>(dismiss_errors: Ms, errors: &[String]) -> Node<Ms> {
+pub fn view_errors<Ms: Clone>(dismiss_errors: Ms, errors: &[ErrorMessage]) -> Node<Ms> {
     if errors.is_empty() {
         empty![]
     } else {

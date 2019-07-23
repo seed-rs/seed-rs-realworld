@@ -1,4 +1,4 @@
-use crate::entity::{Slug, Viewer};
+use crate::entity::{ErrorMessage, Slug, Viewer};
 use crate::request;
 use futures::prelude::*;
 use indexmap::IndexMap;
@@ -9,7 +9,7 @@ type RootDecoder = IndexMap<(), ()>;
 pub fn delete<Ms: 'static>(
     viewer: Option<&Viewer>,
     slug: &Slug,
-    f: fn(Result<(), Vec<String>>) -> Ms,
+    f: fn(Result<(), Vec<ErrorMessage>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
     request::new(&format!("articles/{}", slug.as_str()), viewer)
         .method(fetch::Method::Delete)

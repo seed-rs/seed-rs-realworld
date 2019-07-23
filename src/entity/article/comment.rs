@@ -1,5 +1,5 @@
 use crate::entity::{Author, Timestamp};
-use shrinkwraprs::Shrinkwrap;
+use newtype::NewType;
 
 // ------ Comment ------
 
@@ -14,7 +14,7 @@ pub struct Comment {
 
 // ------ CommentId ------
 
-#[derive(Shrinkwrap, Clone, PartialEq, Eq)]
+#[derive(NewType, Clone, PartialEq, Eq)]
 #[allow(clippy::module_name_repetitions)]
 pub struct CommentId(String);
 

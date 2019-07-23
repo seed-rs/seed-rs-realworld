@@ -63,7 +63,7 @@ pub fn init(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
         .map_or_else(SelectedFeed::default, SelectedFeed::Your);
 
     orders
-        .perform_cmd(loading::slow_threshold(
+        .perform_cmd(loading::notify_on_slow_load(
             Msg::SlowLoadThresholdPassed,
             Msg::Unreachable,
         ))
@@ -237,8 +237,8 @@ fn view_tag(tag: Tag) -> Node<Msg> {
 fn view_tags(model: &Model) -> Node<Msg> {
     match &model.tags {
         Status::Loading => empty![],
-        Status::LoadingSlowly => loading::icon(),
-        Status::Failed => loading::error("tags"),
+        Status::LoadingSlowly => loading::view_icon(),
+        Status::Failed => loading::view_error("tags"),
         Status::Loaded(tags) => div![
             class!["sidebar"],
             p!["Popular Tags"],
@@ -250,8 +250,8 @@ fn view_tags(model: &Model) -> Node<Msg> {
 fn view_feed(model: &Model) -> Node<Msg> {
     match &model.feed {
         Status::Loading => empty![],
-        Status::LoadingSlowly => loading::icon(),
-        Status::Failed => loading::error("feed"),
+        Status::LoadingSlowly => loading::view_icon(),
+        Status::Failed => loading::view_error("feed"),
         Status::Loaded(feed_model) => div![
             class!["container", "page"],
             div![

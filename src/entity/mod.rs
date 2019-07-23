@@ -6,11 +6,11 @@ pub use article::{
     Article,
 };
 
-pub mod asset;
-pub use asset::Image;
+pub mod image;
+pub use image::Image;
 
 pub mod author;
-pub use author::{Author, FollowedAuthor, UnfollowedAuthor};
+pub use author::Author;
 
 pub mod avatar;
 pub use avatar::Avatar;

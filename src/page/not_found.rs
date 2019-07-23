@@ -1,5 +1,5 @@
 use super::ViewPage;
-use crate::entity::asset;
+use crate::entity::Image;
 use seed::prelude::*;
 
 // View
@@ -16,7 +16,7 @@ fn view_content<Ms>() -> Node<Ms> {
         h1!["Not Found"],
         div![
             class!["row"],
-            img![attrs! {At::Src => asset::error().url()}]
+            img![attrs! {At::Src => Image::error().url()}]
         ]
     ]
 }

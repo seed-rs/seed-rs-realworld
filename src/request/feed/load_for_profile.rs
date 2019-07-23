@@ -2,7 +2,7 @@ use crate::entity::{Article, ErrorMessage, PageNumber, PaginatedList, Username, 
 use crate::{coder::decoder, logger, page::profile::SelectedFeed, request};
 use futures::prelude::*;
 use lazy_static::lazy_static;
-use seed::fetch;
+use seed::fetch::ResponseDataResult;
 use serde::Deserialize;
 use std::borrow::Cow;
 use std::num::NonZeroUsize;
@@ -53,7 +53,7 @@ pub fn request_url(
         },
         username.as_str(),
         *ARTICLES_PER_PAGE,
-        (page_number.to_usize() - 1) * ARTICLES_PER_PAGE.get()
+        (*page_number - 1) * ARTICLES_PER_PAGE.get()
     )
 }
 
@@ -69,7 +69,7 @@ pub fn load_for_profile<Ms: 'static>(
         &request_url(&username, selected_feed, page_number),
         viewer.as_ref(),
     )
-    .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {
+    .fetch_json_data(move |data_result: ResponseDataResult<RootDecoder>| {
         f(data_result
             .map(move |root_decoder| root_decoder.into_paginated_list(viewer.as_ref()))
             .map_err(request::fail_reason_into_errors)

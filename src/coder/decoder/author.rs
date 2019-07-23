@@ -1,4 +1,4 @@
-use crate::entity::{self, Avatar, FollowedAuthor, Profile, UnfollowedAuthor, Viewer};
+use crate::entity::{self, Avatar, Profile, Viewer};
 use serde::Deserialize;
 use std::borrow::Cow;
 
@@ -21,16 +21,14 @@ impl Author {
             }
         }
 
-        let profile = Profile {
+        (if self.following {
+            entity::Author::Following
+        } else {
+            entity::Author::NotFollowing
+        })(Profile {
             bio: self.bio,
             avatar: Avatar::new(Some(self.image)),
             username,
-        };
-
-        if self.following {
-            entity::Author::Following(FollowedAuthor { profile })
-        } else {
-            entity::Author::NotFollowing(UnfollowedAuthor { profile })
-        }
+        })
     }
 }

@@ -2,7 +2,7 @@ use crate::entity::{Article, ErrorMessage, PageNumber, PaginatedList, Viewer};
 use crate::{coder::decoder, logger, page::home::SelectedFeed, request};
 use futures::prelude::*;
 use lazy_static::lazy_static;
-use seed::fetch;
+use seed::fetch::ResponseDataResult;
 use serde::Deserialize;
 use std::borrow::Cow;
 use std::num::NonZeroUsize;
@@ -49,10 +49,7 @@ pub fn request_url(selected_feed: &SelectedFeed, page_number: PageNumber) -> Str
 
     let mut parameters = vec![
         format!("limit={}", *ARTICLES_PER_PAGE),
-        format!(
-            "offset={}",
-            (page_number.to_usize() - 1) * ARTICLES_PER_PAGE.get()
-        ),
+        format!("offset={}", (*page_number - 1) * ARTICLES_PER_PAGE.get()),
     ];
     if let Some(tag_param) = tag_param {
         parameters.push(tag_param)
@@ -71,7 +68,7 @@ pub fn load_for_home<Ms: 'static>(
     f: fn(Result<PaginatedList<Article>, Vec<ErrorMessage>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
     request::new(&request_url(selected_feed, page_number), viewer.as_ref()).fetch_json_data(
-        move |data_result: fetch::ResponseDataResult<RootDecoder>| {
+        move |data_result: ResponseDataResult<RootDecoder>| {
             f(data_result
                 .map(move |root_decoder| root_decoder.into_paginated_list(&viewer))
                 .map_err(request::fail_reason_into_errors))

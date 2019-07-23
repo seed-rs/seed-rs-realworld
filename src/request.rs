@@ -1,8 +1,7 @@
+use crate::coder::decoder;
 use crate::entity::{form::Problem, ErrorMessage, Viewer};
 use crate::logger;
-use indexmap::IndexMap;
 use seed::fetch;
-use serde::Deserialize;
 use serde_json;
 use std::fmt::Debug;
 
@@ -19,11 +18,6 @@ pub mod tag;
 
 static BASE_API_URL: &str = "https://conduit.productionready.io/api";
 const TIMEOUT: u32 = 5000;
-
-#[derive(Deserialize)]
-pub struct ServerErrorData {
-    errors: IndexMap<String, Vec<String>>,
-}
 
 pub fn new(path: &str, viewer: Option<&Viewer>) -> fetch::Request {
     let mut request = fetch::Request::new(format!("{}/{}", BASE_API_URL, path)).timeout(TIMEOUT);
@@ -53,8 +47,8 @@ pub fn fail_reason_into_errors<T: Debug>(fail_reason: fetch::FailReason<T>) -> V
             vec!["Data error".into()]
         }
         fetch::FailReason::Status(_, fetch_object) => {
-            let response = fetch_object.result.unwrap();
-            match response.data {
+            // response isn't ok, but maybe contains error messages - try to decode them:
+            match fetch_object.result.unwrap().data {
                 Err(fetch::DataError::SerdeError(_, json)) => decode_server_errors(&json)
                     .unwrap_or_else(|serde_error| {
                         logger::error(serde_error);
@@ -69,11 +63,9 @@ pub fn fail_reason_into_errors<T: Debug>(fail_reason: fetch::FailReason<T>) -> V
     }
 }
 
+// ====== PRIVATE ======
+
 fn decode_server_errors(json: &str) -> Result<Vec<ErrorMessage>, serde_json::Error> {
-    let server_error_data = serde_json::from_str::<ServerErrorData>(json)?;
-    Ok(server_error_data
-        .errors
-        .into_iter()
-        .map(|(field, errors)| format!("{} {}", field, errors.join(", ")).into())
-        .collect())
+    serde_json::from_str::<decoder::ErrorMessages>(json)
+        .map(decoder::ErrorMessages::into_error_messages)
 }

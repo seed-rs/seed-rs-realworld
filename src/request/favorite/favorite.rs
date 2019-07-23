@@ -1,7 +1,7 @@
 use crate::entity::{Article, ErrorMessage, Slug, Viewer};
 use crate::{coder::decoder, request};
 use futures::prelude::*;
-use seed::fetch;
+use seed::fetch::{Method, ResponseDataResult};
 use serde::Deserialize;
 use std::borrow::Cow;
 
@@ -20,8 +20,8 @@ pub fn favorite<Ms: 'static>(
         &format!("articles/{}/favorite", slug.as_str()),
         viewer.as_ref(),
     )
-    .method(fetch::Method::Post)
-    .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {
+    .method(Method::Post)
+    .fetch_json_data(move |data_result: ResponseDataResult<RootDecoder>| {
         f(data_result
             .map_err(request::fail_reason_into_errors)
             .and_then(move |root_decoder| {

@@ -76,7 +76,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         }
         Msg::LoginCompleted(Ok(viewer)) => {
             viewer.store();
-            orders.send_g_msg(GMsg::SessionChanged(Some(viewer).into()));
+            orders.send_g_msg(GMsg::SessionChanged(Session::LoggedIn(viewer)));
         }
         Msg::LoginCompleted(Err(problems)) => {
             model.problems = problems;

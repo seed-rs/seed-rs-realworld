@@ -22,7 +22,9 @@ mod route;
 mod session;
 mod storage;
 
-// Model
+// ------ ------
+//     Model
+// ------ ------
 
 enum Model<'a> {
     Redirect(Session),
@@ -58,7 +60,18 @@ impl<'a> From<Model<'a>> for Session {
     }
 }
 
-// Sink
+// ------ ------
+//     Init
+// ------ ------
+
+fn init(url: Url, orders: &mut impl Orders<Msg<'static>, GMsg>) -> Model<'static> {
+    orders.send_msg(Msg::RouteChanged(url.try_into().ok()));
+    Model::Redirect(Session::new(storage::load_viewer()))
+}
+
+// ------ ------
+//     Sink
+// ------ ------
 
 pub enum GMsg {
     RoutePushed(Route<'static>),
@@ -101,7 +114,9 @@ fn sink<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Orders<Msg<'st
     }
 }
 
-// Update
+// ------ ------
+//    Update
+// ------ ------
 
 #[allow(clippy::enum_variant_names)]
 enum Msg<'a> {
@@ -182,7 +197,7 @@ fn change_model_by_route<'a>(
             Route::Root => route::go_to(Route::Home, orders),
             Route::Logout => {
                 storage::delete_app_data();
-                orders.send_g_msg(GMsg::SessionChanged(None.into()));
+                orders.send_g_msg(GMsg::SessionChanged(Session::Guest));
                 route::go_to(Route::Home, orders)
             }
             Route::NewArticle => {
@@ -234,75 +249,48 @@ fn change_model_by_route<'a>(
     };
 }
 
-// View
+// ------ ------
+//     View
+// ------ ------
 
 fn view(model: &Model) -> impl View<Msg<'static>> {
     use page::Page;
     match model {
-        Model::Redirect(session) => page::view(&Page::Other, page::blank::view(), session.viewer()),
-        Model::NotFound(session) => {
-            page::view(&Page::Other, page::not_found::view(), session.viewer())
-        }
-        Model::Settings(model) => page::view(
-            &Page::Settings,
-            page::settings::view(model),
-            model.session().viewer(),
-        )
-        .map_message(Msg::SettingsMsg),
-        Model::Home(model) => page::view(
-            &Page::Home,
-            page::home::view(model),
-            model.session().viewer(),
-        )
-        .map_message(Msg::HomeMsg),
-        Model::Login(model) => page::view(
-            &Page::Login,
-            page::login::view(model),
-            model.session().viewer(),
-        )
-        .map_message(Msg::LoginMsg),
-        Model::Register(model) => page::view(
-            &Page::Register,
-            page::register::view(model),
-            model.session().viewer(),
-        )
-        .map_message(Msg::RegisterMsg),
-        Model::Profile(model, username) => page::view(
-            &Page::Profile(username),
-            page::profile::view(model),
-            model.session().viewer(),
-        )
-        .map_message(Msg::ProfileMsg),
-        Model::Article(model) => page::view(
-            &Page::Other,
-            page::article::view(model),
-            model.session().viewer(),
-        )
-        .map_message(Msg::ArticleMsg),
-        Model::ArticleEditor(model, None) => page::view(
-            &Page::NewArticle,
-            page::article_editor::view(model),
-            model.session().viewer(),
-        )
-        .map_message(Msg::ArticleEditorMsg),
-        Model::ArticleEditor(model, Some(_)) => page::view(
-            &Page::Other,
-            page::article_editor::view(model),
-            model.session().viewer(),
-        )
-        .map_message(Msg::ArticleEditorMsg),
+        Model::Redirect(session) => Page::Other.view(page::blank::view(), session.viewer()),
+        Model::NotFound(session) => Page::Other.view(page::not_found::view(), session.viewer()),
+        Model::Settings(model) => Page::Settings
+            .view(page::settings::view(model), model.session().viewer())
+            .map_message(Msg::SettingsMsg),
+        Model::Home(model) => Page::Home
+            .view(page::home::view(model), model.session().viewer())
+            .map_message(Msg::HomeMsg),
+        Model::Login(model) => Page::Login
+            .view(page::login::view(model), model.session().viewer())
+            .map_message(Msg::LoginMsg),
+        Model::Register(model) => Page::Register
+            .view(page::register::view(model), model.session().viewer())
+            .map_message(Msg::RegisterMsg),
+        Model::Profile(model, username) => Page::Profile(username)
+            .view(page::profile::view(model), model.session().viewer())
+            .map_message(Msg::ProfileMsg),
+        Model::Article(model) => Page::Other
+            .view(page::article::view(model), model.session().viewer())
+            .map_message(Msg::ArticleMsg),
+        Model::ArticleEditor(model, None) => Page::NewArticle
+            .view(page::article_editor::view(model), model.session().viewer())
+            .map_message(Msg::ArticleEditorMsg),
+        Model::ArticleEditor(model, Some(_)) => Page::Other
+            .view(page::article_editor::view(model), model.session().viewer())
+            .map_message(Msg::ArticleEditorMsg),
     }
 }
 
-// Init
-
-fn init(url: Url, orders: &mut impl Orders<Msg<'static>, GMsg>) -> Model<'static> {
-    orders.send_msg(Msg::RouteChanged(url.try_into().ok()));
-    Model::Redirect(storage::load_viewer().into())
-}
+// ------ ------
+//     Start
+// ------ ------
 
 #[wasm_bindgen(start)]
-pub fn render() {
+pub fn start() {
     seed::App::build(init, update, view)
         .routes(|url| Msg::RouteChanged(url.try_into().ok()))
         .sink(sink)

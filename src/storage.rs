@@ -23,6 +23,8 @@ pub fn delete_app_data() {
         .expect("remove item from local storage failed");
 }
 
+// ====== PRIVATE ======
+
 fn local_storage() -> storage::Storage {
     storage::get_storage().expect("get local storage failed")
 }

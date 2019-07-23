@@ -4,7 +4,7 @@ use crate::entity::{
 };
 use crate::{coder::decoder, request};
 use futures::prelude::*;
-use seed::fetch;
+use seed::fetch::{Method, ResponseDataResult};
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
@@ -19,9 +19,9 @@ pub fn update<Ms: 'static>(
     f: fn(Result<Viewer, Vec<Problem>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
     request::new("user", viewer)
-        .method(fetch::Method::Put)
+        .method(Method::Put)
         .send_json(&valid_form.to_encoder())
-        .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {
+        .fetch_json_data(move |data_result: ResponseDataResult<RootDecoder>| {
             f(data_result
                 .map(|root_decoder| root_decoder.user.into_viewer())
                 .map_err(request::fail_reason_into_problems))

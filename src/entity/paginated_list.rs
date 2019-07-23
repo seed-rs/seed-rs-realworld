@@ -1,4 +1,4 @@
-use num_integer;
+use num_integer::div_ceil;
 use std::num::NonZeroUsize;
 
 #[derive(Clone)]
@@ -10,7 +10,7 @@ pub struct PaginatedList<T> {
 
 impl<T> PaginatedList<T> {
     pub fn total_pages(&self) -> usize {
-        num_integer::div_ceil(self.total, self.per_page.get())
+        div_ceil(self.total, self.per_page.get())
     }
 }
 

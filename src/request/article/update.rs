@@ -4,7 +4,7 @@ use crate::entity::{
 };
 use crate::{coder::decoder, request};
 use futures::prelude::*;
-use seed::fetch;
+use seed::fetch::{Method, ResponseDataResult};
 use serde::Deserialize;
 use std::borrow::Cow;
 
@@ -21,9 +21,9 @@ pub fn update<Ms: 'static>(
     f: fn(Result<Article, Vec<Problem>>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
     request::new(&format!("articles/{}", slug.as_str()), viewer.as_ref())
-        .method(fetch::Method::Put)
+        .method(Method::Put)
         .send_json(&valid_form.to_encoder())
-        .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {
+        .fetch_json_data(move |data_result: ResponseDataResult<RootDecoder>| {
             f(data_result
                 .map_err(request::fail_reason_into_problems)
                 .and_then(move |root_decoder| {

@@ -75,7 +75,7 @@ pub fn init_new(session: Session) -> Model {
 
 pub fn init_edit(session: Session, slug: Slug, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     orders
-        .perform_cmd(loading::slow_threshold(
+        .perform_cmd(loading::notify_on_slow_load(
             Msg::SlowLoadThresholdPassed,
             Msg::Unreachable,
         ))
@@ -305,9 +305,9 @@ fn view_content(model: &Model) -> Node<Msg> {
 fn view_authenticated(model: &Model) -> Vec<Node<Msg>> {
     match &model.status {
         Status::Loading(_) => vec![],
-        Status::LoadingSlowly(_) => vec![loading::icon()],
+        Status::LoadingSlowly(_) => vec![loading::view_icon()],
         Status::LoadingFailed(_, problems) => {
-            vec![view_problems(problems), loading::error("article")]
+            vec![view_problems(problems), loading::view_error("article")]
         }
         Status::Saving(_, form) => vec![view_form(
             form,

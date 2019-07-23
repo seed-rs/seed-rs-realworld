@@ -1,6 +1,6 @@
 use super::ViewPage;
 use crate::entity::{
-    author::{self, Author, FollowedAuthor, UnfollowedAuthor},
+    author::{self, Author},
     timestamp, Article, Comment, CommentId, ErrorMessage, Slug,
 };
 use crate::{
@@ -61,7 +61,7 @@ impl From<Model> for Session {
 
 pub fn init(session: Session, slug: &Slug, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     orders
-        .perform_cmd(loading::slow_threshold(
+        .perform_cmd(loading::notify_on_slow_load(
             Msg::SlowLoadThresholdPassed,
             Msg::Unreachable,
         ))
@@ -103,8 +103,8 @@ pub enum Msg {
     DismissErrorsClicked,
     FavoriteClicked(Slug),
     UnfavoriteClicked(Slug),
-    FollowClicked(UnfollowedAuthor),
-    UnfollowClicked(FollowedAuthor),
+    FollowClicked(Author),
+    UnfollowClicked(Author),
     PostCommentClicked(Slug),
     CommentTextEntered(String),
     LoadArticleCompleted(Result<Article, Vec<ErrorMessage>>),
@@ -161,20 +161,20 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 ))
                 .skip();
         }
-        Msg::FollowClicked(unfollowed_author) => {
+        Msg::FollowClicked(author) => {
             orders
                 .perform_cmd(request::follow::follow(
                     model.session.viewer().cloned(),
-                    &unfollowed_author.profile.username,
+                    author.username(),
                     Msg::FollowChangeCompleted,
                 ))
                 .skip();
         }
-        Msg::UnfollowClicked(followed_author) => {
+        Msg::UnfollowClicked(author) => {
             orders
                 .perform_cmd(request::follow::unfollow(
                     model.session.viewer().cloned(),
-                    &followed_author.profile.username,
+                    author.username(),
                     Msg::FollowChangeCompleted,
                 ))
                 .skip();
@@ -345,19 +345,16 @@ fn view_buttons(article: &Article, model: &Model) -> Vec<Node<Msg>> {
                 plain![" "],
                 view_delete_button(article.slug.clone()),
             ],
-            Author::Following(followed_author) => vec![
+            author @ Author::Following(_) => vec![
                 author::view_unfollow_button(
-                    Msg::UnfollowClicked(followed_author.clone()),
-                    &followed_author.profile.username,
+                    Msg::UnfollowClicked(author.clone()),
+                    author.username(),
                 ),
                 plain![" "],
                 view_favorite_button(article),
             ],
-            Author::NotFollowing(unfollowed_author) => vec![
-                author::view_follow_button(
-                    Msg::FollowClicked(unfollowed_author.clone()),
-                    &unfollowed_author.profile.username,
-                ),
+            author @ Author::NotFollowing(_) => vec![
+                author::view_follow_button(Msg::FollowClicked(author.clone()), author.username()),
                 plain![" "],
                 view_favorite_button(article),
             ],
@@ -494,8 +491,8 @@ fn view_comments(slug: &Slug, comments: &VecDeque<Comment>) -> Vec<Node<Msg>> {
 fn view_form_and_comments(slug: &Slug, model: &Model) -> Vec<Node<Msg>> {
     match &model.comments {
         Status::Loading => vec![],
-        Status::LoadingSlowly => vec![loading::icon()],
-        Status::Failed => vec![loading::error("comments")],
+        Status::LoadingSlowly => vec![loading::view_icon()],
+        Status::Failed => vec![loading::view_error("comments")],
         Status::Loaded((comment_text, comments)) => {
             vec![view_comment_form(slug.clone(), comment_text, model)]
                 .into_iter()
@@ -508,8 +505,8 @@ fn view_form_and_comments(slug: &Slug, model: &Model) -> Vec<Node<Msg>> {
 fn view_content(model: &Model) -> Node<Msg> {
     match &model.article {
         Status::Loading => empty![],
-        Status::LoadingSlowly => loading::icon(),
-        Status::Failed => loading::error("article"),
+        Status::LoadingSlowly => loading::view_icon(),
+        Status::Failed => loading::view_error("article"),
         Status::Loaded(article) => div![
             class!["article-page"],
             view_banner(article, model),

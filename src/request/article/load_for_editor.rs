@@ -1,7 +1,7 @@
 use crate::entity::{form::article_editor::Problem, Article, Slug, Viewer};
 use crate::{coder::decoder, request};
 use futures::prelude::*;
-use seed::fetch;
+use seed::fetch::ResponseDataResult;
 use serde::Deserialize;
 use std::borrow::Cow;
 
@@ -18,7 +18,7 @@ pub fn load_for_editor<Ms: 'static>(
     f: fn(Result<Article, (Slug, Vec<Problem>)>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
     request::new(&format!("articles/{}", slug.as_str()), viewer.as_ref()).fetch_json_data(
-        move |data_result: fetch::ResponseDataResult<RootDecoder>| {
+        move |data_result: ResponseDataResult<RootDecoder>| {
             f(data_result
                 .map_err(request::fail_reason_into_problems)
                 .and_then(move |root_decoder| {

@@ -1,7 +1,7 @@
 use crate::entity::{username, Author, ErrorMessage, Viewer};
 use crate::{coder::decoder, request};
 use futures::prelude::*;
-use seed::fetch;
+use seed::fetch::{Method, ResponseDataResult};
 use serde::Deserialize;
 use std::borrow::Cow;
 
@@ -20,8 +20,8 @@ pub fn follow<Ms: 'static>(
         &format!("profiles/{}/follow", username.as_str()),
         viewer.as_ref(),
     )
-    .method(fetch::Method::Post)
-    .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {
+    .method(Method::Post)
+    .fetch_json_data(move |data_result: ResponseDataResult<RootDecoder>| {
         f(data_result
             .map(move |root_decoder| root_decoder.profile.into_author(viewer.map(Cow::Owned)))
             .map_err(request::fail_reason_into_errors))

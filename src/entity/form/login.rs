@@ -3,11 +3,9 @@ use crate::entity::form::{self, FormField};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
-pub type Form = form::Form<Field>;
-pub type ValidForm = form::ValidForm<Field>;
-pub type Problem = form::Problem;
+// ------ Form ------
 
-// ---- Form ----
+pub type Form = form::Form<Field>;
 
 impl Default for Form {
     fn default() -> Self {
@@ -15,13 +13,21 @@ impl Default for Form {
     }
 }
 
+// ------ ValidForm ------
+
+pub type ValidForm = form::ValidForm<Field>;
+
 impl ValidForm {
     pub fn to_encoder(&self) -> ValidFormEncoder {
         ValidFormEncoder::new(self)
     }
 }
 
-// ---- Field ----
+// ------ Form ------
+
+pub type Problem = form::Problem;
+
+// ------ Field ------
 
 #[derive(Clone, EnumIter)]
 pub enum Field {

@@ -4,7 +4,12 @@ use seed::prelude::*;
 use std::{borrow::Cow, convert::TryFrom, fmt};
 use tool::non_empty;
 
-type Path<'a> = Vec<&'a str>;
+pub fn go_to<Ms: 'static>(route: Route<'static>, orders: &mut impl Orders<Ms, GMsg>) {
+    seed::push_route(route.clone());
+    orders.send_g_msg(GMsg::RoutePushed(route));
+}
+
+// ------ Route ------
 
 #[derive(Clone)]
 pub enum Route<'a> {
@@ -21,7 +26,7 @@ pub enum Route<'a> {
 }
 
 impl<'a> Route<'a> {
-    pub fn path(&self) -> Path {
+    pub fn path(&self) -> Vec<&str> {
         use Route::*;
         match self {
             Home | Root => vec![],
@@ -82,11 +87,4 @@ impl<'a> TryFrom<seed::Url> for Route<'a> {
         }
         .ok_or(())
     }
-}
-
-// Public helpers
-
-pub fn go_to<Ms: 'static>(route: Route<'static>, orders: &mut impl Orders<Ms, GMsg>) {
-    seed::push_route(route.clone());
-    orders.send_g_msg(GMsg::RoutePushed(route));
 }

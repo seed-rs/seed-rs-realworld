@@ -26,12 +26,11 @@ pub struct Article {
 
 impl Article {
     pub fn into_form(self) -> Form {
-        let fields: Vec<Field> = vec![
+        Form::new(vec![
             Field::Title(self.title),
             Field::Description(self.description),
             Field::Body(self.body.to_string()),
             Field::Tags(self.tag_list.into_strings().join(" ")),
-        ];
-        Form::new(fields)
+        ])
     }
 }

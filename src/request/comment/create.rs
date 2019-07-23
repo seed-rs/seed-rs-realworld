@@ -4,7 +4,7 @@ use crate::{
     request,
 };
 use futures::prelude::*;
-use seed::fetch;
+use seed::fetch::{Method, ResponseDataResult};
 use serde::Deserialize;
 use std::borrow::Cow;
 
@@ -24,9 +24,9 @@ pub fn create<Ms: 'static>(
         &format!("articles/{}/comments", slug.as_str()),
         viewer.as_ref(),
     )
-    .method(fetch::Method::Post)
+    .method(Method::Post)
     .send_json(&encoder::Comment::new(text))
-    .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {
+    .fetch_json_data(move |data_result: ResponseDataResult<RootDecoder>| {
         f(data_result
             .map_err(request::fail_reason_into_errors)
             .and_then(move |root_decoder| {

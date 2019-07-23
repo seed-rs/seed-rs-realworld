@@ -13,19 +13,16 @@ impl<'a> Default for Session {
 }
 
 impl<'a> Session {
+    pub fn new(viewer: Option<Viewer>) -> Self {
+        match viewer {
+            Some(viewer) => Session::LoggedIn(viewer),
+            None => Session::Guest,
+        }
+    }
     pub fn viewer(&self) -> Option<&Viewer> {
         match self {
             Session::LoggedIn(viewer) => Some(viewer),
             Session::Guest => None,
-        }
-    }
-}
-
-impl From<Option<Viewer>> for Session {
-    fn from(viewer: Option<Viewer>) -> Self {
-        match viewer {
-            Some(viewer) => Session::LoggedIn(viewer),
-            None => Self::default(),
         }
     }
 }

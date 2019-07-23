@@ -48,7 +48,7 @@ impl From<Model> for Session {
 
 pub fn init(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     orders
-        .perform_cmd(loading::slow_threshold(
+        .perform_cmd(loading::notify_on_slow_load(
             Msg::SlowLoadThresholdPassed,
             Msg::Unreachable,
         ))
@@ -118,7 +118,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
         }
         Msg::SaveCompleted(Ok(viewer)) => {
             viewer.store();
-            orders.send_g_msg(GMsg::SessionChanged(Some(viewer).into()));
+            orders.send_g_msg(GMsg::SessionChanged(Session::LoggedIn(viewer)));
         }
         Msg::SaveCompleted(Err(problems)) => {
             model.problems = problems;
@@ -216,7 +216,7 @@ fn view_fieldset(field: &Field) -> Node<Msg> {
 fn view_form(model: &Model) -> Node<Msg> {
     match &model.status {
         Status::Loading => empty![],
-        Status::LoadingSlowly => loading::icon(),
+        Status::LoadingSlowly => loading::view_icon(),
         Status::Loaded(form) => form![
             raw_ev(Ev::Submit, |event| {
                 event.prevent_default();
@@ -228,7 +228,7 @@ fn view_form(model: &Model) -> Node<Msg> {
                 "Update Settings"
             ]
         ],
-        Status::Failed => loading::error("page"),
+        Status::Failed => loading::view_error("page"),
     }
 }
 

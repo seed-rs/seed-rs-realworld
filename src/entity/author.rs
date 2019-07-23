@@ -3,42 +3,32 @@ use crate::Route;
 use seed::prelude::*;
 use std::borrow::Cow;
 
+// ------ Author ------
+
 #[derive(Clone)]
 pub enum Author {
-    Following(FollowedAuthor),
-    NotFollowing(UnfollowedAuthor),
+    Following(Profile),
+    NotFollowing(Profile),
     IsViewer(Viewer),
 }
 
 impl Author {
     pub fn username(&self) -> &Username {
         match self {
-            Author::Following(FollowedAuthor { profile })
-            | Author::NotFollowing(UnfollowedAuthor { profile }) => &profile.username,
+            Author::Following(profile) | Author::NotFollowing(profile) => &profile.username,
             Author::IsViewer(viewer) => viewer.username(),
         }
     }
 
     pub fn profile(&self) -> &Profile {
         match self {
-            Author::Following(FollowedAuthor { profile, .. })
-            | Author::NotFollowing(UnfollowedAuthor { profile, .. }) => profile,
-            Author::IsViewer(viewer) => viewer.profile(),
+            Author::Following(profile) | Author::NotFollowing(profile) => profile,
+            Author::IsViewer(viewer) => &viewer.profile,
         }
     }
 }
 
-#[derive(Clone)]
-#[allow(clippy::module_name_repetitions)]
-pub struct FollowedAuthor {
-    pub profile: Profile,
-}
-
-#[derive(Clone)]
-#[allow(clippy::module_name_repetitions)]
-pub struct UnfollowedAuthor {
-    pub profile: Profile,
-}
+// ------ view functions ------
 
 pub fn view<Ms>(username: &Username) -> Node<Ms> {
     a![

@@ -1,7 +1,7 @@
 use crate::entity::{Author, ErrorMessage, Username, Viewer};
 use crate::{coder::decoder, request};
 use futures::prelude::*;
-use seed::fetch;
+use seed::fetch::ResponseDataResult;
 use serde::Deserialize;
 use std::borrow::Cow;
 
@@ -18,7 +18,7 @@ pub fn load<Ms: 'static>(
     f: fn(Result<Author, (Username<'static>, Vec<ErrorMessage>)>) -> Ms,
 ) -> impl Future<Item = Ms, Error = Ms> {
     request::new(&format!("profiles/{}", username.as_str()), viewer.as_ref()).fetch_json_data(
-        move |data_result: fetch::ResponseDataResult<RootDecoder>| {
+        move |data_result: ResponseDataResult<RootDecoder>| {
             f(data_result
                 .map(move |root_decoder| root_decoder.profile.into_author(viewer.map(Cow::Owned)))
                 .map_err(request::fail_reason_into_errors)

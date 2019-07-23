@@ -1,8 +1,12 @@
+use crate::entity::ErrorMessage;
 use chrono::prelude::*;
+use newtype::NewType;
 use seed::prelude::*;
-use std::{convert::TryFrom, fmt};
+use std::convert::TryFrom;
 
-#[derive(Clone)]
+// ------ Timestamp ------
+
+#[derive(NewType, Clone)]
 pub struct Timestamp(DateTime<Local>);
 
 impl Timestamp {
@@ -11,21 +15,17 @@ impl Timestamp {
     }
 }
 
-impl fmt::Display for Timestamp {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
 impl TryFrom<String> for Timestamp {
-    type Error = String;
+    type Error = ErrorMessage;
 
     fn try_from(string: String) -> Result<Self, Self::Error> {
         DateTime::parse_from_rfc3339(string.as_str())
             .map(|date_time| Self(date_time.into()))
-            .map_err(|parse_error| parse_error.to_string())
+            .map_err(|parse_error| parse_error.to_string().into())
     }
 }
+
+// ------ view timestamp ------
 
 pub fn view<Ms>(timestamp: &Timestamp) -> Node<Ms> {
     span![

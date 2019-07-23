@@ -1,4 +1,4 @@
-use crate::entity::asset;
+use crate::entity::Image;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
@@ -13,7 +13,7 @@ impl Avatar {
     pub fn src(&self) -> String {
         match &self.0 {
             Some(url) if !url.is_empty() => url.to_string(),
-            _ => asset::default_avatar().into_url(),
+            _ => Image::default_avatar().into_url(),
         }
     }
 }

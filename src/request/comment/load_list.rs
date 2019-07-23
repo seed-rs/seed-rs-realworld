@@ -1,7 +1,7 @@
 use crate::entity::{Comment, ErrorMessage, Slug, Viewer};
 use crate::{coder::decoder, logger, request};
 use futures::prelude::*;
-use seed::fetch;
+use seed::fetch::ResponseDataResult;
 use serde::Deserialize;
 use std::borrow::Cow;
 use std::collections::VecDeque;
@@ -38,7 +38,7 @@ pub fn load_list<Ms: 'static>(
         &format!("articles/{}/comments", slug.as_str()),
         viewer.as_ref(),
     )
-    .fetch_json_data(move |data_result: fetch::ResponseDataResult<RootDecoder>| {
+    .fetch_json_data(move |data_result: ResponseDataResult<RootDecoder>| {
         f(data_result
             .map(move |root_decoder| root_decoder.into_comments(viewer.as_ref()))
             .map_err(request::fail_reason_into_errors))

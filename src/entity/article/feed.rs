@@ -83,8 +83,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
 //     View
 // ------ ------
 
-// ====== PUBLIC ======
-
 // ------ Tab ------
 
 pub struct Tab<Ms> {
@@ -144,7 +142,7 @@ pub fn view_pagination<Ms: Clone>(
         ul![
             class!["pagination"],
             (1..=model.articles.total_pages())
-                .map(PageNumber::new)
+                .map(PageNumber::from)
                 .map(|page_number| view_page_link(
                     page_number,
                     page_number == current_page,

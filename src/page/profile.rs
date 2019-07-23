@@ -83,7 +83,7 @@ pub fn init<'a>(
     orders: &mut impl Orders<Msg, GMsg>,
 ) -> Model<'a> {
     orders
-        .perform_cmd(loading::slow_threshold(
+        .perform_cmd(loading::notify_on_slow_load(
             Msg::SlowLoadThresholdPassed,
             Msg::Unreachable,
         ))
@@ -280,8 +280,8 @@ fn view_tabs(selected_feed: SelectedFeed) -> Node<Msg> {
 fn view_feed(model: &Model) -> Node<Msg> {
     match &model.feed {
         Status::Loading(_) => empty![],
-        Status::LoadingSlowly(_) => loading::icon(),
-        Status::Failed(_) => loading::error("feed"),
+        Status::LoadingSlowly(_) => loading::view_icon(),
+        Status::Failed(_) => loading::view_error("feed"),
         Status::Loaded(feed_model) => div![
             class!["container"],
             div![
@@ -324,8 +324,8 @@ fn view_follow_button(author: &Author, model: &Model) -> Node<Msg> {
 fn view_content(model: &Model) -> Node<Msg> {
     match &model.author {
         Status::Loading(_) => empty![],
-        Status::LoadingSlowly(_) => loading::icon(),
-        Status::Failed(_) => loading::error("profile"),
+        Status::LoadingSlowly(_) => loading::view_icon(),
+        Status::Failed(_) => loading::view_error("profile"),
         Status::Loaded(author) => div![
             class!["profile-page"],
             page::view_errors(Msg::DismissErrorsClicked, &model.errors),

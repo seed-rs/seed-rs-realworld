@@ -17,10 +17,6 @@ impl Viewer {
         &self.profile.avatar
     }
 
-    pub const fn profile(&self) -> &Profile {
-        &self.profile
-    }
-
     pub fn store(&self) {
         storage::store_viewer(self);
     }

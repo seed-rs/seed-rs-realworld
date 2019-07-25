@@ -1,7 +1,12 @@
 [package]
 name = "seed_rs_realworld"
 version = "0.1.0"
+repository = "https://github.com/MartinKavik/seed-rs-realworld"
 authors = ["Martin Kavík <martin@kavik.cz>"]
+description = "Exemplary real world application built with Seed"
+categories = ["wasm", "rust", "seed", "realworld", "example"]
+license = "MIT"
+readme = "./README.md"
 edition = "2018"
 
 [lib]
@@ -27,3 +32,7 @@ lazy_static = "1.3.0"
 shrinkwraprs = "0.2.1"
 newtype = "0.2.1"
 web-sys = { version = "0.3.25", features = [ "ScrollBehavior", "ScrollToOptions" ] }
+
+[profile.release]
+lto = true
+opt-level = 's'

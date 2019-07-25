@@ -38,7 +38,7 @@ args = ["build", "--target", "web", "--out-name", "package", "--dev"]
 description = "Build with wasm-pack"
 install_crate = { crate_name = "wasm-pack", binary = "wasm-pack", test_arg = "-V" }
 command = "wasm-pack"
-args = ["build", "--target", "web", "--out-name", "package"]
+args = ["build", "--target", "web", "--out-name", "package", "--release"]
 
 [tasks.all]
 description = "Build, and create wasms"

@@ -28,7 +28,6 @@ addons:
 env:
   global:
     - RUST_BACKTRACE=1
-    - CI=true
 
 matrix:
   allow_failures:
@@ -42,10 +41,13 @@ script:
 before_deploy:
   - npm install netlify-cli -g
   - cargo make all_release
+  - mkdir dist
+  - mv index.html assets pkg ./dist
 
 deploy:
   provider: script
-  script: netlify deploy -s $NETLIFY_SITE_ID --auth $NETLIFY_ACCESS_TOKEN -p --dir .
+  script: netlify deploy -s $NETLIFY_SITE_ID --auth $NETLIFY_ACCESS_TOKEN -p --dir ./dist
   skip_cleanup: true
   on:
     branch: master
+    condition: $TRAVIS_OS_NAME = linux

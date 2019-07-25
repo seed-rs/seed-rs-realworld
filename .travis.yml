@@ -1,0 +1,51 @@
+language: rust
+
+install:
+  - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash
+  - source ~/.nvm/nvm.sh
+  - nvm install v10.5
+
+rust:
+  - stable
+
+os:
+  #  - windows   # firefox problem
+  - osx
+  - linux
+
+before_cache:
+  - rm -rf $HOME/.cargo/registry
+
+# https://levans.fr/rust_travis_cache.html
+cache:
+  directories:
+    - $HOME/.cargo
+
+addons:
+  firefox: latest
+  chrome: stable
+
+env:
+  global:
+    - RUST_BACKTRACE=1
+    - CI=true
+
+matrix:
+  allow_failures:
+    - rust: nightly
+
+script:
+  - cargo install --force cargo-make # remove --force in the future (https://github.com/rust-lang/cargo/pull/6798)
+  - cargo make verify_only # includes `test_h firefox`
+  - cargo make test_h chrome
+
+before_deploy:
+  - npm install netlify-cli -g
+  - cargo make all_release
+
+deploy:
+  provider: script
+  script: netlify deploy -s $NETLIFY_SITE_ID --auth $NETLIFY_ACCESS_TOKEN -p --dir .
+  skip_cleanup: true
+  on:
+    branch: master

@@ -1,3 +1,5 @@
+[![Netlify Status](https://api.netlify.com/api/v1/badges/e4891ed3-3ecd-43ae-ab60-0fd8647b372d/deploy-status)](https://app.netlify.com/sites/seed-rs-realworld/deploys)
+
 # ![RealWorld Example App](logo.png)
 
 > ### Seed codebase containing real world examples (CRUD, auth, advanced patterns, etc) that adheres to the [RealWorld](https://github.com/gothinkster/realworld) spec and API.

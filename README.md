@@ -1,4 +1,4 @@
-[![Netlify Status](https://api.netlify.com/api/v1/badges/e4891ed3-3ecd-43ae-ab60-0fd8647b372d/deploy-status)](https://app.netlify.com/sites/seed-rs-realworld/deploys)
+[![Build Status](https://travis-ci.org/MartinKavik/seed-rs-realworld.svg?branch=master)](https://travis-ci.org/MartinKavik/seed-rs-realworld) [![Netlify Status](https://api.netlify.com/api/v1/badges/e4891ed3-3ecd-43ae-ab60-0fd8647b372d/deploy-status)](https://app.netlify.com/sites/seed-rs-realworld/deploys)
 
 # ![RealWorld Example App](logo.png)
 

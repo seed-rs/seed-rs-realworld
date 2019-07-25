@@ -40,7 +40,7 @@ pub enum Msg {
     FavoriteCompleted(Result<Article, Vec<ErrorMessage>>),
 }
 
-#[allow(clippy::option_map_unit_fn)]
+#[allow(clippy::option_map_unit_fn, clippy::find_map)]
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match msg {
         Msg::DismissErrorsClicked => {

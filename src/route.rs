@@ -88,3 +88,186 @@ impl<'a> TryFrom<seed::Url> for Route<'a> {
         .ok_or(())
     }
 }
+
+// ====== ====== TESTS ====== ======
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use std::convert::TryInto;
+    use wasm_bindgen_test::*;
+
+    wasm_bindgen_test_configure!(run_in_browser);
+
+    #[wasm_bindgen_test]
+    fn home_route_test() {
+        // ====== ARRANGE ======
+        let url: seed::Url = "".to_string().into();
+
+        // ====== ACT ======
+        let route = url.try_into();
+
+        // ====== ASSERT ======
+        assert!(if let Ok(Route::Home) = route {
+            true
+        } else {
+            false
+        })
+    }
+
+    #[wasm_bindgen_test]
+    fn home_route_trailing_slash_test() {
+        // ====== ARRANGE ======
+        let url: seed::Url = "/".to_string().into();
+
+        // ====== ACT ======
+        let route = url.try_into();
+
+        // ====== ASSERT ======
+        assert!(if let Ok(Route::Home) = route {
+            true
+        } else {
+            false
+        })
+    }
+
+    #[wasm_bindgen_test]
+    fn login_route_test() {
+        // ====== ARRANGE ======
+        let url: seed::Url = "/login".to_string().into();
+
+        // ====== ACT ======
+        let route = url.try_into();
+
+        // ====== ASSERT ======
+        assert!(if let Ok(Route::Login) = route {
+            true
+        } else {
+            false
+        })
+    }
+
+    #[wasm_bindgen_test]
+    fn logout_route_test() {
+        // ====== ARRANGE ======
+        let url: seed::Url = "/logout".to_string().into();
+
+        // ====== ACT ======
+        let route = url.try_into();
+
+        // ====== ASSERT ======
+        assert!(if let Ok(Route::Logout) = route {
+            true
+        } else {
+            false
+        })
+    }
+
+    #[wasm_bindgen_test]
+    fn settings_route_test() {
+        // ====== ARRANGE ======
+        let url: seed::Url = "/settings".to_string().into();
+
+        // ====== ACT ======
+        let route = url.try_into();
+
+        // ====== ASSERT ======
+        assert!(if let Ok(Route::Settings) = route {
+            true
+        } else {
+            false
+        })
+    }
+
+    #[wasm_bindgen_test]
+    fn profile_route_test() {
+        // ====== ARRANGE ======
+        let url: seed::Url = "/profile/john".to_string().into();
+
+        // ====== ACT ======
+        let route = url.try_into();
+
+        // ====== ASSERT ======
+        assert!(if let Ok(Route::Profile(username)) = route {
+            username.as_str() == "john"
+        } else {
+            false
+        })
+    }
+
+    #[wasm_bindgen_test]
+    fn register_route_test() {
+        // ====== ARRANGE ======
+        let url: seed::Url = "/register".to_string().into();
+
+        // ====== ACT ======
+        let route = url.try_into();
+
+        // ====== ASSERT ======
+        assert!(if let Ok(Route::Register) = route {
+            true
+        } else {
+            false
+        })
+    }
+
+    #[wasm_bindgen_test]
+    fn article_route_test() {
+        // ====== ARRANGE ======
+        let url: seed::Url = "/article/my_article".to_string().into();
+
+        // ====== ACT ======
+        let route = url.try_into();
+
+        // ====== ASSERT ======
+        assert!(if let Ok(Route::Article(slug)) = route {
+            slug.as_str() == "my_article"
+        } else {
+            false
+        })
+    }
+
+    #[wasm_bindgen_test]
+    fn edit_article_route_test() {
+        // ====== ARRANGE ======
+        let url: seed::Url = "/editor/my_article".to_string().into();
+
+        // ====== ACT ======
+        let route = url.try_into();
+
+        // ====== ASSERT ======
+        assert!(if let Ok(Route::EditArticle(slug)) = route {
+            slug.as_str() == "my_article"
+        } else {
+            false
+        })
+    }
+
+    #[wasm_bindgen_test]
+    fn new_article_route_test() {
+        // ====== ARRANGE ======
+        let url: seed::Url = "/editor".to_string().into();
+
+        // ====== ACT ======
+        let route = url.try_into();
+
+        // ====== ASSERT ======
+        assert!(if let Ok(Route::NewArticle) = route {
+            true
+        } else {
+            false
+        })
+    }
+
+    #[wasm_bindgen_test]
+    fn invalid_route_test() {
+        // ====== ARRANGE ======
+        let url: seed::Url = "/unknown_url".to_string().into();
+
+        // ====== ACT ======
+        let route: Result<Route, ()> = url.try_into();
+
+        // ====== ASSERT ======
+        assert!(route.is_err())
+    }
+}

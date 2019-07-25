@@ -84,3 +84,45 @@ impl FormField for Field {
         }
     }
 }
+
+// ====== ====== TESTS ====== ======
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use wasm_bindgen_test::*;
+
+    #[wasm_bindgen_test]
+    fn valid_form_test() {
+        // ====== ARRANGE ======
+        let mut form = Form::default();
+        form.upsert_field(Field::Email("john@example.com".into()));
+        form.upsert_field(Field::Password("John's password".into()));
+
+        // ====== ACT ======
+        let result = form.trim_fields().validate();
+
+        // ====== ASSERT ======
+        assert!(result.is_ok());
+    }
+
+    #[wasm_bindgen_test]
+    fn invalid_form_test() {
+        // ====== ARRANGE ======
+        let form = Form::default();
+
+        // ====== ACT ======
+        let result = form.trim_fields().validate();
+
+        // ====== ASSERT ======
+        assert!(if let Err(problems) = result {
+            vec!["email can't be blank", "password can't be blank"]
+                == problems
+                    .iter()
+                    .map(form::Problem::message)
+                    .collect::<Vec<_>>()
+        } else {
+            false
+        });
+    }
+}

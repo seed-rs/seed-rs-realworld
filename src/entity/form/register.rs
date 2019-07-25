@@ -101,3 +101,68 @@ impl FormField for Field {
         }
     }
 }
+
+// ====== ====== TESTS ====== ======
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use wasm_bindgen_test::*;
+
+    #[wasm_bindgen_test]
+    fn valid_form_test() {
+        // ====== ARRANGE ======
+        let mut form = Form::default();
+        form.upsert_field(Field::Username("John".into()));
+        form.upsert_field(Field::Email("john@example.com".into()));
+        form.upsert_field(Field::Password("12345678".into()));
+
+        // ====== ACT ======
+        let result = form.trim_fields().validate();
+
+        // ====== ASSERT ======
+        assert!(result.is_ok());
+    }
+
+    #[wasm_bindgen_test]
+    fn invalid_form_test() {
+        // ====== ARRANGE ======
+        let form = Form::default();
+
+        // ====== ACT ======
+        let result = form.trim_fields().validate();
+
+        // ====== ASSERT ======
+        assert!(if let Err(problems) = result {
+            vec![
+                "username can't be blank",
+                "email can't be blank",
+                "password can't be blank",
+            ] == problems
+                .iter()
+                .map(form::Problem::message)
+                .collect::<Vec<_>>()
+        } else {
+            false
+        });
+    }
+
+    #[wasm_bindgen_test]
+    fn short_password_test() {
+        // ====== ARRANGE ======
+        let mut form = Form::default();
+        form.upsert_field(Field::Password("1234567".into()));
+
+        // ====== ACT ======
+        let result = form.trim_fields().validate();
+
+        // ====== ASSERT ======
+        assert!(if let Err(problems) = result {
+            problems.iter().any(|problem| {
+                problem.message() == "password is too short (minimum is 8 characters)"
+            })
+        } else {
+            false
+        });
+    }
+}

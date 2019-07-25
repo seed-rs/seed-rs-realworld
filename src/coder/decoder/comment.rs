@@ -31,3 +31,7 @@ impl Comment {
         })
     }
 }
+
+// ====== ====== TESTS ====== ======
+
+// see `src/code/decoder/viewer` for example how to test decoder

@@ -94,7 +94,15 @@ description = "Run headless tests in release mode. Ex: 'cargo make test_h firefo
 args = ["test", "--headless", "--${@}", "--release"]
 
 [tasks.test_one]
-description = "Run Seed's tests. Ex: 'cargo make test firefox'. Test envs: [chrome, firefox, safari]"
+description = "Run a single test in Firefox. Ex 'cargo make test_one my_test'"
+clear = true
+workspace = false
+install_crate = { crate_name = "wasm-pack", binary = "wasm-pack", test_arg = "-V" }
+command = "wasm-pack"
+args = ["test", "--firefox", "--", "--lib", "${@}"]
+
+[tasks.test_one_h]
+description = "Run a single test in headless Firefox. Ex 'cargo make test_one_h my_test'"
 clear = true
 workspace = false
 install_crate = { crate_name = "wasm-pack", binary = "wasm-pack", test_arg = "-V" }
@@ -116,7 +124,7 @@ description = "Check format with rustfmt"
 args = ["fmt", "--all", "--", "--check"]
 
 [tasks.clippy]
-description = "Lint only Seed with Clippy"
+description = "Lint with Clippy"
 clear = true
 workspace = false
 install_crate = { rustup_component_name = "clippy", binary = "cargo-clippy", test_arg = "--help" }

@@ -23,3 +23,26 @@ impl<T> Default for PaginatedList<T> {
         }
     }
 }
+
+// ====== ====== TESTS ====== ======
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use wasm_bindgen_test::*;
+
+    wasm_bindgen_test_configure!(run_in_browser);
+
+    #[wasm_bindgen_test]
+    fn total_pages_test() {
+        // ====== ARRANGE ======
+        let paginated_list: PaginatedList<()> = PaginatedList {
+            per_page: NonZeroUsize::new(5).unwrap(),
+            total: 6,
+            ..PaginatedList::default()
+        };
+
+        // ====== ACT & ASSERT ======
+        assert_eq!(paginated_list.total_pages(), 2);
+    }
+}

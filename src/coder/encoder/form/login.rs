@@ -17,3 +17,7 @@ impl<'a> ValidForm<'a> {
         }
     }
 }
+
+// ====== ====== TESTS ====== ======
+
+// see `src/code/encoder/comments` for example how to test encoder

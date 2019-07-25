@@ -30,3 +30,20 @@ For more information on how to this works with other frontends/backends, head ov
 
 1. Create issues and PRs - bugs, missing documentation, typos, unreadable code...
 2. Squash commits, rebase on the current `master` and run `$ cargo make verify` (+ commit changes, if any) before creating PR.
+
+# Statistics
+
+```bash
+$ tokei
+-------------------------------------------------------------------------------
+ Language            Files        Lines         Code     Comments       Blanks
+-------------------------------------------------------------------------------
+ HTML                    1           21           19            2            0
+ Markdown                1           32           32            0            0
+ Rust                   81         5888         4864          338          686
+ SVG                     1           17           17            0            0
+ TOML                    4          198          145           20           33
+-------------------------------------------------------------------------------
+ Total                  88         6156         5077          360          719
+-------------------------------------------------------------------------------
+```

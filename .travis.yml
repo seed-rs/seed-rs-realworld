@@ -1,10 +1,5 @@
 language: rust
 
-install:
-  - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash
-  - source ~/.nvm/nvm.sh
-  - nvm install v10.5
-
 rust:
   - stable
 
@@ -39,6 +34,9 @@ script:
   - cargo make test_h chrome
 
 before_deploy:
+  - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash
+  - source ~/.nvm/nvm.sh
+  - nvm install v10.5
   - npm install netlify-cli -g
   - cargo make all_release
   - mkdir dist

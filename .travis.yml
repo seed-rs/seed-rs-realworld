@@ -31,7 +31,8 @@ matrix:
 script:
   - cargo install --force cargo-make # remove --force in the future (https://github.com/rust-lang/cargo/pull/6798)
   - cargo make verify_only # includes `test_h firefox`
-  - cargo make test_h chrome
+  # https://github.com/rustwasm/wasm-pack/issues/611
+  # - cargo make test_h chrome
 
 before_deploy:
   - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash

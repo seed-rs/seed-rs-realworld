@@ -7,7 +7,6 @@ pub mod register;
 pub mod settings;
 
 const MIN_PASSWORD_LENGTH: usize = 8;
-const MAX_INVALID_PASSWORD_LENGTH: usize = MIN_PASSWORD_LENGTH - 1;
 
 // ------ FormField ------
 

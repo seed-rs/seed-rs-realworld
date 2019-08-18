@@ -32,6 +32,7 @@ script:
   - cargo install --force cargo-make # remove --force in the future (https://github.com/rust-lang/cargo/pull/6798)
   - cargo make verify_only # includes `test_h firefox`
   # https://github.com/rustwasm/wasm-pack/issues/611
+  # workaround: https://github.com/David-OConnor/seed/blob/master/.travis.yml#L6
   # - cargo make test_h chrome
 
 before_deploy:

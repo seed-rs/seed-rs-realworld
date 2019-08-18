@@ -89,13 +89,17 @@ impl FormField for Field {
                     self.key(),
                     "password can't be blank",
                 )),
-                1...form::MAX_INVALID_PASSWORD_LENGTH => Some(form::Problem::new_invalid_field(
-                    self.key(),
-                    format!(
-                        "password is too short (minimum is {} characters)",
-                        form::MIN_PASSWORD_LENGTH
-                    ),
-                )),
+                // @TODO: use exclusive range pattern once stabilized
+                // https://github.com/rust-lang/rust/issues/37854
+                i @ 1..=form::MIN_PASSWORD_LENGTH if i < form::MIN_PASSWORD_LENGTH => {
+                    Some(form::Problem::new_invalid_field(
+                        self.key(),
+                        format!(
+                            "password is too short (minimum is {} characters)",
+                            form::MIN_PASSWORD_LENGTH
+                        ),
+                    ))
+                }
                 _ => None,
             },
         }

@@ -37,8 +37,10 @@ We didn't talked about function `sink` in `lib.rs` in the steps above. `sink` ha
 2. Update Rust: `$ rustup update`
 3. Install WASM target: `$ rustup target add wasm32-unknown-unknown`
 4. Install [cargo-make](https://sagiegurari.github.io/cargo-make/): `$ cargo install --force cargo-make`
-5. Build project from its root: `$ cargo make build`
+5. Build project from its root: `$ cargo make all` or `$ cargo make watch`
+   - _Note:_ You need some dependencies like `pkg-config` on Linux - just follow recommendations after compilation errors.
 6. Start local server: `$ cargo make serve`
+   - _Note:_ You have to open a new terminal tab/window if you used `$ cargo make watch`.
 7. Open in you browser [localhost:8000](http://localhost:8000/)
 
 # Contributing

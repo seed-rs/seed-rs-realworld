@@ -91,6 +91,9 @@ impl<T: FormField> ValidForm<T> {
 // ------ Problem ------
 
 #[derive(Clone)]
+// `#[allow(dead_code)]` because compiler has problems with constructed variants using `Self::`
+// https://github.com/rust-lang/rust/pull/64424
+#[allow(dead_code)]
 pub enum Problem {
     InvalidField {
         field_key: &'static str,
@@ -106,20 +109,19 @@ impl Problem {
         field_key: &'static str,
         message: impl Into<Cow<'static, str>>,
     ) -> Self {
-        Problem::InvalidField {
+        Self::InvalidField {
             field_key,
             message: message.into(),
         }
     }
     pub fn new_server_error(message: impl Into<Cow<'static, str>>) -> Self {
-        Problem::ServerError {
+        Self::ServerError {
             message: message.into(),
         }
     }
     pub fn message(&self) -> &str {
-        use Problem::*;
         match self {
-            InvalidField { message, .. } | ServerError { message } => message,
+            Self::InvalidField { message, .. } | Self::ServerError { message } => message,
         }
     }
 }

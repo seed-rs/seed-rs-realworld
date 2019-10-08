@@ -96,7 +96,7 @@ pub enum SelectedFeed {
 
 impl Default for SelectedFeed {
     fn default() -> Self {
-        SelectedFeed::MyArticles
+        Self::MyArticles
     }
 }
 

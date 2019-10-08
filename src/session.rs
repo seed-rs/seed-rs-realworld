@@ -8,21 +8,21 @@ pub enum Session {
 
 impl<'a> Default for Session {
     fn default() -> Self {
-        Session::Guest
+        Self::Guest
     }
 }
 
 impl<'a> Session {
     pub fn new(viewer: Option<Viewer>) -> Self {
         match viewer {
-            Some(viewer) => Session::LoggedIn(viewer),
-            None => Session::Guest,
+            Some(viewer) => Self::LoggedIn(viewer),
+            None => Self::Guest,
         }
     }
     pub fn viewer(&self) -> Option<&Viewer> {
         match self {
-            Session::LoggedIn(viewer) => Some(viewer),
-            Session::Guest => None,
+            Self::LoggedIn(viewer) => Some(viewer),
+            Self::Guest => None,
         }
     }
 }

@@ -54,7 +54,7 @@ impl Status {
     fn slug(&self) -> Option<&Slug> {
         use Status::*;
         match self {
-            EditingNew(..) | Status::Creating(..) => None,
+            EditingNew(..) | Creating(..) => None,
             Loading(slug)
             | LoadingSlowly(slug)
             | LoadingFailed(slug, ..)
@@ -66,7 +66,7 @@ impl Status {
 
 impl Default for Status {
     fn default() -> Self {
-        Status::EditingNew(Vec::default(), Form::default())
+        Self::EditingNew(Vec::default(), Form::default())
     }
 }
 

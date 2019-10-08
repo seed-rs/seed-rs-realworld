@@ -15,15 +15,15 @@ pub enum Author {
 impl Author {
     pub fn username(&self) -> &Username {
         match self {
-            Author::Following(profile) | Author::NotFollowing(profile) => &profile.username,
-            Author::IsViewer(viewer) => viewer.username(),
+            Self::Following(profile) | Self::NotFollowing(profile) => &profile.username,
+            Self::IsViewer(viewer) => viewer.username(),
         }
     }
 
     pub fn profile(&self) -> &Profile {
         match self {
-            Author::Following(profile) | Author::NotFollowing(profile) => profile,
-            Author::IsViewer(viewer) => &viewer.profile,
+            Self::Following(profile) | Self::NotFollowing(profile) => profile,
+            Self::IsViewer(viewer) => &viewer.profile,
         }
     }
 }

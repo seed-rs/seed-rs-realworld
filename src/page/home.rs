@@ -53,7 +53,7 @@ enum Status<T> {
 
 impl<T> Default for Status<T> {
     fn default() -> Self {
-        Status::Loading
+        Self::Loading
     }
 }
 
@@ -68,7 +68,7 @@ pub enum SelectedFeed {
 
 impl<'a> Default for SelectedFeed {
     fn default() -> Self {
-        SelectedFeed::Global
+        Self::Global
     }
 }
 

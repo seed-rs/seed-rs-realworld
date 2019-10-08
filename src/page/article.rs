@@ -50,7 +50,7 @@ enum Status<T> {
 
 impl<T> Default for Status<T> {
     fn default() -> Self {
-        Status::Loading
+        Self::Loading
     }
 }
 
@@ -63,7 +63,7 @@ enum CommentText {
 
 impl Default for CommentText {
     fn default() -> Self {
-        CommentText::Editing("".into())
+        Self::Editing("".into())
     }
 }
 

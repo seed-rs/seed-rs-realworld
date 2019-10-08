@@ -46,7 +46,7 @@ enum Status {
 
 impl Default for Status {
     fn default() -> Self {
-        Status::Loading
+        Self::Loading
     }
 }
 

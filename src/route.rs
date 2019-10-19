@@ -4,7 +4,7 @@ use seed::prelude::*;
 use std::{borrow::Cow, convert::TryFrom, fmt};
 use tool::non_empty;
 
-pub fn go_to<Ms: 'static>(route: Route<'static>, orders: &mut impl Orders<Ms, GMsg>) {
+pub fn go_to<Ms: 'static + Clone>(route: Route<'static>, orders: &mut impl Orders<Ms, GMsg>) {
     seed::push_route(route.clone());
     orders.send_g_msg(GMsg::RoutePushed(route));
 }

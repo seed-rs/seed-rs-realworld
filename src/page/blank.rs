@@ -4,6 +4,6 @@ use super::ViewPage;
 //     View
 // ------ ------
 
-pub fn view<'a, Ms>() -> ViewPage<'a, Ms> {
+pub fn view<'a, Ms: Clone>() -> ViewPage<'a, Ms> {
     ViewPage::new("Blank", empty!())
 }

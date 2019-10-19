@@ -64,9 +64,9 @@ impl<'a> From<Model<'a>> for Session {
 //     Init
 // ------ ------
 
-fn init(url: Url, orders: &mut impl Orders<Msg<'static>, GMsg>) -> Model<'static> {
-    orders.send_msg(Msg::RouteChanged(url.try_into().ok()));
-    Model::Redirect(Session::new(storage::load_viewer()))
+fn init(_: Url, _: &mut impl Orders<Msg<'static>, GMsg>) -> Init<Model<'static>> {
+    let model = Model::Redirect(Session::new(storage::load_viewer()));
+    Init::new(model)
 }
 
 // ------ ------
@@ -119,6 +119,7 @@ fn sink<'a>(g_msg: GMsg, model: &mut Model<'a>, orders: &mut impl Orders<Msg<'st
 // ------ ------
 
 #[allow(clippy::enum_variant_names)]
+#[derive(Clone)]
 enum Msg<'a> {
     RouteChanged(Option<Route<'a>>),
     HomeMsg(page::home::Msg),
@@ -292,7 +293,7 @@ fn view(model: &Model) -> impl View<Msg<'static>> {
 #[wasm_bindgen(start)]
 pub fn start() {
     seed::App::build(init, update, view)
-        .routes(|url| Msg::RouteChanged(url.try_into().ok()))
+        .routes(|url| Some(Msg::RouteChanged(url.try_into().ok())))
         .sink(sink)
         .finish()
         .run();

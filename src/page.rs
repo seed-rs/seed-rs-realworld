@@ -45,12 +45,12 @@ pub fn view_errors<Ms: Clone>(dismiss_errors: Ms, errors: &[ErrorMessage]) -> No
 // ------ ViewPage ------
 
 #[allow(clippy::module_name_repetitions)]
-pub struct ViewPage<'a, Ms: 'static> {
+pub struct ViewPage<'a, Ms: 'static + Clone> {
     title_prefix: Cow<'a, str>,
     content: Node<Ms>,
 }
 
-impl<'a, Ms> ViewPage<'a, Ms> {
+impl<'a, Ms: Clone> ViewPage<'a, Ms> {
     pub fn new(title_prefix: impl Into<Cow<'a, str>>, content: Node<Ms>) -> Self {
         Self {
             title_prefix: title_prefix.into(),
@@ -95,7 +95,11 @@ impl<'a> Page<'a> {
 
     // ------ view methods ------
 
-    pub fn view<Ms>(&self, view_page: ViewPage<'a, Ms>, viewer: Option<&Viewer>) -> Vec<Node<Ms>> {
+    pub fn view<Ms: Clone>(
+        &self,
+        view_page: ViewPage<'a, Ms>,
+        viewer: Option<&Viewer>,
+    ) -> Vec<Node<Ms>> {
         seed::document().set_title(&view_page.title());
 
         vec![
@@ -107,7 +111,7 @@ impl<'a> Page<'a> {
 
     // ====== PRIVATE ======
 
-    fn view_header<Ms>(&self, viewer: Option<&Viewer>) -> Node<Ms> {
+    fn view_header<Ms: Clone>(&self, viewer: Option<&Viewer>) -> Node<Ms> {
         nav![
             class!["navbar", "navbar-light"],
             div![
@@ -126,7 +130,7 @@ impl<'a> Page<'a> {
         ]
     }
 
-    fn view_footer<Ms>(&self) -> Node<Ms> {
+    fn view_footer<Ms: Clone>(&self) -> Node<Ms> {
         footer![div![
             class!["container"],
             a![
@@ -145,7 +149,11 @@ impl<'a> Page<'a> {
 
     // ------ view_header helpers ------
 
-    fn view_navbar_link<Ms>(&self, route: &Route, link_content: impl UpdateEl<El<Ms>>) -> Node<Ms> {
+    fn view_navbar_link<Ms: Clone>(
+        &self,
+        route: &Route,
+        link_content: impl UpdateEl<El<Ms>>,
+    ) -> Node<Ms> {
         li![
             class!["nav-item"],
             a![
@@ -159,7 +167,7 @@ impl<'a> Page<'a> {
         ]
     }
 
-    fn view_menu<Ms>(&self, viewer: Option<&Viewer>) -> Vec<Node<Ms>> {
+    fn view_menu<Ms: Clone>(&self, viewer: Option<&Viewer>) -> Vec<Node<Ms>> {
         match viewer {
             None => vec![
                 self.view_navbar_link(&Route::Login, "Sign in"),

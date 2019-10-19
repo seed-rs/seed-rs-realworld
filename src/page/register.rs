@@ -62,6 +62,7 @@ pub fn sink(g_msg: GMsg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>)
 //    Update
 // ------ ------
 
+#[derive(Clone)]
 pub enum Msg {
     FormSubmitted,
     FieldChanged(Field),

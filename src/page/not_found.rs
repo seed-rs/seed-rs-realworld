@@ -6,13 +6,13 @@ use seed::prelude::*;
 //     View
 // ------ ------
 
-pub fn view<'a, Ms>() -> ViewPage<'a, Ms> {
+pub fn view<'a, Ms: Clone>() -> ViewPage<'a, Ms> {
     ViewPage::new("Page Not Found", view_content())
 }
 
 // ====== PRIVATE ======
 
-fn view_content<Ms>() -> Node<Ms> {
+fn view_content<Ms: Clone>() -> Node<Ms> {
     main![
         id!("content"),
         class!["container"],

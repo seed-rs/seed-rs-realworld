@@ -1,6 +1,6 @@
 use crate::entity::Image;
 use futures::Future;
-use seed::gloo_timers::future::TimeoutFuture;
+use gloo_timers::future::TimeoutFuture;
 use seed::prelude::*;
 
 const SLOW_LOADING_THRESHOLD_MS: u32 = 500;
@@ -13,7 +13,7 @@ pub fn notify_on_slow_load<Ms>(msg: Ms, error_msg: Ms) -> impl Future<Item = Ms,
 
 // ------ view functions ------
 
-pub fn view_icon<Ms>() -> Node<Ms> {
+pub fn view_icon<Ms: Clone>() -> Node<Ms> {
     img![attrs! {
         At::Src => Image::loading().url(),
         At::Width => 64,
@@ -22,6 +22,6 @@ pub fn view_icon<Ms>() -> Node<Ms> {
     }]
 }
 
-pub fn view_error<Ms>(subject: &str) -> Node<Ms> {
+pub fn view_error<Ms: Clone>(subject: &str) -> Node<Ms> {
     div![format!("Error loading {}.", subject)]
 }

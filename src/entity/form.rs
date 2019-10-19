@@ -22,6 +22,7 @@ pub trait FormField: Clone {
 
 // ------ Form ------
 
+#[derive(Clone)]
 pub struct Form<T: FormField>(IndexMap<FieldKey, T>);
 
 impl<T: FormField> Form<T> {

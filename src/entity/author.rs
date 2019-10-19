@@ -30,7 +30,7 @@ impl Author {
 
 // ------ view functions ------
 
-pub fn view<Ms>(username: &Username) -> Node<Ms> {
+pub fn view<Ms: Clone>(username: &Username) -> Node<Ms> {
     a![
         class!["author"],
         attrs! {At::Href => Route::Profile(Cow::Borrowed(username)).to_string()},

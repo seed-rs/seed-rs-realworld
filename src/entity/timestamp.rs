@@ -22,7 +22,7 @@ impl TryFrom<String> for Timestamp {
 
 // ------ view timestamp ------
 
-pub fn view<Ms>(timestamp: &Timestamp) -> Node<Ms> {
+pub fn view<Ms: Clone>(timestamp: &Timestamp) -> Node<Ms> {
     span![
         class!["date"],
         // "February 14, 2018"

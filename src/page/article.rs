@@ -134,7 +134,7 @@ pub enum Msg {
     Unreachable,
 }
 
-#[allow(clippy::match_same_arms)]
+#[allow(clippy::match_same_arms, clippy::too_many_lines)]
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
     match msg {
         Msg::DeleteArticleClicked(slug) => {

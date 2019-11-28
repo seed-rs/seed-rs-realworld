@@ -1,6 +1,6 @@
 use crate::entity::Image;
 use futures::Future;
-use seed::gloo_timers::future::TimeoutFuture;
+use gloo_timers::future::TimeoutFuture;
 use seed::prelude::*;
 
 const SLOW_LOADING_THRESHOLD_MS: u32 = 500;

@@ -1,10 +1,10 @@
-[![Build Status](https://travis-ci.org/MartinKavik/seed-rs-realworld.svg?branch=master)](https://travis-ci.org/MartinKavik/seed-rs-realworld) [![Netlify Status](https://api.netlify.com/api/v1/badges/e4891ed3-3ecd-43ae-ab60-0fd8647b372d/deploy-status)](https://app.netlify.com/sites/seed-rs-realworld/deploys)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/356507e1-a86c-4284-95fe-f50643e2dc33/deploy-status)](https://app.netlify.com/sites/realworld-seed-rs/deploys)
 
 # ![RealWorld Example App](logo.png)
 
 > ### Seed codebase containing real world examples (CRUD, auth, advanced patterns, etc) that adheres to the [RealWorld](https://github.com/gothinkster/realworld) spec and API.
 
-### [Demo](https://seed-rs-realworld.netlify.com/) &nbsp;&nbsp;&nbsp;&nbsp;[RealWorld](https://github.com/gothinkster/realworld)
+### [Demo](https://realworld-seed-rs.netlify.com/) &nbsp;&nbsp;&nbsp;&nbsp;[RealWorld](https://github.com/gothinkster/realworld)
 
 This codebase was created to demonstrate a fully fledged fullstack application built with **Seed** including CRUD operations, authentication, routing, pagination, and more.
 
@@ -56,11 +56,11 @@ $ tokei
  Language            Files        Lines         Code     Comments       Blanks
 -------------------------------------------------------------------------------
  HTML                    1           21           19            2            0
- Markdown                1           64           64            0            0
- Rust                   81         5888         4864          338          686
+ Markdown                1           66           66            0            0
+ Rust                   81         5899         4869          344          686
  SVG                     1           17           17            0            0
- TOML                    4          198          145           20           33
+ TOML                    4          199          146           20           33
 -------------------------------------------------------------------------------
- Total                  88         6188         5109          360          719
+ Total                  88         6202         5117          366          719
 -------------------------------------------------------------------------------
 ```

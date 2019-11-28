@@ -1,7 +1,7 @@
 [package]
 name = "seed_rs_realworld"
 version = "0.1.0"
-repository = "https://github.com/MartinKavik/seed-rs-realworld"
+repository = "https://github.com/seed-rs/seed-rs-realworld"
 authors = ["Martin Kavík <martin@kavik.cz>"]
 description = "Exemplary real world application built with Seed"
 categories = ["wasm", "rust", "seed", "realworld", "example"]

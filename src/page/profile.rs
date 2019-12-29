@@ -1,28 +1,29 @@
 use super::ViewPage;
-use crate::entity::{
-    article::{self, Article},
-    author::{self, Author},
-    ErrorMessage, PageNumber, PaginatedList, Username, Viewer,
-};
+use std::borrow::Cow;
+
+use seed::prelude::*;
+
 use crate::{
+    entity::{
+        article::{self, Article},
+        author::{self, Author},
+        ErrorMessage, PageNumber, PaginatedList, Username, Viewer,
+    },
     helper::take,
     loading, logger, page, request,
     route::{self, Route},
     GMsg, Session,
 };
-use futures::prelude::*;
-use seed::prelude::*;
-use std::borrow::Cow;
 
 static DEFAULT_TITLE_PREFIX: &str = "Profile";
 static TITLE_PREFIX_FOR_ME: &str = "My Profile";
 
-fn fetch_feed(
+async fn fetch_feed(
     viewer: Option<Viewer>,
     username: Username<'static>,
     selected_feed: SelectedFeed,
     page_number: PageNumber,
-) -> impl Future<Item = Msg, Error = Msg> {
+) -> Result<Msg, Msg> {
     request::feed::load_for_profile(
         viewer,
         username,
@@ -30,6 +31,7 @@ fn fetch_feed(
         page_number,
         Msg::FeedLoadCompleted,
     )
+    .await
 }
 
 // ------ ------
@@ -110,10 +112,7 @@ pub fn init<'a>(
     orders: &mut impl Orders<Msg, GMsg>,
 ) -> Model<'a> {
     orders
-        .perform_cmd(loading::notify_on_slow_load(
-            Msg::SlowLoadThresholdPassed,
-            Msg::Unreachable,
-        ))
+        .perform_cmd(loading::notify_on_slow_load(Msg::SlowLoadThresholdPassed))
         .perform_cmd(request::author::load(
             session.viewer().cloned(),
             username.clone(),
@@ -165,7 +164,6 @@ pub enum Msg {
     FeedLoadCompleted(Result<PaginatedList<Article>, (Username<'static>, Vec<ErrorMessage>)>),
     FeedMsg(article::feed::Msg),
     SlowLoadThresholdPassed,
-    Unreachable,
 }
 
 #[allow(clippy::match_same_arms)]
@@ -242,7 +240,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 model.feed = Status::LoadingSlowly(take(username))
             }
         }
-        Msg::Unreachable => logger::error("Unreachable!"),
     }
 }
 
@@ -348,7 +345,7 @@ fn view_feed(model: &Model) -> Node<Msg> {
                         view_tabs(model.selected_feed),
                         article::feed::view_articles(feed_model)
                             .els()
-                            .map_message(Msg::FeedMsg),
+                            .map_msg(Msg::FeedMsg),
                         article::feed::view_pagination(
                             feed_model,
                             model.feed_page,

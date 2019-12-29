@@ -1,5 +1,7 @@
-use crate::coder::encoder::form::settings::ValidForm as ValidFormEncoder;
-use crate::entity::form::{self, FormField};
+use crate::{
+    coder::encoder::form::settings::ValidForm as ValidFormEncoder,
+    entity::form::{self, FormField},
+};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use unicode_segmentation::UnicodeSegmentation;

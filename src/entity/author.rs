@@ -1,5 +1,7 @@
-use crate::entity::{Profile, Username, Viewer};
-use crate::Route;
+use crate::{
+    entity::{Profile, Username, Viewer},
+    Route,
+};
 use seed::prelude::*;
 use std::borrow::Cow;
 

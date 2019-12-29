@@ -1,11 +1,14 @@
-use crate::entity::{Article, ErrorMessage, PageNumber, PaginatedList, Username, Viewer};
-use crate::{coder::decoder, logger, page::profile::SelectedFeed, request};
-use futures::prelude::*;
+use crate::{
+    coder::decoder,
+    entity::{Article, ErrorMessage, PageNumber, PaginatedList, Username, Viewer},
+    logger,
+    page::profile::SelectedFeed,
+    request,
+};
 use lazy_static::lazy_static;
 use seed::fetch::ResponseDataResult;
 use serde::Deserialize;
-use std::borrow::Cow;
-use std::num::NonZeroUsize;
+use std::{borrow::Cow, num::NonZeroUsize};
 
 lazy_static! {
     static ref ARTICLES_PER_PAGE: NonZeroUsize = NonZeroUsize::new(5).unwrap();
@@ -58,13 +61,13 @@ pub fn request_url(
 }
 
 #[allow(clippy::type_complexity)]
-pub fn load_for_profile<Ms: 'static>(
+pub async fn load_for_profile<Ms: 'static>(
     viewer: Option<Viewer>,
     username: Username<'static>,
     selected_feed: SelectedFeed,
     page_number: PageNumber,
     f: fn(Result<PaginatedList<Article>, (Username<'static>, Vec<ErrorMessage>)>) -> Ms,
-) -> impl Future<Item = Ms, Error = Ms> {
+) -> Result<Ms, Ms> {
     request::new(
         &request_url(&username, selected_feed, page_number),
         viewer.as_ref(),
@@ -75,4 +78,5 @@ pub fn load_for_profile<Ms: 'static>(
             .map_err(request::fail_reason_into_errors)
             .map_err(|errors| (username, errors)))
     })
+    .await
 }

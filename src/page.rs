@@ -1,5 +1,7 @@
-use crate::entity::{ErrorMessage, Username, Viewer};
-use crate::Route;
+use crate::{
+    entity::{ErrorMessage, Username, Viewer},
+    Route,
+};
 use seed::prelude::*;
 use std::borrow::{Borrow, Cow};
 

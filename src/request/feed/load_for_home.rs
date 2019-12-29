@@ -1,11 +1,14 @@
-use crate::entity::{Article, ErrorMessage, PageNumber, PaginatedList, Viewer};
-use crate::{coder::decoder, logger, page::home::SelectedFeed, request};
-use futures::prelude::*;
+use crate::{
+    coder::decoder,
+    entity::{Article, ErrorMessage, PageNumber, PaginatedList, Viewer},
+    logger,
+    page::home::SelectedFeed,
+    request,
+};
 use lazy_static::lazy_static;
 use seed::fetch::ResponseDataResult;
 use serde::Deserialize;
-use std::borrow::Cow;
-use std::num::NonZeroUsize;
+use std::{borrow::Cow, future::Future, num::NonZeroUsize};
 
 lazy_static! {
     static ref ARTICLES_PER_PAGE: NonZeroUsize = NonZeroUsize::new(10).unwrap();
@@ -66,7 +69,7 @@ pub fn load_for_home<Ms: 'static>(
     selected_feed: &SelectedFeed,
     page_number: PageNumber,
     f: fn(Result<PaginatedList<Article>, Vec<ErrorMessage>>) -> Ms,
-) -> impl Future<Item = Ms, Error = Ms> {
+) -> impl Future<Output = Result<Ms, Ms>> {
     request::new(&request_url(selected_feed, page_number), viewer.as_ref()).fetch_json_data(
         move |data_result: ResponseDataResult<RootDecoder>| {
             f(data_result

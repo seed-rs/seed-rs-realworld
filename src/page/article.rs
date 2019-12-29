@@ -1,17 +1,16 @@
 use super::ViewPage;
-use crate::entity::{
-    author::{self, Author},
-    timestamp, Article, Comment, CommentId, ErrorMessage, Slug,
-};
 use crate::{
+    entity::{
+        author::{self, Author},
+        timestamp, Article, Comment, CommentId, ErrorMessage, Slug,
+    },
     helper::take,
     loading, logger, page, request,
     route::{self, Route},
     GMsg, Session,
 };
 use seed::prelude::*;
-use std::borrow::Cow;
-use std::collections::VecDeque;
+use std::{borrow::Cow, collections::VecDeque};
 
 // ------ ------
 //     Model
@@ -73,10 +72,7 @@ impl Default for CommentText {
 
 pub fn init(session: Session, slug: &Slug, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     orders
-        .perform_cmd(loading::notify_on_slow_load(
-            Msg::SlowLoadThresholdPassed,
-            Msg::Unreachable,
-        ))
+        .perform_cmd(loading::notify_on_slow_load(Msg::SlowLoadThresholdPassed))
         .perform_cmd(request::article::load(
             session.viewer().cloned(),
             slug,
@@ -131,7 +127,6 @@ pub enum Msg {
     FollowChangeCompleted(Result<Author, Vec<ErrorMessage>>),
     PostCommentCompleted(Result<Comment, Vec<ErrorMessage>>),
     SlowLoadThresholdPassed,
-    Unreachable,
 }
 
 #[allow(clippy::match_same_arms, clippy::too_many_lines)]
@@ -295,7 +290,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 model.comments = Status::LoadingSlowly
             }
         }
-        Msg::Unreachable => logger::error("Unreachable!"),
     }
 }
 

@@ -1,9 +1,13 @@
-use crate::entity::{Article, ErrorMessage, Slug, Viewer};
-use crate::{coder::decoder, request};
-use futures::prelude::*;
+use std::{borrow::Cow, future::Future};
+
 use seed::fetch::ResponseDataResult;
 use serde::Deserialize;
-use std::borrow::Cow;
+
+use crate::{
+    coder::decoder,
+    entity::{Article, ErrorMessage, Slug, Viewer},
+    request,
+};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -15,7 +19,7 @@ pub fn load<Ms: 'static>(
     viewer: Option<Viewer>,
     slug: &Slug,
     f: fn(Result<Article, Vec<ErrorMessage>>) -> Ms,
-) -> impl Future<Item = Ms, Error = Ms> {
+) -> impl Future<Output = Result<Ms, Ms>> {
     request::new(&format!("articles/{}", slug.as_str()), viewer.as_ref()).fetch_json_data(
         move |data_result: ResponseDataResult<RootDecoder>| {
             f(data_result

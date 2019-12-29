@@ -1,7 +1,9 @@
-use crate::entity::{
-    author, timestamp, Article, ErrorMessage, PageNumber, PaginatedList, Slug, Tag, Viewer,
+use crate::{
+    entity::{
+        author, timestamp, Article, ErrorMessage, PageNumber, PaginatedList, Slug, Tag, Viewer,
+    },
+    logger, page, request, GMsg, Route, Session,
 };
-use crate::{logger, page, request, GMsg, Route, Session};
 use seed::prelude::*;
 use std::borrow::Cow;
 

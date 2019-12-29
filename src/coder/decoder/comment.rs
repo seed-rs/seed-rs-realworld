@@ -1,8 +1,9 @@
-use crate::coder::decoder;
-use crate::entity::{self, ErrorMessage, Viewer};
+use crate::{
+    coder::decoder,
+    entity::{self, ErrorMessage, Viewer},
+};
 use serde::Deserialize;
-use std::borrow::Cow;
-use std::convert::TryInto;
+use std::{borrow::Cow, convert::TryInto};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]

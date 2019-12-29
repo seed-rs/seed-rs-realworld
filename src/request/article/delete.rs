@@ -1,8 +1,12 @@
-use crate::entity::{ErrorMessage, Slug, Viewer};
-use crate::request;
-use futures::prelude::*;
+use std::future::Future;
+
 use indexmap::IndexMap;
 use seed::fetch::{Method, ResponseDataResult};
+
+use crate::{
+    entity::{ErrorMessage, Slug, Viewer},
+    request,
+};
 
 type RootDecoder = IndexMap<(), ()>;
 
@@ -10,7 +14,7 @@ pub fn delete<Ms: 'static>(
     viewer: Option<&Viewer>,
     slug: &Slug,
     f: fn(Result<(), Vec<ErrorMessage>>) -> Ms,
-) -> impl Future<Item = Ms, Error = Ms> {
+) -> impl Future<Output = Result<Ms, Ms>> {
     request::new(&format!("articles/{}", slug.as_str()), viewer)
         .method(Method::Delete)
         .fetch_json_data(move |data_result: ResponseDataResult<RootDecoder>| {

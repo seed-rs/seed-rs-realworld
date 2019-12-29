@@ -1,9 +1,12 @@
-use crate::entity::{Article, ErrorMessage, Slug, Viewer};
-use crate::{coder::decoder, request};
-use futures::prelude::*;
+use crate::{
+    coder::decoder,
+    entity::{Article, ErrorMessage, Slug, Viewer},
+    request,
+};
 use seed::fetch::{Method, ResponseDataResult};
 use serde::Deserialize;
-use std::borrow::Cow;
+
+use std::{borrow::Cow, future::Future};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -15,7 +18,7 @@ pub fn favorite<Ms: 'static>(
     viewer: Option<Viewer>,
     slug: &Slug,
     f: fn(Result<Article, Vec<ErrorMessage>>) -> Ms,
-) -> impl Future<Item = Ms, Error = Ms> {
+) -> impl Future<Output = Result<Ms, Ms>> {
     request::new(
         &format!("articles/{}/favorite", slug.as_str()),
         viewer.as_ref(),

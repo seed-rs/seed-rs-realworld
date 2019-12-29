@@ -1,14 +1,15 @@
 use super::ViewPage;
-use crate::entity::{
-    form::settings::{Field, Form, Problem},
-    Viewer,
-};
+use seed::prelude::*;
+
 use crate::{
-    loading, logger, request,
+    entity::{
+        form::settings::{Field, Form, Problem},
+        Viewer,
+    },
+    loading, request,
     route::{self, Route},
     GMsg, Session,
 };
-use seed::prelude::*;
 
 // ------ ------
 //     Model
@@ -56,10 +57,7 @@ impl Default for Status {
 
 pub fn init(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     orders
-        .perform_cmd(loading::notify_on_slow_load(
-            Msg::SlowLoadThresholdPassed,
-            Msg::Unreachable,
-        ))
+        .perform_cmd(loading::notify_on_slow_load(Msg::SlowLoadThresholdPassed))
         .perform_cmd(request::settings::load(
             session.viewer(),
             Msg::FormLoadCompleted,
@@ -94,7 +92,6 @@ pub enum Msg {
     FormLoadCompleted(Result<Form, Vec<Problem>>),
     SaveCompleted(Result<Viewer, Vec<Problem>>),
     SlowLoadThresholdPassed,
-    Unreachable,
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
@@ -140,7 +137,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 model.status = Status::LoadingSlowly
             }
         }
-        Msg::Unreachable => logger::error("Unreachable!"),
     }
 }
 

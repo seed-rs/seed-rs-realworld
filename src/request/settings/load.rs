@@ -1,11 +1,14 @@
-use crate::entity::{
-    form::settings::{Form, Problem},
-    Viewer,
+use crate::{
+    coder::decoder,
+    entity::{
+        form::settings::{Form, Problem},
+        Viewer,
+    },
+    request,
 };
-use crate::{coder::decoder, request};
-use futures::prelude::*;
 use seed::fetch::ResponseDataResult;
 use serde::Deserialize;
+use std::future::Future;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -16,7 +19,7 @@ struct RootDecoder {
 pub fn load<Ms: 'static>(
     viewer: Option<&Viewer>,
     f: fn(Result<Form, Vec<Problem>>) -> Ms,
-) -> impl Future<Item = Ms, Error = Ms> {
+) -> impl Future<Output = Result<Ms, Ms>> {
     request::new("user", viewer).fetch_json_data(
         move |data_result: ResponseDataResult<RootDecoder>| {
             f(data_result

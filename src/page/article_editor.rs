@@ -1,9 +1,9 @@
 use super::ViewPage;
-use crate::entity::{
-    form::article_editor::{Field, Form, Problem},
-    Article, Slug,
-};
 use crate::{
+    entity::{
+        form::article_editor::{Field, Form, Problem},
+        Article, Slug,
+    },
     helper::take,
     loading, logger, request,
     route::{self, Route},
@@ -83,10 +83,7 @@ pub fn init_new(session: Session) -> Model {
 
 pub fn init_edit(session: Session, slug: Slug, orders: &mut impl Orders<Msg, GMsg>) -> Model {
     orders
-        .perform_cmd(loading::notify_on_slow_load(
-            Msg::SlowLoadThresholdPassed,
-            Msg::Unreachable,
-        ))
+        .perform_cmd(loading::notify_on_slow_load(Msg::SlowLoadThresholdPassed))
         .perform_cmd(request::article::load_for_editor(
             session.viewer().cloned(),
             slug.clone(),
@@ -124,7 +121,6 @@ pub enum Msg {
     EditCompleted(Result<Article, Vec<Problem>>),
     ArticleLoadCompleted(Result<Article, (Slug, Vec<Problem>)>),
     SlowLoadThresholdPassed,
-    Unreachable,
 }
 
 #[allow(clippy::match_same_arms)]
@@ -189,7 +185,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 model.status = Status::LoadingSlowly(take(slug));
             }
         }
-        Msg::Unreachable => logger::error("Unreachable!"),
     }
 }
 

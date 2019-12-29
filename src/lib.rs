@@ -64,12 +64,18 @@ impl<'a> From<Model<'a>> for Session {
 //     Init
 // ------ ------
 
-fn init(url: Url, orders: &mut impl Orders<Msg<'static>, GMsg>) -> Init<Model<'static>> {
-    orders.send_msg(Msg::RouteChanged(url.try_into().ok()));
-    Init::new_with_url_handling(
-        Model::Redirect(Session::new(storage::load_viewer())),
-        UrlHandling::None,
-    )
+fn before_mount(_url: Url) -> BeforeMount {
+    BeforeMount::new()
+        .mount_point("app")
+        .mount_type(MountType::Takeover)
+}
+
+fn after_mount(
+    _url: Url,
+    _orders: &mut impl Orders<Msg<'static>, GMsg>,
+) -> AfterMount<Model<'static>> {
+    let model = Model::Redirect(Session::new(storage::load_viewer()));
+    AfterMount::new(model).url_handling(UrlHandling::None)
 }
 
 // ------ ------
@@ -263,28 +269,28 @@ fn view(model: &Model) -> impl View<Msg<'static>> {
         Model::NotFound(session) => Page::Other.view(page::not_found::view(), session.viewer()),
         Model::Settings(model) => Page::Settings
             .view(page::settings::view(model), model.session().viewer())
-            .map_message(Msg::SettingsMsg),
+            .map_msg(Msg::SettingsMsg),
         Model::Home(model) => Page::Home
             .view(page::home::view(model), model.session().viewer())
-            .map_message(Msg::HomeMsg),
+            .map_msg(Msg::HomeMsg),
         Model::Login(model) => Page::Login
             .view(page::login::view(model), model.session().viewer())
-            .map_message(Msg::LoginMsg),
+            .map_msg(Msg::LoginMsg),
         Model::Register(model) => Page::Register
             .view(page::register::view(model), model.session().viewer())
-            .map_message(Msg::RegisterMsg),
+            .map_msg(Msg::RegisterMsg),
         Model::Profile(model, username) => Page::Profile(username)
             .view(page::profile::view(model), model.session().viewer())
-            .map_message(Msg::ProfileMsg),
+            .map_msg(Msg::ProfileMsg),
         Model::Article(model) => Page::Other
             .view(page::article::view(model), model.session().viewer())
-            .map_message(Msg::ArticleMsg),
+            .map_msg(Msg::ArticleMsg),
         Model::ArticleEditor(model, None) => Page::NewArticle
             .view(page::article_editor::view(model), model.session().viewer())
-            .map_message(Msg::ArticleEditorMsg),
+            .map_msg(Msg::ArticleEditorMsg),
         Model::ArticleEditor(model, Some(_)) => Page::Other
             .view(page::article_editor::view(model), model.session().viewer())
-            .map_message(Msg::ArticleEditorMsg),
+            .map_msg(Msg::ArticleEditorMsg),
     }
 }
 
@@ -294,7 +300,9 @@ fn view(model: &Model) -> impl View<Msg<'static>> {
 
 #[wasm_bindgen(start)]
 pub fn start() {
-    seed::App::build(init, update, view)
+    seed::App::builder(update, view)
+        .before_mount(before_mount)
+        .after_mount(after_mount)
         .routes(|url| Some(Msg::RouteChanged(url.try_into().ok())))
         .sink(sink)
         .build_and_start();

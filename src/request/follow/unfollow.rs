@@ -1,9 +1,11 @@
-use crate::entity::{Author, ErrorMessage, Username, Viewer};
-use crate::{coder::decoder, request};
-use futures::prelude::*;
+use crate::{
+    coder::decoder,
+    entity::{Author, ErrorMessage, Username, Viewer},
+    request,
+};
 use seed::fetch::{Method, ResponseDataResult};
 use serde::Deserialize;
-use std::borrow::Cow;
+use std::{borrow::Cow, future::Future};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -13,9 +15,9 @@ struct RootDecoder {
 
 pub fn unfollow<Ms: 'static>(
     viewer: Option<Viewer>,
-    username: &Username,
+    username: &Username<'_>,
     f: fn(Result<Author, Vec<ErrorMessage>>) -> Ms,
-) -> impl Future<Item = Ms, Error = Ms> {
+) -> impl Future<Output = Result<Ms, Ms>> {
     request::new(
         &format!("profiles/{}/follow", username.as_str()),
         viewer.as_ref(),

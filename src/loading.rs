@@ -1,14 +1,12 @@
 use crate::entity::Image;
-use futures::Future;
 use gloo_timers::future::TimeoutFuture;
 use seed::prelude::*;
 
 const SLOW_LOADING_THRESHOLD_MS: u32 = 500;
 
-pub fn notify_on_slow_load<Ms>(msg: Ms, error_msg: Ms) -> impl Future<Item = Ms, Error = Ms> {
-    TimeoutFuture::new(SLOW_LOADING_THRESHOLD_MS)
-        .map(|_| msg)
-        .map_err(|_| error_msg)
+pub async fn notify_on_slow_load<Ms>(msg: Ms) -> Result<Ms, Ms> {
+    TimeoutFuture::new(SLOW_LOADING_THRESHOLD_MS).await;
+    Ok(msg)
 }
 
 // ------ view functions ------

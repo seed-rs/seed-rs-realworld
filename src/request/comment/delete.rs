@@ -1,8 +1,12 @@
-use crate::entity::{CommentId, ErrorMessage, Slug, Viewer};
-use crate::request;
-use futures::prelude::*;
+use std::future::Future;
+
 use indexmap::IndexMap;
 use seed::fetch::{Method, ResponseDataResult};
+
+use crate::{
+    entity::{CommentId, ErrorMessage, Slug, Viewer},
+    request,
+};
 
 type RootDecoder = IndexMap<(), ()>;
 
@@ -11,7 +15,7 @@ pub fn delete<Ms: 'static>(
     slug: &Slug,
     comment_id: CommentId,
     f: fn(Result<CommentId, Vec<ErrorMessage>>) -> Ms,
-) -> impl Future<Item = Ms, Error = Ms> {
+) -> impl Future<Output = Result<Ms, Ms>> {
     request::new(
         &format!(
             "articles/{}/comments/{}",

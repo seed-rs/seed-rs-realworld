@@ -1,9 +1,9 @@
 use super::ViewPage;
-use crate::entity::{
-    form::login::{Field, Form, Problem},
-    Viewer,
-};
 use crate::{
+    entity::{
+        form::login::{Field, Form, Problem},
+        Viewer,
+    },
     request,
     route::{self, Route},
     GMsg, Session,

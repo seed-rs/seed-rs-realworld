@@ -1,12 +1,16 @@
-use crate::entity::{
-    form::article_editor::{Problem, ValidForm},
-    Article, Viewer,
-};
-use crate::{coder::decoder, request};
-use futures::prelude::*;
+use std::{borrow::Cow, future::Future};
+
 use seed::fetch::{Method, ResponseDataResult};
 use serde::Deserialize;
-use std::borrow::Cow;
+
+use crate::{
+    coder::decoder,
+    entity::{
+        form::article_editor::{Problem, ValidForm},
+        Article, Viewer,
+    },
+    request,
+};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -18,7 +22,7 @@ pub fn create<Ms: 'static>(
     viewer: Option<Viewer>,
     valid_form: &ValidForm,
     f: fn(Result<Article, Vec<Problem>>) -> Ms,
-) -> impl Future<Item = Ms, Error = Ms> {
+) -> impl Future<Output = Result<Ms, Ms>> {
     request::new("articles", viewer.as_ref())
         .method(Method::Post)
         .send_json(&valid_form.to_encoder())

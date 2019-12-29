@@ -1,5 +1,7 @@
-use crate::entity::{Avatar, Profile, Username};
-use crate::storage;
+use crate::{
+    entity::{Avatar, Profile, Username},
+    storage,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

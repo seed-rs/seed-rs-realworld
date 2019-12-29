@@ -1,17 +1,19 @@
 use super::ViewPage;
-use crate::entity::{
-    article::{self, Article},
-    ErrorMessage, PageNumber, PaginatedList, Tag, Viewer,
+use crate::{
+    entity::{
+        article::{self, Article},
+        ErrorMessage, PageNumber, PaginatedList, Tag, Viewer,
+    },
+    loading, logger, page, request, GMsg, Session,
 };
-use crate::{loading, logger, page, request, GMsg, Session};
-use futures::prelude::*;
 use seed::prelude::*;
+use std::future::Future;
 
 fn fetch_feed(
     viewer: Option<Viewer>,
     selected_feed: &SelectedFeed,
     page_number: PageNumber,
-) -> impl Future<Item = Msg, Error = Msg> {
+) -> impl Future<Output = Result<Msg, Msg>> {
     request::feed::load_for_home(viewer, selected_feed, page_number, Msg::FeedLoadCompleted)
 }
 
@@ -83,10 +85,7 @@ pub fn init(session: Session, orders: &mut impl Orders<Msg, GMsg>) -> Model {
         .map_or_else(SelectedFeed::default, SelectedFeed::Your);
 
     orders
-        .perform_cmd(loading::notify_on_slow_load(
-            Msg::SlowLoadThresholdPassed,
-            Msg::Unreachable,
-        ))
+        .perform_cmd(loading::notify_on_slow_load(Msg::SlowLoadThresholdPassed))
         .perform_cmd(request::tag::load_list(Msg::TagsLoadCompleted))
         .perform_cmd(fetch_feed(
             session.viewer().cloned(),
@@ -128,7 +127,6 @@ pub enum Msg {
     TagsLoadCompleted(Result<Vec<Tag>, Vec<ErrorMessage>>),
     FeedMsg(article::feed::Msg),
     SlowLoadThresholdPassed,
-    Unreachable,
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) {
@@ -188,7 +186,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg, GMsg>) 
                 model.tags = Status::LoadingSlowly
             }
         }
-        Msg::Unreachable => logger::error("Unreachable!"),
     }
 }
 
@@ -235,7 +232,7 @@ fn view_feed(model: &Model) -> Node<Msg> {
                         view_tabs(model),
                         article::feed::view_articles(feed_model)
                             .els()
-                            .map_message(Msg::FeedMsg),
+                            .map_msg(Msg::FeedMsg),
                         article::feed::view_pagination(
                             feed_model,
                             model.feed_page,

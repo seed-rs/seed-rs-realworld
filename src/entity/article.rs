@@ -1,5 +1,5 @@
-use crate::entity::article::tag::IntoStrings;
 use crate::entity::{
+    article::tag::IntoStrings,
     form::article_editor::{Field, Form},
     Author, Markdown, Tag, Timestamp,
 };

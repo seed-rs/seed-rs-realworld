@@ -1,10 +1,13 @@
-use crate::entity::{Comment, ErrorMessage, Slug, Viewer};
-use crate::{coder::decoder, logger, request};
-use futures::prelude::*;
+use std::{borrow::Cow, collections::VecDeque, future::Future};
+
 use seed::fetch::ResponseDataResult;
 use serde::Deserialize;
-use std::borrow::Cow;
-use std::collections::VecDeque;
+
+use crate::{
+    coder::decoder,
+    entity::{Comment, ErrorMessage, Slug, Viewer},
+    logger, request,
+};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -33,7 +36,7 @@ pub fn load_list<Ms: 'static>(
     viewer: Option<Viewer>,
     slug: &Slug,
     f: fn(Result<VecDeque<Comment>, Vec<ErrorMessage>>) -> Ms,
-) -> impl Future<Item = Ms, Error = Ms> {
+) -> impl Future<Output = Result<Ms, Ms>> {
     request::new(
         &format!("articles/{}/comments", slug.as_str()),
         viewer.as_ref(),

@@ -1,6 +1,8 @@
-use crate::coder::decoder;
-use crate::entity::{form::Problem, ErrorMessage, Viewer};
-use crate::logger;
+use crate::{
+    coder::decoder,
+    entity::{form::Problem, ErrorMessage, Viewer},
+    logger,
+};
 use seed::fetch;
 use serde_json;
 use std::fmt::Debug;

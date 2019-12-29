@@ -1,12 +1,13 @@
-use crate::entity::{Comment, ErrorMessage, Slug, Viewer};
-use crate::{
-    coder::{decoder, encoder},
-    request,
-};
-use futures::prelude::*;
+use std::{borrow::Cow, future::Future};
+
 use seed::fetch::{Method, ResponseDataResult};
 use serde::Deserialize;
-use std::borrow::Cow;
+
+use crate::{
+    coder::{decoder, encoder},
+    entity::{Comment, ErrorMessage, Slug, Viewer},
+    request,
+};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -19,7 +20,7 @@ pub fn create<Ms: 'static>(
     slug: &Slug,
     text: String,
     f: fn(Result<Comment, Vec<ErrorMessage>>) -> Ms,
-) -> impl Future<Item = Ms, Error = Ms> {
+) -> impl Future<Output = Result<Ms, Ms>> {
     request::new(
         &format!("articles/{}/comments", slug.as_str()),
         viewer.as_ref(),

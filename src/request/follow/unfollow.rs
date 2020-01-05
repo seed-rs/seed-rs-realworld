@@ -15,7 +15,7 @@ struct RootDecoder {
 
 pub fn unfollow<Ms: 'static>(
     viewer: Option<Viewer>,
-    username: &Username<'_>,
+    username: &Username,
     f: fn(Result<Author, Vec<ErrorMessage>>) -> Ms,
 ) -> impl Future<Output = Result<Ms, Ms>> {
     request::new(

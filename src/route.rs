@@ -70,19 +70,19 @@ impl<'a> TryFrom<seed::Url> for Route<'a> {
             Some("settings") => Some(Route::Settings),
             Some("profile") => path
                 .next()
-                .filter(|v| !v.is_empty())
+                .filter(|username| !username.is_empty())
                 .map(Username::from)
                 .map(Cow::Owned)
                 .map(Route::Profile),
             Some("register") => Some(Route::Register),
             Some("article") => path
                 .next()
-                .filter(|v| !v.is_empty())
+                .filter(|slug| !slug.is_empty())
                 .map(Slug::from)
                 .map(Route::Article),
             Some("editor") => path
                 .next()
-                .filter(|v| !v.is_empty())
+                .filter(|slug| !slug.is_empty())
                 .map(Slug::from)
                 .map(Route::EditArticle)
                 .or_else(|| Some(Route::NewArticle)),

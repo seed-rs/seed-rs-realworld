@@ -61,19 +61,17 @@ impl<'a> From<Model<'a>> for Session {
 }
 
 // ------ ------
-//     Before Mount
+// Before Mount
 // ------ ------
 
 fn before_mount(_url: Url) -> BeforeMount {
     // Since we have the "loading..." text in the app section of index.html,
     // we use MountType::Takover which will overwrite it with the seed generated html
-    BeforeMount::new()
-        .mount_point("app")
-        .mount_type(MountType::Takeover)
+    BeforeMount::new().mount_type(MountType::Takeover)
 }
 
 // ------ ------
-//     After Mount
+//  After Mount
 // ------ ------
 
 fn after_mount(

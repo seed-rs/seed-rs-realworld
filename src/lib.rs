@@ -61,14 +61,20 @@ impl<'a> From<Model<'a>> for Session {
 }
 
 // ------ ------
-//     Init
+//     Before Mount
 // ------ ------
 
 fn before_mount(_url: Url) -> BeforeMount {
+    // Since we have the "loading..." text in the app section of index.html,
+    // we use MountType::Takover which will overwrite it with the seed generated html
     BeforeMount::new()
         .mount_point("app")
         .mount_type(MountType::Takeover)
 }
+
+// ------ ------
+//     After Mount
+// ------ ------
 
 fn after_mount(
     _url: Url,
@@ -300,7 +306,7 @@ fn view(model: &Model) -> impl View<Msg<'static>> {
 
 #[wasm_bindgen(start)]
 pub fn start() {
-    seed::App::builder(update, view)
+    App::builder(update, view)
         .before_mount(before_mount)
         .after_mount(after_mount)
         .routes(|url| Some(Msg::RouteChanged(url.try_into().ok())))

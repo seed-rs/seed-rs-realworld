@@ -75,9 +75,11 @@ fn before_mount(_url: Url) -> BeforeMount {
 // ------ ------
 
 fn after_mount(
-    _url: Url,
-    _orders: &mut impl Orders<Msg<'static>, GMsg>,
+    url: Url,
+    orders: &mut impl Orders<Msg<'static>, GMsg>,
 ) -> AfterMount<Model<'static>> {
+    orders.send_msg(Msg::RouteChanged(url.try_into().ok()));
+
     let model = Model::Redirect(Session::new(storage::load_viewer()));
     AfterMount::new(model).url_handling(UrlHandling::None)
 }

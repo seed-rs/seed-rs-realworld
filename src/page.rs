@@ -80,6 +80,7 @@ pub enum Page<'a> {
     NewArticle,
 }
 
+#[allow(clippy::unused_self)]
 impl<'a> Page<'a> {
     fn is_active(&self, route: &Route) -> bool {
         match (self, route) {

@@ -1,4 +1,8 @@
-#![allow(clippy::single_match, clippy::large_enum_variant)]
+#![allow(
+    clippy::single_match,
+    clippy::large_enum_variant,
+    clippy::must_use_candidate
+)]
 #![allow(clippy::default_trait_access)] // because of problem with `strum_macros::EnumIter`
 
 #[macro_use]
@@ -64,7 +68,7 @@ impl<'a> From<Model<'a>> for Session {
 // Before Mount
 // ------ ------
 
-fn before_mount(_url: Url) -> BeforeMount {
+fn before_mount(_: Url) -> BeforeMount {
     // Since we have the "loading..." text in the app section of index.html,
     // we use MountType::Takover which will overwrite it with the seed generated html
     BeforeMount::new().mount_type(MountType::Takeover)

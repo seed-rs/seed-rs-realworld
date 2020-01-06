@@ -19,12 +19,15 @@ I think the best way to show you how it works is to describe what's going on ste
 1. Netlify redirects your request to `index.html`. (See `/netlify.toml`.)
 1. There is a script in `/index.html` that loads `wasm` file and starts application.
 1. Application is initialized in `/src/lib.rs` - see block `Start` at the end of that file.
-1. The first is called function `init` (we are still in file `lib.rs`):
-   1. It tries to load `Viewer` from local storage. `Viewer` is the object that contains info about currently logged in user (name, auth. token, avatar image url, etc).
+1. The first is called function `before_mount` (we are still in file `lib.rs`):
+   1. You can select mount point with `.mount_point("element-id")`. But the default one (`app`) is good for us.
+   1. `.mount_type(MountType::Takeover)` means that the previous HTML content in the mount point will be replaced with the application HTML.
+1. Then the function `after_mount` is called:
+   1. It tries to load `Viewer` from the local storage. `Viewer` is the object that contains info about currently logged in user (name, auth. token, avatar image url, etc).
    1. Then it creates a new `Session` with `Viewer` (or without it if you are not logged in). `Session` is de facto shared state - you are able to get it from all pages.
    1. Then the `Model` is created with `Session`. `Model` is enum, where each variant represents one page. Here, in `init` function, we create `Model` from variant `Redirect` because we haven't decided yet which page to show (i.e. `Redirect` is a "placeholder" variant).
    1. And we also try to parse given URL and send result to Seed's runtime.
-1. `init` function sends message `RouteChanged` which is handled in `update` function. Handler calls function `change_model_by_route` which choose the right `Model` according to the URL path.
+1. `after_mount` function also sends message `RouteChanged` which is handled in `update` function. Handler calls function `change_model_by_route` which choose the right `Model` according to the URL path.
 1. `Model::Home` is chosen in our example. However this variant should contain "sub-model" from `/src/page/home` so we need to call `page::home::init(..)` to get it.
 1. `page::home::init` loads required data (e.g. article feed or tags).
 1. We have data to show so when Seed's runtime calls `View` function again we can see it rendered in the browser.

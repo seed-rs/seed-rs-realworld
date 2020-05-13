@@ -12,6 +12,12 @@ We've gone to great lengths to adhere to the **Seed** community styleguides & be
 
 For more information on how to this works with other frontends/backends, head over to the [RealWorld](https://github.com/gothinkster/realworld) repo.
 
+---
+
+_NOTE:_ This project uses older Seed version `0.5.1`. It will be updated and refactored once [Seeder](https://github.com/MartinKavik/seeder) is ready. Please see [built-in examples](https://github.com/seed-rs/seed/blob/master/examples/README.md) and other projects instead.
+
+---
+
 # How it works
 
 I think the best way to show you how it works is to describe what's going on step by step when you open this example in your browser. So let's say you've just written `https://seed-rs-realworld.netlify.com/` to URL bar and pressed Enter:
